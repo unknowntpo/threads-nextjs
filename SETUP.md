@@ -23,7 +23,7 @@
 1. Update `.env.local` with your Supabase credentials:
    ```
    NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
-   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_OR_ANON_KEY=your-anon-key-here
+   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-publishable-key-here
    ```
 
 ## Step 4: Set up Database with CLI

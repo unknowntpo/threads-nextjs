@@ -5,8 +5,16 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
-    include: ['src/**/*.spec.ts', 'test/**/*.spec.ts'],
-    root: './',
+    include: ['src/**/*.spec.ts', 'test/**/*.e2e.spec.ts'],
+    exclude: ['node_modules', 'dist'],
+    testTimeout: 30000,
+    deps: {
+      optimizer: {
+        ssr: {
+          exclude: [/node_modules/],
+        },
+      },
+    },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
@@ -14,9 +22,13 @@ export default defineConfig({
         'node_modules/',
         'dist/',
         '**/*.spec.ts',
-        '**/*.config.ts',
+        '**/*.e2e.spec.ts',
+        '**/*.test.ts',
+        '**/main.ts',
       ],
     },
+    setupFiles: ['reflect-metadata'],
+    pool: 'forks',
   },
   plugins: [swc.vite()],
   resolve: {

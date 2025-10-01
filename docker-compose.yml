@@ -5,15 +5,15 @@ services:
     image: postgres:16-alpine
     container_name: threads_postgres
     environment:
-      POSTGRES_USER: threads
-      POSTGRES_PASSWORD: threads_dev_password
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
       POSTGRES_DB: threads_db
     ports:
       - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U threads"]
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -26,7 +26,7 @@ services:
       dockerfile: Dockerfile
     container_name: threads_backend
     environment:
-      DATABASE_URL: postgresql://threads:threads_dev_password@postgres:5432/threads_db
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/threads_db
       JWT_SECRET: dev_jwt_secret_change_in_production
       NODE_ENV: development
       PORT: 3001

@@ -19,7 +19,7 @@ Reference: https://www.threads.com
 
 **Testing:**
 - Playwright (E2E testing)
-- Jest (Unit tests)
+- Vitest (Unit tests - Backend & Frontend)
 - Supertest (API tests)
 
 **Deployment:**
@@ -166,18 +166,21 @@ threads-app/
 
 ## Development Phases (TDD Approach)
 
-### Phase 1: Project Setup & Docker Compose
+### Phase 1: Project Setup & Docker Compose ✅
 **Goal:** Set up monorepo with NestJS backend and Vite frontend, with Docker Compose for local development
 **Tasks:**
-- [ ] Initialize NestJS backend with TypeScript
-- [ ] Initialize Vite + React + TypeScript frontend
-- [ ] Set up PostgreSQL in docker-compose.yml
-- [ ] Configure Prisma/TypeORM for database
-- [ ] Create initial database migrations
-- [ ] Set up environment variables
-- [ ] Configure CORS between frontend and backend
+- [x] Initialize NestJS backend with TypeScript
+- [x] Initialize Vite + React + TypeScript frontend
+- [x] Set up PostgreSQL in docker-compose.yml (port 5433)
+- [x] Configure Prisma for database
+- [x] Create initial database migrations
+- [x] Set up environment variables
+- [x] Configure CORS between frontend and backend
+- [x] Migrate from Jest to Vitest for backend testing
+- [x] Configure TypeScript with CommonJS for NestJS
+- [x] Remove obsolete Next.js configuration files
 - [ ] Write setup documentation
-**Test:** `docker-compose up` starts all services successfully
+**Test:** `docker-compose up` starts all services successfully ✅
 
 ### Phase 2: Authentication Module (TDD)
 **Goal:** Implement JWT-based authentication with full test coverage
@@ -274,7 +277,7 @@ threads-app/
 ## Testing Strategy
 
 **Backend:**
-- **Unit Tests:** Jest for service layer logic
+- **Unit Tests:** Vitest for service layer logic
 - **Integration Tests:** Supertest for API endpoints with test database
 - **E2E Tests:** Full flow testing with Docker
 

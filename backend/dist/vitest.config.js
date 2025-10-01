@@ -35,6 +35,9 @@ exports.default = (0, config_1.defineConfig)({
         pool: 'forks',
     },
     plugins: [unplugin_swc_1.default.vite()],
+    css: {
+        postcss: null,
+    },
     resolve: {
         alias: {
             '@': '/src',

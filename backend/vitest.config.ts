@@ -31,6 +31,9 @@ export default defineConfig({
     pool: 'forks',
   },
   plugins: [swc.vite()],
+  css: {
+    postcss: null,
+  },
   resolve: {
     alias: {
       '@': '/src',

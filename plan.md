@@ -1,287 +1,293 @@
-# Threads clone with Supabase backend
+# Threads Clone with NestJS + Vite + React
 
 Reference: https://www.threads.com
 
-## Arch
+## Architecture
 
-Framework:
-- NextJS
-- Supabase
+**Backend:**
+- NestJS (TypeScript)
+- PostgreSQL (Database)
+- Prisma/TypeORM (ORM)
+- JWT Authentication
+- Docker Compose (Local deployment)
 
-Please ref this POC for integration of them.
-/Users/unknowntpo/repo/unknowntpo/playground-2022/supabase/nextjs_example
+**Frontend:**
+- Vite + React + TypeScript
+- TanStack Query (Data fetching)
+- React Router (Routing)
+- Tailwind CSS + shadcn/ui (Styling)
+
+**Testing:**
+- Playwright (E2E testing)
+- Jest (Unit tests)
+- Supertest (API tests)
+
+**Deployment:**
+- Docker Compose (Local)
+- Zeabur (Cloud deployment)
 
 ## Database Schema
 
 ```sql
--- Users table (extends Supabase auth.users)
-profiles (
-  id: uuid (FK to auth.users.id),
-  username: varchar unique,
-  display_name: varchar,
+-- Users table
+users (
+  id: uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  email: varchar(255) UNIQUE NOT NULL,
+  password_hash: varchar(255) NOT NULL,
+  username: varchar(50) UNIQUE NOT NULL,
+  display_name: varchar(100),
   bio: text,
   avatar_url: text,
-  created_at: timestamp,
-  updated_at: timestamp
+  created_at: timestamp DEFAULT now(),
+  updated_at: timestamp DEFAULT now()
 )
 
 -- Posts table
 posts (
-  id: uuid PRIMARY KEY,
-  user_id: uuid (FK profiles.id),
-  content: text,
+  id: uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id: uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  content: text NOT NULL,
   media_urls: text[],
-  created_at: timestamp,
-  updated_at: timestamp
+  created_at: timestamp DEFAULT now(),
+  updated_at: timestamp DEFAULT now()
 )
 
 -- Follows relationship
 follows (
-  id: uuid PRIMARY KEY,
-  follower_id: uuid (FK profiles.id),
-  following_id: uuid (FK profiles.id),
-  created_at: timestamp,
-  UNIQUE(follower_id, following_id)
+  id: uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  follower_id: uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  following_id: uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at: timestamp DEFAULT now(),
+  UNIQUE(follower_id, following_id),
+  CHECK (follower_id != following_id)
 )
 
 -- Likes
 likes (
-  id: uuid PRIMARY KEY,
-  user_id: uuid (FK profiles.id),
-  post_id: uuid (FK posts.id),
-  created_at: timestamp,
+  id: uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id: uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  post_id: uuid NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+  created_at: timestamp DEFAULT now(),
   UNIQUE(user_id, post_id)
 )
 
 -- Comments
 comments (
-  id: uuid PRIMARY KEY,
-  user_id: uuid (FK profiles.id),
-  post_id: uuid (FK posts.id),
-  content: text,
-  created_at: timestamp,
-  updated_at: timestamp
+  id: uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id: uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  post_id: uuid NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+  content: text NOT NULL,
+  created_at: timestamp DEFAULT now(),
+  updated_at: timestamp DEFAULT now()
 )
 
 -- Notifications
 notifications (
-  id: uuid PRIMARY KEY,
-  user_id: uuid (FK profiles.id),
-  type: varchar, -- 'new_post', 'like', 'comment', 'follow'
-  related_user_id: uuid (FK profiles.id),
-  related_post_id: uuid (FK posts.id) NULL,
+  id: uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id: uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  type: varchar(50) NOT NULL, -- 'new_post', 'like', 'comment', 'follow'
+  related_user_id: uuid REFERENCES users(id) ON DELETE CASCADE,
+  related_post_id: uuid REFERENCES posts(id) ON DELETE CASCADE,
   read: boolean DEFAULT false,
-  created_at: timestamp
+  created_at: timestamp DEFAULT now()
 )
 ```
 
-## Features Implementation
+## API Endpoints
 
-### 1. Post Creation Feature
+### Authentication
+- `POST /api/auth/register` - User registration
+- `POST /api/auth/login` - User login
+- `POST /api/auth/logout` - User logout
+- `POST /api/auth/refresh` - Refresh JWT token
+- `GET /api/auth/me` - Get current user
 
-**Backend:**
-- API Route: `POST /api/posts`
-- Supabase Functions: `create_post()`, `notify_followers()`
-- Real-time updates via Supabase Realtime
+### Users
+- `GET /api/users/:id` - Get user profile
+- `PUT /api/users/:id` - Update user profile
+- `GET /api/users/:id/posts` - Get user's posts
+- `GET /api/users/:id/followers` - Get user's followers
+- `GET /api/users/:id/following` - Get users being followed
 
-**Frontend Components:**
-- `PostComposer` - Text area with media upload
-- `PostSubmissionState` - Loading/success/error states
-- `MediaUploader` - Handle image/video uploads
+### Posts
+- `GET /api/posts` - Get timeline/feed posts
+- `POST /api/posts` - Create new post
+- `GET /api/posts/:id` - Get post by ID
+- `PUT /api/posts/:id` - Update post
+- `DELETE /api/posts/:id` - Delete post
+- `POST /api/posts/:id/like` - Like a post
+- `DELETE /api/posts/:id/like` - Unlike a post
 
-**Technical Tasks:**
-- Set up Supabase Storage bucket for media
-- Implement RLS policies for posts table
-- Create post creation API route with validation
-- Build composer UI with rich text support
-- Implement real-time notification system
-- Add optimistic UI updates
+### Comments
+- `GET /api/posts/:id/comments` - Get post comments
+- `POST /api/posts/:id/comments` - Create comment
+- `PUT /api/comments/:id` - Update comment
+- `DELETE /api/comments/:id` - Delete comment
 
-### 2. Timeline Feature
+### Follows
+- `POST /api/users/:id/follow` - Follow user
+- `DELETE /api/users/:id/follow` - Unfollow user
 
-**Backend:**
-- API Routes: `GET /api/timeline?cursor=&limit=20`
-- Database: Join posts with user follows, cursor-based pagination
-- Optimized indexes on (user_id, created_at)
+### Notifications
+- `GET /api/notifications` - Get user notifications
+- `PUT /api/notifications/:id/read` - Mark notification as read
 
-**Frontend Components:**
-- `Timeline` - Main timeline container
-- `PostCard` - Individual post display
-- `InfiniteScroll` - Pagination handler
-- `TimelineLoader` - Loading states
+## Project Structure
 
-**Technical Tasks:**
-- Implement cursor-based pagination
-- Create timeline query with proper joins
-- Build infinite scroll with intersection observer
-- Add loading skeletons and empty states
-- Implement pull-to-refresh functionality
-- Cache management with React Query/SWR
+```
+threads-app/
+├── backend/                 # NestJS Backend
+│   ├── src/
+│   │   ├── auth/           # Authentication module
+│   │   ├── users/          # Users module
+│   │   ├── posts/          # Posts module
+│   │   ├── comments/       # Comments module
+│   │   ├── follows/        # Follows module
+│   │   ├── notifications/  # Notifications module
+│   │   ├── database/       # Database config & migrations
+│   │   └── common/         # Shared utilities
+│   ├── test/               # E2E & Integration tests
+│   ├── Dockerfile
+│   └── package.json
+├── frontend/               # Vite + React Frontend
+│   ├── src/
+│   │   ├── components/     # React components
+│   │   ├── pages/          # Page components
+│   │   ├── hooks/          # Custom hooks
+│   │   ├── api/            # API client
+│   │   ├── lib/            # Utilities
+│   │   └── types/          # TypeScript types
+│   ├── tests/              # Playwright E2E tests
+│   ├── Dockerfile
+│   └── package.json
+├── docker-compose.yml      # Local development setup
+└── README.md
+```
 
-### 3. Post Interactions Feature
+## Development Phases (TDD Approach)
 
-**Backend:**
-- API Routes:
-  - `POST/DELETE /api/posts/[id]/like`
-  - `POST /api/posts/[id]/comments`
-  - `GET /api/posts/[id]/comments?cursor=&limit=10`
-- Functions: `toggle_like()`, `create_comment()`
-
-**Frontend Components:**
-- `InteractionBar` - Like, comment, share buttons
-- `CommentsList` - Comments display with pagination
-- `CommentComposer` - Comment input with @mentions
-- `MentionAutocomplete` - User search/selection
-- `FollowButton` - Follow/unfollow functionality
-
-**Technical Tasks:**
-- Implement optimistic like/unlike with rollback
-- Build @mention system with autocomplete
-- Create comment threading (if needed)
-- Add real-time comment updates
-- Implement follow/unfollow with RLS updates
-- User search and suggestion system
-
-### 4. User Relationships Feature
-
-**Backend:**
-- API Routes:
-  - `POST/DELETE /api/users/[id]/follow`
-  - `GET /api/users/[id]/followers`
-  - `GET /api/users/[id]/following`
-- Database triggers for follower counts and notifications
-
-**Frontend Components:**
-- `UserProfile` - Profile page with follow status
-- `FollowersList` - Followers/following lists
-- `UserCard` - User display component
-- `FollowSuggestions` - Discover new users
-
-**Technical Tasks:**
-- Implement follow/unfollow with proper RLS
-- Build user discovery algorithm
-- Create follower/following lists with pagination
-- Add mutual follow indicators
-- Implement follow suggestions
-- Private/public account settings
-
-## Technical Stack
-
-**Frontend:**
-- Next.js 15 with App Router
-- TypeScript for type safety
-- Tailwind CSS for styling
-- shadcn/ui components (Radix UI + Tailwind)
-- Client-side fetch for API calls
-- No client state management (using server components)
-
-**Backend:**
-- Next.js API Routes (app/api/)
-- Supabase Auth for authentication
-- Supabase Database with RLS
-- Supabase Realtime for live updates
-- Supabase Storage for media
-- Direct Supabase calls in API routes
-
-**Architecture Pattern:**
-- Server Components: fetch() API routes server-side for initial data
-- Client Components: fetch() API routes client-side for mutations
-- router.refresh() for data revalidation
-- No Server Actions (following POC pattern)
-
-## Development Phases (Incremental MVPs)
-
-### MVP 1: Basic Auth & Profile Setup ✅
-**Goal:** User can sign up, sign in, and set up profile
-**Deliverable:** Working authentication flow with profile creation
-**Database:** `profiles` table only
-**Frontend:**
-- [x] Login/signup pages
-- [x] Profile setup form
-- [x] Basic navigation
-**Test:** User can create account and edit profile
-
-### MVP 2: Post Creation & Display ✅
-**Goal:** User can create and view their own posts
-**Deliverable:** Simple post composer and personal feed
-**Database:** Add `posts` table
-**Frontend:**
-- [x] Post composer (text only)
-- [x] Personal posts list
-- [x] Basic post card display
-**Test:** User can write posts and see them listed
-
-### MVP 3: Docker Image & CI/CD Setup ✅
-**Goal:** Automate Docker image building with semantic versioning
-**Deliverable:** GitHub Actions workflow that builds and tags Docker images
+### Phase 1: Project Setup & Docker Compose
+**Goal:** Set up monorepo with NestJS backend and Vite frontend, with Docker Compose for local development
 **Tasks:**
-- [x] Create Dockerfile for Next.js app
-- [x] Set up GitHub Actions workflow for Docker build
-- [x] Implement semantic versioning (v1.0.0, v1.0.1, etc.)
-- [x] Tag images with version, latest, and git SHA
-- [x] Push images to GitHub Container Registry (ghcr.io)
-- [x] Configure workflow triggers (push to main, tag creation)
-- [x] Add build caching for faster builds
-- [x] Test image locally before deployment
-**Test:** Git tag triggers automated Docker build with proper version tags
+- [ ] Initialize NestJS backend with TypeScript
+- [ ] Initialize Vite + React + TypeScript frontend
+- [ ] Set up PostgreSQL in docker-compose.yml
+- [ ] Configure Prisma/TypeORM for database
+- [ ] Create initial database migrations
+- [ ] Set up environment variables
+- [ ] Configure CORS between frontend and backend
+- [ ] Write setup documentation
+**Test:** `docker-compose up` starts all services successfully
 
-### MVP 4: Deployment Setup
-**Goal:** Deploy application to production using free tier services
-**Deliverable:** Live, publicly accessible application
-**Services:**
-- Supabase Cloud (Free tier)
-- GCP GKE Autopilot (Free tier eligible)
+### Phase 2: Authentication Module (TDD)
+**Goal:** Implement JWT-based authentication with full test coverage
+**Backend Tasks:**
+- [ ] Write unit tests for AuthService (register, login, validate token)
+- [ ] Implement AuthService with bcrypt password hashing
+- [ ] Write e2e tests for auth endpoints
+- [ ] Implement AuthController (register, login, refresh, me)
+- [ ] Add JWT Guards and Strategies
+- [ ] Write integration tests with test database
+**Frontend Tasks:**
+- [ ] Write Playwright tests for signup flow
+- [ ] Implement signup page
+- [ ] Write Playwright tests for login flow
+- [ ] Implement login page
+- [ ] Set up TanStack Query for API calls
+- [ ] Implement auth context/state management
+**Test:** All tests pass (unit, integration, e2e)
+
+### Phase 3: User Profile Module (TDD)
+**Goal:** User profile CRUD with tests
+**Backend Tasks:**
+- [ ] Write unit tests for UsersService
+- [ ] Implement UsersService (get, update profile)
+- [ ] Write e2e tests for user endpoints
+- [ ] Implement UsersController
+**Frontend Tasks:**
+- [ ] Write Playwright tests for profile page
+- [ ] Implement profile view page
+- [ ] Write Playwright tests for profile edit
+- [ ] Implement profile edit form
+**Test:** All tests pass, users can view/edit profiles
+
+### Phase 4: Posts Module (TDD)
+**Goal:** Create, read, update, delete posts with tests
+**Backend Tasks:**
+- [ ] Write unit tests for PostsService
+- [ ] Implement PostsService (CRUD operations)
+- [ ] Write e2e tests for post endpoints
+- [ ] Implement PostsController
+- [ ] Add pagination support
+**Frontend Tasks:**
+- [ ] Write Playwright tests for post creation
+- [ ] Implement post composer
+- [ ] Write Playwright tests for post feed
+- [ ] Implement post feed/timeline
+- [ ] Add infinite scroll
+**Test:** All tests pass, users can create and view posts
+
+### Phase 5: Social Features (TDD)
+**Goal:** Follows, likes, comments with full testing
+**Backend Tasks:**
+- [ ] Write tests for FollowsService
+- [ ] Implement FollowsService and Controller
+- [ ] Write tests for LikesService
+- [ ] Implement likes functionality
+- [ ] Write tests for CommentsService
+- [ ] Implement comments functionality
+**Frontend Tasks:**
+- [ ] Write Playwright tests for follow/unfollow
+- [ ] Implement follow button
+- [ ] Write Playwright tests for likes
+- [ ] Implement like button
+- [ ] Write Playwright tests for comments
+- [ ] Implement comment system
+**Test:** All social features work with passing tests
+
+### Phase 6: Notifications Module (TDD)
+**Goal:** Real-time notifications with WebSocket
+**Backend Tasks:**
+- [ ] Write tests for NotificationsService
+- [ ] Implement NotificationsService
+- [ ] Set up WebSocket Gateway
+- [ ] Write e2e tests for notifications
+**Frontend Tasks:**
+- [ ] Write Playwright tests for notifications
+- [ ] Implement notification UI
+- [ ] Set up WebSocket client
+**Test:** Notifications work in real-time
+
+### Phase 7: Production Deployment
+**Goal:** Deploy to Zeabur with CI/CD
 **Tasks:**
-- [ ] Set up Supabase Cloud project
-- [ ] Configure production database and migrations
-- [ ] Set up Supabase Storage buckets for media
-- [ ] Configure RLS policies for production
-- [ ] Create GCP project and enable GKE API
-- [ ] Set up GKE Autopilot cluster (e2-micro instances)
-- [ ] Configure kubectl and cluster access
-- [ ] Pull Docker image from GitHub Container Registry
-- [ ] Create Kubernetes deployment manifests
-- [ ] Configure environment variables and secrets
-- [ ] Set up Ingress for external access
-- [ ] Configure custom domain (optional)
-- [ ] Set up SSL/TLS certificates
-**Test:** Application is accessible via public URL with all features working
+- [ ] Create production Dockerfiles
+- [ ] Set up Zeabur configuration
+- [ ] Configure environment variables for production
+- [ ] Set up database migrations for production
+- [ ] Deploy backend to Zeabur
+- [ ] Deploy frontend to Zeabur
+- [ ] Configure domain and SSL
+- [ ] Run all tests against production
+**Test:** Application works in production with all tests passing
 
-### MVP 5: Following & Timeline
-**Goal:** Users can follow others and see followed posts
-**Deliverable:** Social timeline with follow functionality
-**Database:** Add `follows` table
+## Testing Strategy
+
+**Backend:**
+- **Unit Tests:** Jest for service layer logic
+- **Integration Tests:** Supertest for API endpoints with test database
+- **E2E Tests:** Full flow testing with Docker
+
 **Frontend:**
-- [ ] User search and profile pages
-- [ ] Follow/unfollow buttons
-- [ ] Timeline showing followed users' posts
-**Test:** User can follow others and see their posts in timeline
+- **Component Tests:** Vitest + React Testing Library
+- **E2E Tests:** Playwright for user flows
 
-### MVP 6: Basic Interactions
-**Goal:** Users can like and comment on posts
-**Deliverable:** Interactive social features
-**Database:** Add `likes` and `comments` tables
-**Frontend:**
-- [ ] Like button with counter
-- [ ] Comment form and display
-- [ ] Real-time like updates
-**Test:** User can like and comment on posts, see interactions
+**Coverage Goals:**
+- Backend: 80%+ code coverage
+- Frontend: 70%+ code coverage
+- E2E: All critical user flows covered
 
-### MVP 7: Enhanced Features
-**Goal:** Polish and advanced features
-**Deliverable:** Production-ready app
-**Database:** Add `notifications` table
-**Frontend:**
-- [ ] Media uploads
-- [ ] @mentions in posts/comments
-- [ ] Notification system
-- [ ] Infinite scroll and performance optimizations
-**Test:** Full social media experience with notifications
-
-## Implementation Strategy
-
-Each MVP should be:
-- ✅ **Fully functional** - Complete user flow works end-to-end
-- ✅ **Deployable** - Can be deployed and tested immediately
-- ✅ **Incremental** - Builds on previous MVP without breaking changes
-- ✅ **Testable** - Clear success criteria for manual testing
+**Test Execution:**
+- All tests must pass before merging to main
+- Run tests in CI/CD pipeline
+- Run E2E tests against staging environment

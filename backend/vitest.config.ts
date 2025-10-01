@@ -2,6 +2,7 @@ import { defineConfig } from 'vitest/config';
 import swc from 'unplugin-swc';
 
 export default defineConfig({
+  root: __dirname,
   test: {
     globals: true,
     environment: 'node',
@@ -31,9 +32,6 @@ export default defineConfig({
     pool: 'forks',
   },
   plugins: [swc.vite()],
-  css: {
-    postcss: null,
-  },
   resolve: {
     alias: {
       '@': '/src',

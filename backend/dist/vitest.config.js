@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const config_1 = require("vitest/config");
 const unplugin_swc_1 = __importDefault(require("unplugin-swc"));
 exports.default = (0, config_1.defineConfig)({
+    root: __dirname,
     test: {
         globals: true,
         environment: 'node',
@@ -35,9 +36,6 @@ exports.default = (0, config_1.defineConfig)({
         pool: 'forks',
     },
     plugins: [unplugin_swc_1.default.vite()],
-    css: {
-        postcss: null,
-    },
     resolve: {
         alias: {
             '@': '/src',

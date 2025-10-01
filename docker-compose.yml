@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: threads_postgres
+    environment:
+      POSTGRES_USER: threads
+      POSTGRES_PASSWORD: threads_dev_password
+      POSTGRES_DB: threads_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U threads"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - threads_network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: threads_backend
+    environment:
+      DATABASE_URL: postgresql://threads:threads_dev_password@postgres:5432/threads_db
+      JWT_SECRET: dev_jwt_secret_change_in_production
+      NODE_ENV: development
+      PORT: 3001
+    ports:
+      - "3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    command: pnpm run start:dev
+    networks:
+      - threads_network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: threads_frontend
+    environment:
+      VITE_API_URL: http://localhost:3001/api
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    command: pnpm run dev -- --host
+    networks:
+      - threads_network
+
+volumes:
+  postgres_data:
+
+networks:
+  threads_network:
+    driver: bridge

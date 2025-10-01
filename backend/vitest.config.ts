@@ -12,7 +12,7 @@ export default defineConfig({
     deps: {
       optimizer: {
         ssr: {
-          exclude: [/node_modules/],
+          exclude: ['node_modules'],
         },
       },
     },

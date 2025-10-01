@@ -16,7 +16,7 @@ exports.default = (0, config_1.defineConfig)({
         deps: {
             optimizer: {
                 ssr: {
-                    exclude: [/node_modules/],
+                    exclude: ['node_modules'],
                 },
             },
         },

@@ -54,7 +54,7 @@ services:
     volumes:
       - ./frontend:/app
       - /app/node_modules
-    command: pnpm run dev -- --host
+    command: pnpm run dev
     networks:
       - threads_network
 

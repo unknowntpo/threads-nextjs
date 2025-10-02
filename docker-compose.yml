@@ -20,6 +20,21 @@ services:
     networks:
       - threads_network
 
+  migrate:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: threads_migrate
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/threads_db
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: npx prisma migrate deploy
+    networks:
+      - threads_network
+    restart: "no"
+
   backend:
     build:
       context: ./backend
@@ -35,6 +50,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     command: pnpm run start:dev
     networks:
       - threads_network

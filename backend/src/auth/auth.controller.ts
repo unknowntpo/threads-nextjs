@@ -9,6 +9,7 @@ import {
 import { AuthService } from '@/auth/auth.service';
 import { RegisterDto, LoginDto } from '@/auth/dto';
 import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
+import { User } from '@prisma/client';
 
 @Controller('auth')
 export class AuthController {
@@ -26,12 +27,7 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Get('me')
-  getProfile(
-    @Request()
-    req: {
-      user: { passwordHash?: string } & Record<string, unknown>;
-    },
-  ) {
+  getProfile(@Request() req: { user: User }): Omit<User, 'passwordHash'> {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { passwordHash, ...userWithoutPassword } = req.user;
     return userWithoutPassword;

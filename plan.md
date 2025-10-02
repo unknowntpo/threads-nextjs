@@ -1,5 +1,7 @@
 # Threads Clone with NestJS + Vite + React
 
+> **DEPRECATED**: This plan.md is no longer actively maintained. Please refer to the [GitHub Project Board](https://github.com/unknowntpo/threads_supabase/projects) for current task tracking and project status.
+
 Reference: https://www.threads.com
 
 ## Architecture
@@ -190,7 +192,7 @@ threads-app/
 - [x] Refactor imports to use @ alias instead of relative paths
 - [x] Implement AuthController (register, login, me)
 - [x] Add JWT Guards and Strategies
-- [ ] Write e2e tests for auth endpoints
+- [x] Write e2e tests for auth endpoints
 - [ ] Write integration tests with test database
 **Frontend Tasks:**
 - [ ] Write Playwright tests for signup flow

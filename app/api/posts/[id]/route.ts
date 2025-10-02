@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import { logger } from "@/lib/logger";
-import type { UpdatePost } from "@/lib/types/database";
+import type { UpdatePostDTO } from "@/lib/types/entities";
 
 export async function GET(
   request: NextRequest,
@@ -65,7 +65,7 @@ export async function PUT(
 
   try {
     const { id } = await params;
-    const body: UpdatePost = await request.json();
+    const body: UpdatePostDTO = await request.json();
     logger.apiRequest('PUT', `/api/posts/${id}`);
 
     const supabase = await createClient();

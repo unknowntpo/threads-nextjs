@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Loader2, ImagePlus, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import type { CreatePost, PostWithProfile } from "@/lib/types/database";
+import type { CreatePostDTO, PostWithProfile } from "@/lib/types/entities";
 
 interface CreatePostFormProps {
   onPostCreated?: (post: PostWithProfile) => void;
@@ -36,7 +36,7 @@ export function CreatePostForm({ onPostCreated }: CreatePostFormProps) {
     setLoading(true);
 
     try {
-      const postData: CreatePost = {
+      const postData: CreatePostDTO = {
         content: content.trim(),
         ...(imageUrl.trim() && { image_url: imageUrl.trim() }),
       };

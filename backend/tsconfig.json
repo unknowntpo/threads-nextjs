@@ -11,7 +11,6 @@
     "target": "es6",
     "sourceMap": true,
     "outDir": "./dist",
-    "types": ["vitest/globals"],
     "typeRoots": [
       "node_modules/@types"
     ],
@@ -26,5 +25,6 @@
     "noImplicitAny": false,
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false
-  }
+  },
+  "exclude": ["node_modules", "dist", "test", "**/*.spec.ts", "vitest.config.ts"]
 }

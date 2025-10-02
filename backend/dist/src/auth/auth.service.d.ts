@@ -1,14 +1,6 @@
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '@/prisma/prisma.service';
-export interface RegisterDto {
-    email: string;
-    username: string;
-    password: string;
-}
-export interface LoginDto {
-    email: string;
-    password: string;
-}
+import { RegisterDto, LoginDto } from '@/auth/dto';
 export declare class AuthService {
     private prisma;
     private jwtService;

@@ -37,7 +37,6 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey, {
 
 const testUsers = [
   {
-    id: '00000000-0000-0000-0000-000000000001',
     email: 'alice@example.com',
     password: 'password123',
     profile: {
@@ -52,7 +51,6 @@ const testUsers = [
     ]
   },
   {
-    id: '00000000-0000-0000-0000-000000000002',
     email: 'bob@example.com',
     password: 'password123',
     profile: {
@@ -67,7 +65,6 @@ const testUsers = [
     ]
   },
   {
-    id: '00000000-0000-0000-0000-000000000003',
     email: 'charlie@example.com',
     password: 'password123',
     profile: {
@@ -103,14 +100,23 @@ async function seed() {
         console.log(`  ⚠️  User already exists: ${user.email}`)
         // Get the existing user ID
         const { data: existingUser } = await supabase.auth.admin.listUsers()
-        userId = existingUser?.users.find(u => u.email === user.email)?.id || user.id
+        const foundUser = existingUser?.users.find(u => u.email === user.email)
+        if (!foundUser) {
+          console.error(`  ❌ Could not find existing user: ${user.email}`)
+          continue
+        }
+        userId = foundUser.id
       } else {
         console.error(`  ❌ Error creating user: ${authError.message}`)
         continue
       }
     } else {
-      userId = authUser.user?.id || user.id
-      console.log(`  ✅ User created: ${authUser.user?.email}`)
+      if (!authUser.user?.id) {
+        console.error(`  ❌ No user ID returned for: ${user.email}`)
+        continue
+      }
+      userId = authUser.user.id
+      console.log(`  ✅ User created: ${authUser.user.email}`)
     }
 
     // Create profile

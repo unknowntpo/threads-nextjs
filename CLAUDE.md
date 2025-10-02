@@ -1,1 +1,2 @@
 - remember to run test and lint before commit
+- remember to check the checkbox when task completed

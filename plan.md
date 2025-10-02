@@ -188,9 +188,9 @@ threads-app/
 - [x] Write unit tests for AuthService (register, login, validate token)
 - [x] Implement AuthService with bcrypt password hashing
 - [x] Refactor imports to use @ alias instead of relative paths
+- [x] Implement AuthController (register, login, me)
+- [x] Add JWT Guards and Strategies
 - [ ] Write e2e tests for auth endpoints
-- [ ] Implement AuthController (register, login, refresh, me)
-- [ ] Add JWT Guards and Strategies
 - [ ] Write integration tests with test database
 **Frontend Tasks:**
 - [ ] Write Playwright tests for signup flow

@@ -1,6 +1,14 @@
 import { createClient } from '@supabase/supabase-js'
 import { readFileSync } from 'fs'
 import { resolve } from 'path'
+import type { CreateProfile, CreatePost } from '../lib/types/database'
+
+interface SeedUser {
+  email: string
+  password: string
+  profile: Omit<CreateProfile, 'avatar_url'> & { avatar_url: string }
+  posts: CreatePost[]
+}
 
 // Load environment variables from .env.local
 try {
@@ -35,7 +43,7 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey, {
   }
 })
 
-const testUsers = [
+const testUsers: SeedUser[] = [
   {
     email: 'alice@example.com',
     password: 'password123',
@@ -46,8 +54,8 @@ const testUsers = [
       avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Alice'
     },
     posts: [
-      { content: 'Just deployed my first Next.js app with Supabase! 🚀', image_url: null },
-      { content: 'Working on a new feature for the threads clone. Loving the Supabase developer experience!', image_url: null }
+      { content: 'Just deployed my first Next.js app with Supabase! 🚀' },
+      { content: 'Working on a new feature for the threads clone. Loving the Supabase developer experience!' }
     ]
   },
   {
@@ -61,7 +69,7 @@ const testUsers = [
     },
     posts: [
       { content: 'Beautiful sunset today 🌅', image_url: 'https://images.unsplash.com/photo-1495567720989-cebdbdd97913?w=800' },
-      { content: 'New blog post: "Getting Started with Supabase Local Development"', image_url: null }
+      { content: 'New blog post: "Getting Started with Supabase Local Development"' }
     ]
   },
   {
@@ -74,8 +82,8 @@ const testUsers = [
       avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Charlie'
     },
     posts: [
-      { content: 'Just finished redesigning the profile page. What do you think?', image_url: null },
-      { content: 'Coffee first, design later ☕', image_url: null }
+      { content: 'Just finished redesigning the profile page. What do you think?' },
+      { content: 'Coffee first, design later ☕' }
     ]
   }
 ]

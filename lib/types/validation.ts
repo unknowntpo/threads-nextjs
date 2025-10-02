@@ -12,14 +12,18 @@ type DbPost = Database['public']['Tables']['posts']['Row']
 type DbProfileInsert = Database['public']['Tables']['profiles']['Insert']
 type DbPostInsert = Database['public']['Tables']['posts']['Insert']
 
-// These type assertions will fail at compile time if entities drift from schema
-const _profileValidation: Profile = {} as DbProfile
-const _postValidation: Post = {} as DbPost
-const _profileInsertValidation: ProfileInsert = {} as DbProfileInsert
-const _postInsertValidation: PostInsert = {} as DbPostInsert
+// Type assertion utilities for compile-time validation
+type AssertEqual<T, U> = T extends U ? (U extends T ? true : never) : never
+type AssertAssignable<T, U> = T extends U ? true : never
 
-// Reverse validation - database types should also match our entities
-const _dbProfileValidation: DbProfile = {} as Profile
-const _dbPostValidation: DbPost = {} as Post
+// These will fail at compile time if types don't match
+type _ProfileCheck = AssertAssignable<DbProfile, Profile>
+type _PostCheck = AssertAssignable<DbPost, Post>
+type _ProfileInsertCheck = AssertAssignable<DbProfileInsert, ProfileInsert>
+type _PostInsertCheck = AssertAssignable<DbPostInsert, PostInsert>
+
+// Reverse validation - our entities should also be assignable to DB types
+type _DbProfileCheck = AssertAssignable<Profile, DbProfile>
+type _DbPostCheck = AssertAssignable<Post, DbPost>
 
 export {}

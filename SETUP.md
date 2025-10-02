@@ -1,4 +1,94 @@
-# MVP 1 Setup Guide
+# Setup Guide
+
+## Local Development Setup (Recommended)
+
+### Prerequisites
+- Docker Desktop installed and running
+- Node.js 22+ and pnpm installed
+- Supabase CLI installed
+
+### Step 1: Install Supabase CLI
+```bash
+# macOS/Linux
+brew install supabase/tap/supabase
+
+# Or via npm
+npm install -g supabase
+```
+
+### Step 2: Start Local Supabase
+```bash
+# Start all Supabase services locally
+supabase start
+```
+
+This will:
+- Pull required Docker images (first time only, ~5-10 minutes)
+- Start PostgreSQL, GoTrue (auth), PostgREST (API), and other services
+- Apply migrations from `supabase/migrations/`
+- Seed data from `supabase/seed.sql`
+- Show you the local credentials
+
+### Step 3: Get Local Credentials
+After `supabase start` completes, you'll see output like:
+```
+API URL: http://127.0.0.1:54321
+DB URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+Studio URL: http://127.0.0.1:54323
+Inbucket URL: http://127.0.0.1:54324
+anon key: eyJh...
+service_role key: eyJh...
+```
+
+### Step 4: Configure Environment Variables
+Create `.env.local` file:
+```bash
+cp .env.example .env.local
+```
+
+Update `.env.local` with the local credentials from `supabase start`:
+```env
+NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<your-local-anon-key>
+SUPABASE_SERVICE_ROLE_KEY=<your-local-service-role-key>
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+```
+
+### Step 5: Start the Next.js App
+```bash
+pnpm install
+pnpm run dev
+```
+
+### Step 6: Access Local Services
+- **Next.js App**: http://localhost:3000
+- **Supabase Studio**: http://127.0.0.1:54323
+- **Email Testing (Inbucket)**: http://127.0.0.1:54324
+
+### Step 7: Test the Setup
+1. Go to http://localhost:3000
+2. Sign up with test credentials (any email works locally)
+3. Check Inbucket (http://127.0.0.1:54324) for confirmation emails
+4. View database in Studio (http://127.0.0.1:54323)
+
+### Useful Local Commands
+```bash
+# Stop Supabase
+supabase stop
+
+# Reset database (runs migrations and seeds again)
+supabase db reset
+
+# View logs
+supabase logs
+
+# Generate TypeScript types
+supabase gen types typescript --local > types/supabase.ts
+```
+
+---
+
+## Production Setup (Supabase Cloud)
 
 ## Step 1: Create Supabase Project
 

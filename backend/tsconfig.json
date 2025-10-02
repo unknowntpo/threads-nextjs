@@ -11,6 +11,7 @@
     "target": "es6",
     "sourceMap": true,
     "outDir": "./dist",
+    "types": ["vitest/globals"],
     "typeRoots": [
       "node_modules/@types"
     ],

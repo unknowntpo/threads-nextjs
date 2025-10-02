@@ -26,7 +26,6 @@ This will:
 - Pull required Docker images (first time only, ~5-10 minutes)
 - Start PostgreSQL, GoTrue (auth), PostgREST (API), and other services
 - Apply migrations from `supabase/migrations/`
-- Seed data from `supabase/seed.sql`
 - Show you the local credentials
 
 ### Step 3: Get Local Credentials
@@ -54,30 +53,44 @@ SUPABASE_SERVICE_ROLE_KEY=<your-local-service-role-key>
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 
-### Step 5: Start the Next.js App
+### Step 5: Seed Test Data
+After Supabase is running, populate the database with test users and posts:
+```bash
+pnpm run seed
+```
+
+This will create 3 test users:
+- **alice@example.com** / password123
+- **bob@example.com** / password123
+- **charlie@example.com** / password123
+
+### Step 6: Start the Next.js App
 ```bash
 pnpm install
 pnpm run dev
 ```
 
-### Step 6: Access Local Services
+### Step 7: Access Local Services
 - **Next.js App**: http://localhost:3000
 - **Supabase Studio**: http://127.0.0.1:54323
 - **Email Testing (Inbucket)**: http://127.0.0.1:54324
 
-### Step 7: Test the Setup
+### Step 8: Test the Setup
 1. Go to http://localhost:3000
-2. Sign up with test credentials (any email works locally)
-3. Check Inbucket (http://127.0.0.1:54324) for confirmation emails
-4. View database in Studio (http://127.0.0.1:54323)
+2. Sign in with test credentials (e.g., alice@example.com / password123)
+3. View database in Studio (http://127.0.0.1:54323)
+4. Check Inbucket (http://127.0.0.1:54324) for email testing
 
 ### Useful Local Commands
 ```bash
 # Stop Supabase
 supabase stop
 
-# Reset database (runs migrations and seeds again)
+# Reset database (clears all data, runs migrations)
 supabase db reset
+
+# Seed test data
+pnpm run seed
 
 # View logs
 supabase logs

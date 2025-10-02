@@ -5,6 +5,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "seed": "tsx supabase/seed.ts",
     "seed:admin": "curl -X POST http://localhost:3000/api/admin/seed"
   },
   "dependencies": {
@@ -38,6 +39,7 @@
     "supabase": "^2.47.2",
     "tailwindcss": "^3.4.17",
     "tailwindcss-animate": "^1.0.7",
+    "tsx": "^4.19.2",
     "typescript": "^5.9.2"
   },
   "pnpm": {

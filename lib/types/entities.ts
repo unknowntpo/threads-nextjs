@@ -1,4 +1,4 @@
-import type { Database } from './supabase'
+import type { Database } from '@/lib/types/supabase'
 
 // Entity types - Row types from database
 export type Profile = Database['public']['Tables']['profiles']['Row']

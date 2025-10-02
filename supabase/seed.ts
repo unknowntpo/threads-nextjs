@@ -1,13 +1,13 @@
 import { createClient } from '@supabase/supabase-js'
 import { readFileSync } from 'fs'
 import { resolve } from 'path'
-import type { CreateProfile, CreatePost } from '../lib/types/database'
+import type { CreateProfileDTO, CreatePostDTO } from '@/lib/types/entities'
 
 interface SeedUser {
   email: string
   password: string
-  profile: Omit<CreateProfile, 'avatar_url'> & { avatar_url: string }
-  posts: CreatePost[]
+  profile: Omit<CreateProfileDTO, 'avatar_url'> & { avatar_url: string }
+  posts: CreatePostDTO[]
 }
 
 // Load environment variables from .env.local

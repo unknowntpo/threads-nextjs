@@ -4,9 +4,9 @@ test.describe('Profile Management', () => {
   test.beforeEach(async ({ page }) => {
     // Sign in before each test
     await page.goto('/auth/login')
-    await page.fill('input[name="email"]', 'alice@example.com')
-    await page.fill('input[name="password"]', 'password123')
-    await page.click('button[type="submit"]')
+    await page.getByRole('textbox', { name: 'Email' }).fill('alice@example.com')
+    await page.getByRole('textbox', { name: 'Password' }).fill('password123')
+    await page.getByRole('button', { name: 'Login' }).click()
     await page.waitForURL(/\/(dashboard|feed)?/)
   })
 

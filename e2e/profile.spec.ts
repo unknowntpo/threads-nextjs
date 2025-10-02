@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test'
 test.describe('Profile Management', () => {
   test.beforeEach(async ({ page }) => {
     // Sign in before each test
-    await page.goto('/auth/signin')
+    await page.goto('/auth/login')
     await page.fill('input[name="email"]', 'alice@example.com')
     await page.fill('input[name="password"]', 'password123')
     await page.click('button[type="submit"]')

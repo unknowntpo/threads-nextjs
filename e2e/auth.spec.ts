@@ -9,7 +9,7 @@ test.describe('Authentication Flow', () => {
   }
 
   test('should sign up a new user', async ({ page }) => {
-    await page.goto('/auth/signup')
+    await page.goto('/auth/sign-up')
 
     // Fill signup form
     await page.fill('input[name="email"]', testUser.email)
@@ -26,7 +26,7 @@ test.describe('Authentication Flow', () => {
 
   test('should sign in with existing user', async ({ page }) => {
     // Use seed data user
-    await page.goto('/auth/signin')
+    await page.goto('/auth/login')
 
     await page.fill('input[name="email"]', 'alice@example.com')
     await page.fill('input[name="password"]', 'password123')
@@ -42,7 +42,7 @@ test.describe('Authentication Flow', () => {
 
   test('should sign out successfully', async ({ page }) => {
     // First sign in
-    await page.goto('/auth/signin')
+    await page.goto('/auth/login')
     await page.fill('input[name="email"]', 'alice@example.com')
     await page.fill('input[name="password"]', 'password123')
     await page.click('button[type="submit"]')
@@ -53,11 +53,11 @@ test.describe('Authentication Flow', () => {
     await page.click('button:has-text("Sign Out"), button:has-text("Logout"), a:has-text("Sign Out")')
 
     // Should redirect to login or home
-    await expect(page).toHaveURL(/\/(auth\/signin|\/)?/)
+    await expect(page).toHaveURL(/\/(auth\/login|\/)?/)
   })
 
   test('should show error with invalid credentials', async ({ page }) => {
-    await page.goto('/auth/signin')
+    await page.goto('/auth/login')
 
     await page.fill('input[name="email"]', 'invalid@example.com')
     await page.fill('input[name="password"]', 'wrongpassword')

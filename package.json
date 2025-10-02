@@ -6,7 +6,11 @@
     "start": "next start",
     "lint": "next lint",
     "seed": "tsx supabase/seed.ts",
-    "seed:admin": "curl -X POST http://localhost:3000/api/admin/seed"
+    "seed:admin": "curl -X POST http://localhost:3000/api/admin/seed",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:debug": "playwright test --debug"
   },
   "dependencies": {
     "@radix-ui/react-avatar": "^1.1.10",

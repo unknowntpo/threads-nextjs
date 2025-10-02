@@ -185,8 +185,9 @@ threads-app/
 ### Phase 2: Authentication Module (TDD)
 **Goal:** Implement JWT-based authentication with full test coverage
 **Backend Tasks:**
-- [ ] Write unit tests for AuthService (register, login, validate token)
-- [ ] Implement AuthService with bcrypt password hashing
+- [x] Write unit tests for AuthService (register, login, validate token)
+- [x] Implement AuthService with bcrypt password hashing
+- [x] Refactor imports to use @ alias instead of relative paths
 - [ ] Write e2e tests for auth endpoints
 - [ ] Implement AuthController (register, login, refresh, me)
 - [ ] Add JWT Guards and Strategies

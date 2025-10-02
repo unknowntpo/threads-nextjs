@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
-import { SignInRequest } from "@/lib/types/database";
+import { SignInRequest } from "@/lib/types/entities";
 
 /**
  * @swagger

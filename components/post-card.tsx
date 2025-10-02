@@ -1,6 +1,6 @@
 "use client";
 
-import { PostWithProfile } from "@/lib/types/database";
+import { PostWithProfile } from "@/lib/types/entities";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";

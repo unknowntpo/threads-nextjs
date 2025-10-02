@@ -26,7 +26,7 @@ export type PostWithProfile = Post & {
   profiles: Profile
 }
 
-// Request/Response DTOs
+// Request/Response DTOs for API routes
 export interface CreateProfileDTO {
   username: string
   display_name?: string | null
@@ -48,4 +48,17 @@ export interface CreatePostDTO {
 export interface UpdatePostDTO {
   content?: string
   image_url?: string | null
+}
+
+// Auth DTOs
+export interface SignUpRequest {
+  email: string
+  password: string
+  username: string
+  display_name?: string
+}
+
+export interface SignInRequest {
+  email: string
+  password: string
 }

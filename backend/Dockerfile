@@ -14,6 +14,9 @@ RUN pnpm install
 # Copy source code
 COPY . .
 
+# Generate Prisma client
+RUN pnpm exec prisma generate
+
 # Expose port
 EXPOSE 3001
 

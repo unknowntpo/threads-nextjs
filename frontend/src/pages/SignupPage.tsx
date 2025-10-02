@@ -64,7 +64,7 @@ export default function SignupPage() {
   return (
     <div style={{ maxWidth: '400px', margin: '50px auto', padding: '20px' }}>
       <h1>Sign Up for Threads</h1>
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} noValidate>
         <div style={{ marginBottom: '15px' }}>
           <label htmlFor="email" style={{ display: 'block', marginBottom: '5px' }}>
             Email

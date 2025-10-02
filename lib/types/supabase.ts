@@ -1,3 +1,15 @@
+/**
+ * Auto-generated Supabase types from database schema
+ * Generated with: supabase gen types typescript --local
+ *
+ * Note: We define our entities separately in lib/types/entities.ts
+ * This file is used for:
+ * 1. Type validation (ensures entities match DB schema)
+ * 2. SupabaseClient generic parameter for type inference
+ *
+ * The "Relationships" field is metadata for foreign keys - not directly used.
+ */
+
 export type Json =
   | string
   | number

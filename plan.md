@@ -225,27 +225,42 @@ notifications (
 - [x] Test image locally before deployment
 **Test:** Git tag triggers automated Docker build with proper version tags
 
-### MVP 4: Deployment Setup
-**Goal:** Deploy application to production using free tier services
-**Deliverable:** Live, publicly accessible application
+### MVP 4: Local Development & Deployment Setup
+**Goal:** Set up local Supabase development environment, test in CI/CD, and deploy to Zeabur
+**Deliverable:** Live, publicly accessible application with complete development workflow
 **Services:**
-- Supabase Cloud (Free tier)
-- GCP GKE Autopilot (Free tier eligible)
+- Supabase CLI (Local development)
+- Supabase Cloud (Production)
+- Zeabur (Deployment platform)
 **Tasks:**
-- [ ] Set up Supabase Cloud project
-- [ ] Configure production database and migrations
-- [ ] Set up Supabase Storage buckets for media
-- [ ] Configure RLS policies for production
-- [ ] Create GCP project and enable GKE API
-- [ ] Set up GKE Autopilot cluster (e2-micro instances)
-- [ ] Configure kubectl and cluster access
-- [ ] Pull Docker image from GitHub Container Registry
-- [ ] Create Kubernetes deployment manifests
-- [ ] Configure environment variables and secrets
-- [ ] Set up Ingress for external access
-- [ ] Configure custom domain (optional)
-- [ ] Set up SSL/TLS certificates
-**Test:** Application is accessible via public URL with all features working
+- [ ] Install and configure Supabase CLI
+- [ ] Initialize local Supabase project with Docker
+- [ ] Set up local database with migrations
+- [ ] Configure local Supabase Storage for media
+- [ ] Test RLS policies locally
+- [ ] Create seed data for local testing
+- [ ] Configure environment variables for local/production
+- [ ] Set up Supabase Cloud project for production
+- [ ] Write Playwright E2E tests for full user flows (FE + BE integration)
+  - Auth flow (signup, login, logout)
+  - Post creation and display in feed
+  - User profile view and edit
+- [ ] Test database migrations in CI/CD pipeline
+- [ ] Run E2E tests in CI/CD pipeline
+- [ ] Deploy Docker image to Zeabur
+- [ ] Configure Zeabur environment variables
+- [ ] Connect Zeabur app to Supabase Cloud
+- [ ] Set up custom domain (optional)
+- [ ] Configure SSL/TLS (auto via Zeabur)
+**Test:**
+1. Application works locally with Supabase CLI
+2. All E2E tests pass locally and in CI/CD
+3. CI/CD pipeline runs migrations successfully
+4. Application is accessible via Zeabur public URL
+
+**Known Build Warnings (non-blocking):**
+- Edge Runtime warning: Supabase Realtime uses Node.js APIs in middleware (acceptable for now)
+- Deprecated `punycode` module warning from dependencies (will be fixed upstream)
 
 ### MVP 5: Following & Timeline
 **Goal:** Users can follow others and see followed posts

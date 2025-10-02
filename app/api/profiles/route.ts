@@ -1,6 +1,7 @@
-import { createClient } from "@/lib/supabase/server";
+import { createServerSupabaseClient } from "@/lib/db/client";
+import { ProfileRepository } from "@/lib/repositories/profile.repository";
 import { NextRequest, NextResponse } from "next/server";
-import { CreateProfile } from "@/lib/types/database";
+import type { CreateProfileDTO, Profile } from "@/lib/types/entities";
 
 /**
  * @swagger
@@ -42,25 +43,22 @@ import { CreateProfile } from "@/lib/types/database";
  */
 export async function GET() {
   try {
-    const supabase = await createClient();
-    
+    const supabase = await createServerSupabaseClient();
+    const profileRepo = new ProfileRepository(supabase);
+
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
       return NextResponse.json(
-        { error: "Not authenticated" }, 
+        { error: "Not authenticated" },
         { status: 401 }
       );
     }
 
-    const { data: profile, error } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", user.id)
-      .single();
+    const profile: Profile | null = await profileRepo.findById(user.id);
 
-    if (error) {
+    if (!profile) {
       return NextResponse.json(
-        { error: "Profile not found" }, 
+        { error: "Profile not found" },
         { status: 404 }
       );
     }
@@ -73,7 +71,7 @@ export async function GET() {
   } catch (error) {
     console.error("API Error:", error);
     return NextResponse.json(
-      { error: "Internal server error" }, 
+      { error: "Internal server error" },
       { status: 500 }
     );
   }
@@ -81,13 +79,14 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient();
-    const body: CreateProfile = await request.json();
+    const supabase = await createServerSupabaseClient();
+    const profileRepo = new ProfileRepository(supabase);
+    const body: CreateProfileDTO = await request.json();
 
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
       return NextResponse.json(
-        { error: "Not authenticated" }, 
+        { error: "Not authenticated" },
         { status: 401 }
       );
     }
@@ -95,66 +94,50 @@ export async function POST(request: NextRequest) {
     // Validate required fields
     if (!body.username?.trim()) {
       return NextResponse.json(
-        { error: "Username is required" }, 
+        { error: "Username is required" },
         { status: 400 }
       );
     }
 
     // Sanitize username
     const username = body.username.replace(/[^a-zA-Z0-9_]/g, '').toLowerCase();
-    
+
     if (username.length < 3) {
       return NextResponse.json(
-        { error: "Username must be at least 3 characters" }, 
+        { error: "Username must be at least 3 characters" },
         { status: 400 }
       );
     }
 
     // Check if username is already taken
-    const { data: existingProfile } = await supabase
-      .from("profiles")
-      .select("username")
-      .eq("username", username)
-      .single();
+    const existingProfile = await profileRepo.findByUsername(username);
 
     if (existingProfile) {
       return NextResponse.json(
-        { error: "Username is already taken" }, 
+        { error: "Username is already taken" },
         { status: 400 }
       );
     }
 
-    const { data: profile, error } = await supabase
-      .from("profiles")
-      .insert({
-        id: user.id,
-        username,
-        display_name: body.display_name || username,
-        bio: body.bio || null,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      console.error("Profile creation error:", error);
-      return NextResponse.json(
-        { error: "Failed to create profile" }, 
-        { status: 500 }
-      );
-    }
+    const profile: Profile = await profileRepo.create({
+      id: user.id,
+      username,
+      display_name: body.display_name || username,
+      bio: body.bio || null,
+    });
 
     return NextResponse.json(
-      { 
+      {
         message: "Profile created successfully",
-        profile 
-      }, 
+        profile
+      },
       { status: 201 }
     );
 
   } catch (error) {
     console.error("API Error:", error);
     return NextResponse.json(
-      { error: "Internal server error" }, 
+      { error: "Internal server error" },
       { status: 500 }
     );
   }

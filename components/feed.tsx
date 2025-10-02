@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { PostWithProfile } from "@/lib/types/database";
+import { PostWithProfile } from "@/lib/types/entities";
 import { PostCard } from "./post-card";
 import { Button } from "./ui/button";
 import { RefreshCw, Loader2 } from "lucide-react";

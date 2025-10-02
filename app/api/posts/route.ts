@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import { logger } from "@/lib/logger";
-import type { CreatePost } from "@/lib/types/database";
+import type { CreatePostDTO } from "@/lib/types/entities";
 
 export async function GET() {
   const startTime = Date.now();
@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
   const startTime = Date.now();
   
   try {
-    const body: CreatePost = await request.json();
+    const body: CreatePostDTO = await request.json();
     logger.apiRequest('POST', '/api/posts');
 
     // Validate required fields

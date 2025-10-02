@@ -26,7 +26,14 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Get('me')
-  getProfile(@Request() req: { user: unknown }) {
-    return req.user;
+  getProfile(
+    @Request()
+    req: {
+      user: { passwordHash?: string } & Record<string, unknown>;
+    },
+  ) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { passwordHash, ...userWithoutPassword } = req.user;
+    return userWithoutPassword;
   }
 }

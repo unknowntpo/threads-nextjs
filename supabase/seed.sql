@@ -1,11 +1,108 @@
 -- Seed data for local development
--- This file creates test users and sample posts
+-- This file creates test users in auth.users, then profiles and posts
 
--- Note: Users are created via Supabase Auth, so we need to insert into auth.users
--- For local testing, we'll create profiles assuming auth users exist
+-- First, insert test users into auth.users (local development only)
+-- Password hash is for 'password123' (bcrypt)
+INSERT INTO auth.users (
+  id,
+  instance_id,
+  email,
+  encrypted_password,
+  email_confirmed_at,
+  created_at,
+  updated_at,
+  raw_app_meta_data,
+  raw_user_meta_data,
+  is_super_admin,
+  role,
+  aud
+)
+VALUES
+  (
+    '00000000-0000-0000-0000-000000000001'::uuid,
+    '00000000-0000-0000-0000-000000000000'::uuid,
+    'alice@example.com',
+    '$2a$10$ZjrKEW5fKKxqiYKfKqN3P.vqxJV1V5MXqKqN3P.vqxJV1V5MXqKqN3',
+    now(),
+    now(),
+    now(),
+    '{"provider":"email","providers":["email"]}'::jsonb,
+    '{}'::jsonb,
+    false,
+    'authenticated',
+    'authenticated'
+  ),
+  (
+    '00000000-0000-0000-0000-000000000002'::uuid,
+    '00000000-0000-0000-0000-000000000000'::uuid,
+    'bob@example.com',
+    '$2a$10$ZjrKEW5fKKxqiYKfKqN3P.vqxJV1V5MXqKqN3P.vqxJV1V5MXqKqN3',
+    now(),
+    now(),
+    now(),
+    '{"provider":"email","providers":["email"]}'::jsonb,
+    '{}'::jsonb,
+    false,
+    'authenticated',
+    'authenticated'
+  ),
+  (
+    '00000000-0000-0000-0000-000000000003'::uuid,
+    '00000000-0000-0000-0000-000000000000'::uuid,
+    'charlie@example.com',
+    '$2a$10$ZjrKEW5fKKxqiYKfKqN3P.vqxJV1V5MXqKqN3P.vqxJV1V5MXqKqN3',
+    now(),
+    now(),
+    now(),
+    '{"provider":"email","providers":["email"]}'::jsonb,
+    '{}'::jsonb,
+    false,
+    'authenticated',
+    'authenticated'
+  )
+ON CONFLICT (id) DO NOTHING;
 
--- Insert test user profiles
--- These IDs should match test users you create via the Supabase Studio or signup flow
+-- Insert corresponding identities for email auth
+INSERT INTO auth.identities (
+  id,
+  user_id,
+  identity_data,
+  provider,
+  last_sign_in_at,
+  created_at,
+  updated_at
+)
+VALUES
+  (
+    '00000000-0000-0000-0000-000000000001'::uuid,
+    '00000000-0000-0000-0000-000000000001'::uuid,
+    '{"sub":"00000000-0000-0000-0000-000000000001","email":"alice@example.com"}'::jsonb,
+    'email',
+    now(),
+    now(),
+    now()
+  ),
+  (
+    '00000000-0000-0000-0000-000000000002'::uuid,
+    '00000000-0000-0000-0000-000000000002'::uuid,
+    '{"sub":"00000000-0000-0000-0000-000000000002","email":"bob@example.com"}'::jsonb,
+    'email',
+    now(),
+    now(),
+    now()
+  ),
+  (
+    '00000000-0000-0000-0000-000000000003'::uuid,
+    '00000000-0000-0000-0000-000000000003'::uuid,
+    '{"sub":"00000000-0000-0000-0000-000000000003","email":"charlie@example.com"}'::jsonb,
+    'email',
+    now(),
+    now(),
+    now()
+  )
+ON CONFLICT (id) DO NOTHING;
+
+-- Now insert profiles (these will work because auth.users entries exist)
 INSERT INTO public.profiles (id, username, display_name, bio, avatar_url)
 VALUES
   ('00000000-0000-0000-0000-000000000001'::uuid, 'alice', 'Alice Cooper', 'Software engineer and coffee enthusiast ☕', 'https://api.dicebear.com/7.x/avataaars/svg?seed=Alice'),

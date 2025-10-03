@@ -38,7 +38,7 @@ test.describe('Authentication Flow', () => {
     await expect(page).toHaveURL(/\/(dashboard|feed)?/)
 
     // Should see user profile indicator
-    await expect(page.locator('text=/alice|Alice/')).toBeVisible()
+    await expect(page.getByText('@alice')).toBeVisible()
   })
 
   test('should sign out successfully', async ({ page }) => {

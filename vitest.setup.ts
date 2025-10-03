@@ -1,6 +1,7 @@
 import { beforeAll, afterAll } from 'vitest'
 import { exec } from 'child_process'
 import { promisify } from 'util'
+import { setupKeycloak } from './tests/setup-keycloak'
 
 const execAsync = promisify(exec)
 
@@ -10,7 +11,7 @@ process.env.DATABASE_URL =
 process.env.NEXTAUTH_SECRET = 'test-secret'
 process.env.NEXTAUTH_URL = 'http://localhost:3000'
 
-// Setup test database
+// Setup test database and Keycloak
 beforeAll(async () => {
   // Create test database if it doesn't exist
   try {
@@ -20,7 +21,7 @@ beforeAll(async () => {
     console.log('Created test database')
   } catch {
     // Database might already exist, that's okay
-    console.log('Test database already exists or could not be created')
+    console.log('Test database already exists')
   }
 
   // Run Prisma migrations on test database
@@ -33,7 +34,16 @@ beforeAll(async () => {
     console.error('Failed to apply migrations:', error)
     throw error
   }
-}, 30000)
+
+  // Setup Keycloak realm, client, and test users (idempotent)
+  try {
+    await setupKeycloak()
+    console.log('Keycloak setup complete')
+  } catch (error) {
+    console.error('Failed to setup Keycloak:', error)
+    throw error
+  }
+}, 60000)
 
 afterAll(() => {
   // Cleanup code if needed

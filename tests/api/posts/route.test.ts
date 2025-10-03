@@ -4,7 +4,8 @@ import * as appHandler from '@/app/api/posts/route'
 import { cleanupDatabase, createTestUser } from '@/tests/helpers/db'
 import { prisma } from '@/lib/prisma'
 
-// Mock NextAuth
+// Mock NextAuth for API route testing
+// Note: Keycloak is configured in vitest.setup.ts for future E2E testing
 vi.mock('@/auth', () => ({
   auth: vi.fn(),
 }))

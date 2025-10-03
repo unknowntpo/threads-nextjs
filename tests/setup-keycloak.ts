@@ -65,6 +65,10 @@ async function createClient(token: string) {
       webOrigins: ['http://localhost:3000'],
       publicClient: false,
       protocol: 'openid-connect',
+      directAccessGrantsEnabled: true, // Enable Resource Owner Password Credentials flow
+      serviceAccountsEnabled: false,
+      standardFlowEnabled: true,
+      implicitFlowEnabled: false,
     }),
   })
 
@@ -86,6 +90,13 @@ async function createTestUser(token: string, username: string, email: string, pa
       email,
       enabled: true,
       emailVerified: true,
+      credentials: [
+        {
+          type: 'password',
+          value: password,
+          temporary: false,
+        },
+      ],
     }),
   })
 
@@ -110,7 +121,7 @@ async function createTestUser(token: string, username: string, email: string, pa
 
   const userId = users[0].id
 
-  // Set password
+  // Ensure password is set again and remove all required actions
   await fetch(`${KEYCLOAK_URL}/admin/realms/${REALM_NAME}/users/${userId}/reset-password`, {
     method: 'PUT',
     headers: {
@@ -123,6 +134,36 @@ async function createTestUser(token: string, username: string, email: string, pa
       temporary: false,
     }),
   })
+
+  // Execute required actions removal
+  await fetch(`${KEYCLOAK_URL}/admin/realms/${REALM_NAME}/users/${userId}/execute-actions-email`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify([]),
+  })
+
+  // Update user to remove required actions
+  const updateResponse = await fetch(`${KEYCLOAK_URL}/admin/realms/${REALM_NAME}/users/${userId}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      username,
+      email,
+      enabled: true,
+      emailVerified: true,
+      requiredActions: [],
+    }),
+  })
+
+  if (!updateResponse.ok) {
+    console.error('Failed to update user:', await updateResponse.text())
+  }
 }
 
 export async function setupKeycloak() {
@@ -155,7 +196,9 @@ export async function setupKeycloak() {
   }
 }
 
-if (require.main === module) {
+// Run if called directly
+const isMainModule = import.meta.url === `file://${process.argv[1]}`
+if (isMainModule) {
   setupKeycloak()
     .then(() => process.exit(0))
     .catch(() => process.exit(1))

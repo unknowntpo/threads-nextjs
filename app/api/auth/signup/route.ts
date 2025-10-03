@@ -1,12 +1,13 @@
-import { createClient } from "@/lib/supabase/server";
-import { NextRequest, NextResponse } from "next/server";
-import { SignUpRequest } from "@/lib/types/entities";
+import { NextRequest, NextResponse } from 'next/server'
+import { SignUpRequest } from '@/lib/types/entities'
+import { prisma } from '@/lib/prisma'
+import { hashPassword, generateToken } from '@/lib/auth'
 
 /**
  * @swagger
  * /api/auth/signup:
  *   post:
- *     description: Create a new user account and profile
+ *     description: Create a new user account
  *     requestBody:
  *       required: true
  *       content:
@@ -33,90 +34,90 @@ import { SignUpRequest } from "@/lib/types/entities";
  *       201:
  *         description: User created successfully
  *       400:
- *         description: Invalid request or username taken
+ *         description: Invalid request or username/email taken
  *       500:
  *         description: Server error
  */
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient();
-    const body: SignUpRequest = await request.json();
+    const body: SignUpRequest = await request.json()
 
     // Validate required fields
     if (!body.email?.trim() || !body.password?.trim() || !body.username?.trim()) {
       return NextResponse.json(
-        { error: "Email, password, and username are required" }, 
+        { error: 'Email, password, and username are required' },
         { status: 400 }
-      );
+      )
     }
 
     // Sanitize username
-    const username = body.username.replace(/[^a-zA-Z0-9_]/g, '').toLowerCase();
-    
+    const username = body.username.replace(/[^a-zA-Z0-9_]/g, '').toLowerCase()
+
     if (username.length < 3) {
-      return NextResponse.json(
-        { error: "Username must be at least 3 characters" }, 
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Username must be at least 3 characters' }, { status: 400 })
     }
 
-    // Check if username is already taken
-    const { data: existingProfile } = await supabase
-      .from("profiles")
-      .select("username")
-      .eq("username", username)
-      .single();
+    // Check if user already exists
+    const existingUser = await prisma.user.findFirst({
+      where: {
+        OR: [{ email: body.email }, { username }],
+      },
+    })
 
-    if (existingProfile) {
-      return NextResponse.json(
-        { error: "Username is already taken" }, 
-        { status: 400 }
-      );
+    if (existingUser) {
+      if (existingUser.email === body.email) {
+        return NextResponse.json({ error: 'Email already registered' }, { status: 400 })
+      }
+      return NextResponse.json({ error: 'Username is already taken' }, { status: 400 })
     }
+
+    // Hash password
+    const passwordHash = await hashPassword(body.password)
 
     // Create user
-    const { data, error } = await supabase.auth.signUp({
-      email: body.email,
-      password: body.password,
-    });
+    const user = await prisma.user.create({
+      data: {
+        email: body.email,
+        passwordHash,
+        username,
+        displayName: body.display_name || username,
+      },
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        displayName: true,
+        createdAt: true,
+      },
+    })
 
-    if (error) {
-      console.error("Signup error:", error);
-      return NextResponse.json(
-        { error: error.message }, 
-        { status: 400 }
-      );
-    }
+    // Generate JWT token
+    const token = generateToken({
+      userId: user.id,
+      email: user.email,
+      username: user.username,
+    })
 
-    // Create profile if user was created
-    if (data.user) {
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .insert({
-          id: data.user.id,
-          username,
-          display_name: body.display_name || username,
-        });
-
-      if (profileError) {
-        console.error("Profile creation error:", profileError);
-        // User is created but profile failed - they can complete it later
-      }
-    }
-
-    return NextResponse.json(
-      { 
-        message: "User created successfully",
-        user: data.user 
-      }, 
+    const response = NextResponse.json(
+      {
+        message: 'User created successfully',
+        user,
+      },
       { status: 201 }
-    );
+    )
 
+    // Set HTTP-only cookie
+    response.cookies.set('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+      path: '/',
+    })
+
+    return response
   } catch (error) {
-    console.error("API Error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" }, 
-      { status: 500 }
-    );
+    console.error('API Error:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

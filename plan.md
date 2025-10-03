@@ -5,18 +5,21 @@ Reference: https://www.threads.com
 ## Arch
 
 Framework:
-- NextJS
-- Supabase
+- Next.js 15
+- PostgreSQL
+- Prisma ORM
+- NextAuth (or custom JWT auth)
 
-Please ref this POC for integration of them.
-/Users/unknowntpo/repo/unknowntpo/playground-2022/supabase/nextjs_example
+**Migration Note:** Originally built with Supabase, now migrating to plain PostgreSQL + Prisma for simpler development and better control. See Epic #15 for migration details.
 
 ## Database Schema
 
 ```sql
--- Users table (extends Supabase auth.users)
-profiles (
-  id: uuid (FK to auth.users.id),
+-- Users table (with built-in auth)
+users (
+  id: uuid PRIMARY KEY,
+  email: varchar unique,
+  password_hash: varchar,
   username: varchar unique,
   display_name: varchar,
   bio: text,
@@ -28,7 +31,7 @@ profiles (
 -- Posts table
 posts (
   id: uuid PRIMARY KEY,
-  user_id: uuid (FK profiles.id),
+  user_id: uuid (FK users.id),
   content: text,
   media_urls: text[],
   created_at: timestamp,
@@ -38,8 +41,8 @@ posts (
 -- Follows relationship
 follows (
   id: uuid PRIMARY KEY,
-  follower_id: uuid (FK profiles.id),
-  following_id: uuid (FK profiles.id),
+  follower_id: uuid (FK users.id),
+  following_id: uuid (FK users.id),
   created_at: timestamp,
   UNIQUE(follower_id, following_id)
 )
@@ -47,7 +50,7 @@ follows (
 -- Likes
 likes (
   id: uuid PRIMARY KEY,
-  user_id: uuid (FK profiles.id),
+  user_id: uuid (FK users.id),
   post_id: uuid (FK posts.id),
   created_at: timestamp,
   UNIQUE(user_id, post_id)
@@ -56,7 +59,7 @@ likes (
 -- Comments
 comments (
   id: uuid PRIMARY KEY,
-  user_id: uuid (FK profiles.id),
+  user_id: uuid (FK users.id),
   post_id: uuid (FK posts.id),
   content: text,
   created_at: timestamp,
@@ -66,9 +69,9 @@ comments (
 -- Notifications
 notifications (
   id: uuid PRIMARY KEY,
-  user_id: uuid (FK profiles.id),
+  user_id: uuid (FK users.id),
   type: varchar, -- 'new_post', 'like', 'comment', 'follow'
-  related_user_id: uuid (FK profiles.id),
+  related_user_id: uuid (FK users.id),
   related_post_id: uuid (FK posts.id) NULL,
   read: boolean DEFAULT false,
   created_at: timestamp
@@ -81,8 +84,8 @@ notifications (
 
 **Backend:**
 - API Route: `POST /api/posts`
-- Supabase Functions: `create_post()`, `notify_followers()`
-- Real-time updates via Supabase Realtime
+- Prisma queries for database operations
+- WebSocket for real-time updates (optional, future enhancement)
 
 **Frontend Components:**
 - `PostComposer` - Text area with media upload
@@ -90,11 +93,10 @@ notifications (
 - `MediaUploader` - Handle image/video uploads
 
 **Technical Tasks:**
-- Set up Supabase Storage bucket for media
-- Implement RLS policies for posts table
+- Set up local file storage or S3 for media
+- Implement authorization checks in API routes
 - Create post creation API route with validation
 - Build composer UI with rich text support
-- Implement real-time notification system
 - Add optimistic UI updates
 
 ### 2. Timeline Feature
@@ -138,8 +140,7 @@ notifications (
 - Implement optimistic like/unlike with rollback
 - Build @mention system with autocomplete
 - Create comment threading (if needed)
-- Add real-time comment updates
-- Implement follow/unfollow with RLS updates
+- Implement follow/unfollow with authorization checks
 - User search and suggestion system
 
 ### 4. User Relationships Feature
@@ -158,7 +159,7 @@ notifications (
 - `FollowSuggestions` - Discover new users
 
 **Technical Tasks:**
-- Implement follow/unfollow with proper RLS
+- Implement follow/unfollow with proper authorization
 - Build user discovery algorithm
 - Create follower/following lists with pagination
 - Add mutual follow indicators
@@ -177,11 +178,11 @@ notifications (
 
 **Backend:**
 - Next.js API Routes (app/api/)
-- Supabase Auth for authentication
-- Supabase Database with RLS
-- Supabase Realtime for live updates
-- Supabase Storage for media
-- Direct Supabase calls in API routes
+- PostgreSQL database
+- Prisma ORM for type-safe database access
+- NextAuth or custom JWT for authentication
+- Local file storage or S3 for media
+- Direct Prisma queries in API routes
 
 **Architecture Pattern:**
 - Server Components: fetch() API routes server-side for initial data
@@ -225,42 +226,58 @@ notifications (
 - [x] Test image locally before deployment
 **Test:** Git tag triggers automated Docker build with proper version tags
 
-### MVP 4: Local Development & Deployment Setup
-**Goal:** Set up local Supabase development environment, test in CI/CD, and deploy to Zeabur
-**Deliverable:** Live, publicly accessible application with complete development workflow
+### MVP 4: PostgreSQL + Prisma Migration & DevOps Setup 🚧
+**Goal:** Migrate to PostgreSQL + Prisma with complete development tooling and deployment
+**Deliverable:** Live application on Zeabur with professional development workflow
+**Epic:** See Issue #15 for detailed migration plan
 **Services:**
-- Supabase CLI (Local development)
-- Supabase Cloud (Production)
+- PostgreSQL (Docker Compose for local, Zeabur PostgreSQL for production)
+- Prisma ORM
 - Zeabur (Deployment platform)
-**Tasks:**
-- [ ] Install and configure Supabase CLI
-- [ ] Initialize local Supabase project with Docker
-- [ ] Set up local database with migrations
-- [ ] Configure local Supabase Storage for media
-- [ ] Test RLS policies locally
-- [ ] Create seed data for local testing
-- [ ] Configure environment variables for local/production
-- [ ] Set up Supabase Cloud project for production
-- [ ] Write Playwright E2E tests for full user flows (FE + BE integration)
-  - Auth flow (signup, login, logout)
-  - Post creation and display in feed
-  - User profile view and edit
-- [ ] Test database migrations in CI/CD pipeline
-- [ ] Run E2E tests in CI/CD pipeline
-- [ ] Deploy Docker image to Zeabur
-- [ ] Configure Zeabur environment variables
-- [ ] Connect Zeabur app to Supabase Cloud
-- [ ] Set up custom domain (optional)
-- [ ] Configure SSL/TLS (auto via Zeabur)
-**Test:**
-1. Application works locally with Supabase CLI
-2. All E2E tests pass locally and in CI/CD
-3. CI/CD pipeline runs migrations successfully
-4. Application is accessible via Zeabur public URL
 
-**Known Build Warnings (non-blocking):**
-- Edge Runtime warning: Supabase Realtime uses Node.js APIs in middleware (acceptable for now)
-- Deprecated `punycode` module warning from dependencies (will be fixed upstream)
+**Phase 1: Database & Auth Migration**
+- [ ] Set up PostgreSQL with Docker Compose locally
+- [ ] Initialize Prisma with schema
+- [ ] Migrate existing schema to Prisma
+- [ ] Implement NextAuth or custom JWT auth
+- [ ] Replace all Supabase client calls with Prisma
+- [ ] Update middleware for new auth
+
+**Phase 2: Development Tooling**
+- [ ] Configure Prettier with project standards
+- [ ] Configure ESLint with Next.js rules
+- [ ] Set up Husky + lint-staged for pre-commit
+- [ ] Add format/lint npm scripts
+- [ ] Document coding standards
+
+**Phase 3: Testing Updates**
+- [ ] Update Vitest integration tests for Prisma
+- [ ] Update E2E tests for new auth
+- [ ] Add Prisma test database setup/teardown
+- [ ] Ensure all tests pass locally
+
+**Phase 4: CI/CD Pipeline**
+- [ ] Add Prisma generate step to CI
+- [ ] Add linter check to CI
+- [ ] Add Prisma migration check to CI
+- [ ] Run unit + E2E tests in CI
+- [ ] Build Docker image on merge
+
+**Phase 5: Zeabur Deployment**
+- [ ] Create Zeabur project
+- [ ] Add PostgreSQL service in Zeabur
+- [ ] Configure environment variables
+- [ ] Deploy application
+- [ ] Run Prisma migrations in production
+- [ ] Verify live application works
+- [ ] Set up custom domain (optional)
+
+**Test:**
+1. ✅ Application works locally with PostgreSQL + Prisma
+2. ✅ All tests pass (unit + E2E) locally and in CI
+3. ✅ Code quality checks pass (Prettier + ESLint)
+4. ✅ CI/CD pipeline is green
+5. ✅ Application is deployed and accessible on Zeabur
 
 ### MVP 5: Following & Timeline
 **Goal:** Users can follow others and see followed posts

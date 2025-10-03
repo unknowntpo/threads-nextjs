@@ -29,10 +29,10 @@ try {
 }
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || 'http://127.0.0.1:54321'
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+const supabaseServiceKey = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 
 if (!supabaseServiceKey) {
-  console.error('Error: SUPABASE_SERVICE_ROLE_KEY environment variable is required')
+  console.error('Error: SUPABASE_SECRET_KEY environment variable is required')
   process.exit(1)
 }
 

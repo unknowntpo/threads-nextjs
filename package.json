@@ -1,4 +1,5 @@
 {
+  "type": "module",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
@@ -7,6 +8,9 @@
     "lint": "next lint",
     "seed": "tsx supabase/seed.ts",
     "seed:admin": "curl -X POST http://localhost:3000/api/admin/seed",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:watch": "vitest --watch",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
@@ -32,20 +36,26 @@
     "tailwind-merge": "^3.3.1"
   },
   "devDependencies": {
+    "@edge-runtime/vm": "^5.0.0",
     "@eslint/eslintrc": "^3.3.1",
     "@playwright/test": "^1.55.1",
+    "@swc/core": "^1.13.5",
     "@types/node": "^20.19.13",
     "@types/react": "^19.1.12",
     "@types/react-dom": "^19.1.9",
+    "@vitest/ui": "^3.2.4",
     "autoprefixer": "^10.4.21",
     "eslint": "^9.35.0",
     "eslint-config-next": "15.3.1",
+    "next-test-api-route-handler": "^5.0.3",
     "postcss": "^8.5.6",
     "supabase": "^2.47.2",
     "tailwindcss": "^3.4.17",
     "tailwindcss-animate": "^1.0.7",
     "tsx": "^4.19.2",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.2",
+    "unplugin-swc": "^1.5.7",
+    "vitest": "^3.2.4"
   },
   "pnpm": {
     "ignoredBuiltDependencies": [

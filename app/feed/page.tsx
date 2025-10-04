@@ -4,27 +4,23 @@ import { SignOutButton } from '@/components/sign-out-button'
 import { Feed } from '@/components/feed'
 import { CreatePostForm } from '@/components/create-post-form'
 import { Separator } from '@/components/ui/separator'
-import { cookies } from 'next/headers'
+import { auth } from '@/auth'
+import { ProfileRepository } from '@/lib/repositories/profile.repository'
 
 export const dynamic = 'force-dynamic'
 
 export default async function ProtectedPage() {
   try {
-    const cookieStore = await cookies()
-    const url = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/profiles`
+    const session = await auth()
 
-    const response = await fetch(url, {
-      cache: 'no-store',
-      headers: {
-        Cookie: cookieStore.toString(),
-      },
-    })
-
-    if (response.status === 401) {
+    if (!session?.user?.id) {
       redirect('/auth/login')
     }
 
-    if (response.status === 404) {
+    const profileRepo = new ProfileRepository()
+    const profile = await profileRepo.findById(session.user.id)
+
+    if (!profile) {
       // Profile not found, show setup form
       return (
         <div className="flex w-full flex-1 flex-col items-center justify-center">
@@ -35,11 +31,7 @@ export default async function ProtectedPage() {
       )
     }
 
-    if (!response.ok) {
-      throw new Error(`Failed to fetch profile: ${response.statusText}`)
-    }
-
-    const { user, profile } = await response.json()
+    const user = session.user
 
     return (
       <div className="flex w-full flex-1 flex-col items-center">

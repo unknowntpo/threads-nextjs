@@ -8,8 +8,9 @@
     "lint": "next lint",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "seed": "tsx supabase/seed.ts",
+    "seed": "tsx prisma/seed.ts",
     "seed:admin": "curl -X POST http://localhost:3000/api/admin/seed",
+    "db:seed": "prisma db seed",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:watch": "vitest --watch",
@@ -86,5 +87,8 @@
     "onlyBuiltDependencies": [
       "supabase"
     ]
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   }
 }

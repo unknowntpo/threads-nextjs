@@ -8,7 +8,11 @@ async function main() {
   // Create test users
   const alice = await prisma.user.upsert({
     where: { email: 'alice@example.com' },
-    update: {},
+    update: {
+      username: 'alice',
+      displayName: 'Alice Cooper',
+      name: 'Alice Cooper',
+    },
     create: {
       email: 'alice@example.com',
       username: 'alice',
@@ -24,9 +28,30 @@ async function main() {
     },
   })
 
+  // Ensure alice has credentials account
+  await prisma.account.upsert({
+    where: {
+      provider_providerAccountId: {
+        provider: 'credentials',
+        providerAccountId: 'alice-credentials',
+      },
+    },
+    update: {},
+    create: {
+      userId: alice.id,
+      type: 'credentials',
+      provider: 'credentials',
+      providerAccountId: 'alice-credentials',
+    },
+  })
+
   const bob = await prisma.user.upsert({
     where: { email: 'bob@example.com' },
-    update: {},
+    update: {
+      username: 'bob',
+      displayName: 'Bob Builder',
+      name: 'Bob Builder',
+    },
     create: {
       email: 'bob@example.com',
       username: 'bob',
@@ -39,6 +64,23 @@ async function main() {
           providerAccountId: 'bob-credentials',
         },
       },
+    },
+  })
+
+  // Ensure bob has credentials account
+  await prisma.account.upsert({
+    where: {
+      provider_providerAccountId: {
+        provider: 'credentials',
+        providerAccountId: 'bob-credentials',
+      },
+    },
+    update: {},
+    create: {
+      userId: bob.id,
+      type: 'credentials',
+      provider: 'credentials',
+      providerAccountId: 'bob-credentials',
     },
   })
 

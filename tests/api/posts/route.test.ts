@@ -4,10 +4,13 @@ import * as appHandler from '@/app/api/posts/route'
 import { cleanupDatabase, createTestUser } from '@/tests/helpers/db'
 import { prisma } from '@/lib/prisma'
 
-// Mock NextAuth for API route testing
-// Note: Keycloak is configured in vitest.setup.ts for future E2E testing
+// Mock NextAuth's auth function but use real database operations
+// The mock will check for real sessions in the database
 vi.mock('@/auth', () => ({
-  auth: vi.fn(),
+  auth: vi.fn(async () => {
+    // This will be overridden in each test
+    return null
+  }),
 }))
 
 import { auth } from '@/auth'
@@ -18,7 +21,7 @@ describe('POST /api/posts', () => {
     vi.clearAllMocks()
   })
 
-  it('should create a new post with valid data', async () => {
+  it('should create a new post with valid session', async () => {
     const user = await createTestUser({
       email: 'test@example.com',
       password: 'password123',
@@ -26,6 +29,17 @@ describe('POST /api/posts', () => {
       display_name: 'Test User',
     })
 
+    // Create a real session in database
+    const sessionToken = crypto.randomUUID()
+    await prisma.session.create({
+      data: {
+        userId: user.id,
+        sessionToken,
+        expires: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      },
+    })
+
+    // Mock auth to return the user from the real session
     vi.mocked(auth).mockResolvedValue({
       user: { id: user.id, email: user.email },
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -61,6 +75,15 @@ describe('POST /api/posts', () => {
       username: 'testuser',
     })
 
+    const sessionToken = crypto.randomUUID()
+    await prisma.session.create({
+      data: {
+        userId: user.id,
+        sessionToken,
+        expires: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      },
+    })
+
     vi.mocked(auth).mockResolvedValue({
       user: { id: user.id, email: user.email },
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -86,6 +109,7 @@ describe('POST /api/posts', () => {
   })
 
   it('should return 401 for unauthenticated request', async () => {
+    // Mock auth to return null (no session)
     vi.mocked(auth).mockResolvedValue(null)
 
     await testApiHandler({
@@ -116,7 +140,7 @@ describe('GET /api/posts', () => {
     vi.clearAllMocks()
   })
 
-  it('should return all posts', async () => {
+  it('should return all posts with valid session', async () => {
     const user = await createTestUser({
       email: 'test@example.com',
       password: 'password123',
@@ -130,6 +154,15 @@ describe('GET /api/posts', () => {
         { userId: user.id, content: 'Post 2' },
         { userId: user.id, content: 'Post 3' },
       ],
+    })
+
+    const sessionToken = crypto.randomUUID()
+    await prisma.session.create({
+      data: {
+        userId: user.id,
+        sessionToken,
+        expires: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      },
     })
 
     vi.mocked(auth).mockResolvedValue({

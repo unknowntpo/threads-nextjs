@@ -91,13 +91,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     async session({ session, token }) {
       if (token && session.user) {
         session.user.id = token.sub!
-        const user = await prisma.user.findUnique({
-          where: { id: token.sub! },
-          select: { username: true, displayName: true },
-        })
-        if (user) {
-          session.user.username = user.username
-          session.user.displayName = user.displayName
+        // Store user data in JWT to avoid DB queries in edge runtime (middleware)
+        if (token.username && token.displayName) {
+          session.user.username = token.username as string
+          session.user.displayName = token.displayName as string
         }
       }
       return session
@@ -105,6 +102,15 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     async jwt({ token, user }) {
       if (user) {
         token.sub = user.id
+        // Fetch user data and store in JWT
+        const dbUser = await prisma.user.findUnique({
+          where: { id: user.id },
+          select: { username: true, displayName: true },
+        })
+        if (dbUser) {
+          token.username = dbUser.username
+          token.displayName = dbUser.displayName
+        }
       }
       return token
     },

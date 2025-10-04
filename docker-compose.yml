@@ -28,10 +28,10 @@ services:
       - '8080:8080'
     command: start-dev
     healthcheck:
-      test: ['CMD-SHELL', 'curl -f http://localhost:8080/health/ready || exit 1']
-      interval: 30s
-      timeout: 10s
-      retries: 10
+      test: ['CMD-SHELL', 'timeout 1 bash -c "</dev/tcp/localhost/8080" || exit 1']
+      interval: 10s
+      timeout: 5s
+      retries: 30
       start_period: 90s
 
 volumes:

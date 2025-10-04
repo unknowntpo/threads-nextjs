@@ -73,12 +73,14 @@ jobs:
       - name: Wait for services to be healthy
         run: |
           echo "Waiting for PostgreSQL..."
-          timeout 30 sh -c 'until docker compose exec -T postgres pg_isready -U postgres; do sleep 1; done'
-          echo "PostgreSQL is ready!"
+          timeout 60 sh -c 'until docker inspect --format="{{.State.Health.Status}}" threads_postgres | grep -q healthy; do echo "Waiting for postgres..."; sleep 2; done'
+          echo "PostgreSQL is healthy!"
 
           echo "Waiting for Keycloak..."
-          timeout 180 sh -c 'until curl -sf http://localhost:8080/health/ready > /dev/null 2>&1; do echo "Waiting..."; sleep 5; done'
-          echo "Keycloak is ready!"
+          timeout 240 sh -c 'until docker inspect --format="{{.State.Health.Status}}" threads_keycloak | grep -q healthy; do echo "Waiting for keycloak..."; sleep 5; done'
+          echo "Keycloak is healthy!"
+
+          docker compose ps
 
       - name: Setup Node.js
         uses: actions/setup-node@v4

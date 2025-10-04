@@ -62,15 +62,23 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Verify Docker installation
+        run: |
+          docker --version
+          docker compose version
+
       - name: Start Docker Compose services
         run: docker compose up -d
 
       - name: Wait for services to be healthy
         run: |
           echo "Waiting for PostgreSQL..."
-          timeout 30 sh -c 'until docker compose exec postgres pg_isready -U postgres; do sleep 1; done'
+          timeout 30 sh -c 'until docker compose exec -T postgres pg_isready -U postgres; do sleep 1; done'
+          echo "PostgreSQL is ready!"
+
           echo "Waiting for Keycloak..."
-          timeout 120 sh -c 'until curl -f http://localhost:8080/health/ready; do sleep 2; done'
+          timeout 180 sh -c 'until curl -sf http://localhost:8080/health/ready > /dev/null 2>&1; do echo "Waiting..."; sleep 5; done'
+          echo "Keycloak is ready!"
 
       - name: Setup Node.js
         uses: actions/setup-node@v4

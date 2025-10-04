@@ -58,39 +58,19 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
-    services:
-      postgres:
-        image: postgres:16-alpine
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: threads
-        ports:
-          - 5433:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
-      keycloak:
-        image: quay.io/keycloak/keycloak:26.1.0
-        env:
-          KEYCLOAK_ADMIN: admin
-          KEYCLOAK_ADMIN_PASSWORD: admin
-          KC_HEALTH_ENABLED: true
-        ports:
-          - 8080:8080
-        options: >-
-          --health-cmd "curl -f http://localhost:8080/health/ready || exit 1"
-          --health-interval 30s
-          --health-timeout 10s
-          --health-retries 10
-          --health-start-period 90s
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Start Docker Compose services
+        run: docker compose up -d
+
+      - name: Wait for services to be healthy
+        run: |
+          echo "Waiting for PostgreSQL..."
+          timeout 30 sh -c 'until docker compose exec postgres pg_isready -U postgres; do sleep 1; done'
+          echo "Waiting for Keycloak..."
+          timeout 120 sh -c 'until curl -f http://localhost:8080/health/ready; do sleep 2; done'
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -143,3 +123,7 @@ jobs:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5433/threads?schema=public
           NEXTAUTH_SECRET: test-secret
           NEXTAUTH_URL: http://localhost:3000
+
+      - name: Stop Docker Compose services
+        if: always()
+        run: docker compose down -v

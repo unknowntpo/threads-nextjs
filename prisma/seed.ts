@@ -5,11 +5,16 @@ const prisma = new PrismaClient()
 async function main() {
   console.log('🌱 Seeding database...')
 
-  // Create test users
+  // Create test users with fixed IDs
   const alice = await prisma.user.upsert({
     where: { email: 'alice@example.com' },
-    update: {},
+    update: {
+      username: 'alice',
+      displayName: 'Alice Cooper',
+      name: 'Alice Cooper',
+    },
     create: {
+      id: 'test-user-alice-00000000-0000-0000-0000-000000000001',
       email: 'alice@example.com',
       username: 'alice',
       displayName: 'Alice Cooper',
@@ -24,10 +29,32 @@ async function main() {
     },
   })
 
-  const bob = await prisma.user.upsert({
-    where: { email: 'bob@example.com' },
+  // Ensure alice has credentials account
+  await prisma.account.upsert({
+    where: {
+      provider_providerAccountId: {
+        provider: 'credentials',
+        providerAccountId: 'alice-credentials',
+      },
+    },
     update: {},
     create: {
+      userId: alice.id,
+      type: 'credentials',
+      provider: 'credentials',
+      providerAccountId: 'alice-credentials',
+    },
+  })
+
+  const bob = await prisma.user.upsert({
+    where: { email: 'bob@example.com' },
+    update: {
+      username: 'bob',
+      displayName: 'Bob Builder',
+      name: 'Bob Builder',
+    },
+    create: {
+      id: 'test-user-bob-000000000-0000-0000-0000-000000000002',
       email: 'bob@example.com',
       username: 'bob',
       displayName: 'Bob Builder',
@@ -39,6 +66,23 @@ async function main() {
           providerAccountId: 'bob-credentials',
         },
       },
+    },
+  })
+
+  // Ensure bob has credentials account
+  await prisma.account.upsert({
+    where: {
+      provider_providerAccountId: {
+        provider: 'credentials',
+        providerAccountId: 'bob-credentials',
+      },
+    },
+    update: {},
+    create: {
+      userId: bob.id,
+      type: 'credentials',
+      provider: 'credentials',
+      providerAccountId: 'bob-credentials',
     },
   })
 

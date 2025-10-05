@@ -1,1 +1,2 @@
 - use import alias @ dont use relative import
+- Make sure tests runs ok locally, then go to gh[D ci test

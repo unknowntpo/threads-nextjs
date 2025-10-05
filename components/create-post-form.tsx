@@ -8,10 +8,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Loader2, ImagePlus, X } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
-import type { CreatePostDTO, PostWithProfile } from '@/lib/types/entities'
+import type { CreatePostDTO } from '@/lib/types/entities'
+import type { Post } from '@prisma/client'
 
 interface CreatePostFormProps {
-  onPostCreated?: (post: PostWithProfile) => void
+  onPostCreated?: (post: Post) => void
 }
 
 export function CreatePostForm({ onPostCreated }: CreatePostFormProps) {

@@ -7,13 +7,13 @@ test.describe('Post Creation and Feed', () => {
     await page.getByRole('textbox', { name: 'Email' }).fill('alice@example.com')
     await page.getByRole('textbox', { name: 'Password' }).fill('password123')
     await page.getByRole('button', { name: 'Login' }).click()
-    await page.waitForURL(/\/(dashboard|feed)?/)
+    // Wait for redirect to feed page
+    await page.waitForURL('/feed')
+    await page.waitForLoadState('networkidle')
   })
 
   test('should create a new post', async ({ page }) => {
-    // Ensure we're on the feed page
-    await page.goto('/feed')
-    await page.waitForLoadState('networkidle')
+    // Already on feed page from beforeEach
 
     // Find and fill post creation form
     const contentInput = page
@@ -31,8 +31,7 @@ test.describe('Post Creation and Feed', () => {
   })
 
   test('should display posts in feed', async ({ page }) => {
-    await page.goto('/')
-
+    // Already on feed page from beforeEach
     // Should see posts from seed data
     await expect(page.locator('text=/Just deployed my first Next.js app/i')).toBeVisible({
       timeout: 10000,
@@ -40,8 +39,7 @@ test.describe('Post Creation and Feed', () => {
   })
 
   test('should create post with image URL', async ({ page }) => {
-    await page.goto('/')
-
+    // Already on feed page from beforeEach
     // Fill post content
     const contentInput = page
       .locator('textarea[name="content"], textarea[placeholder*="What"]')
@@ -64,15 +62,15 @@ test.describe('Post Creation and Feed', () => {
   })
 
   test('should show user profile info on posts', async ({ page }) => {
-    await page.goto('/')
-
-    // Should see username or display name on posts
-    await expect(page.locator('text=/alice|Alice Cooper/i')).toBeVisible()
+    // Already on feed page from beforeEach
+    // Should see username or display name on posts in a post card
+    await expect(
+      page.locator('.text-sm.font-semibold').filter({ hasText: 'Alice Cooper' }).first()
+    ).toBeVisible()
   })
 
   test('should refresh feed', async ({ page }) => {
-    await page.goto('/')
-
+    // Already on feed page from beforeEach
     // Look for refresh button
     const refreshButton = page.locator('button:has-text("Refresh"), button[aria-label="Refresh"]')
 
@@ -82,8 +80,8 @@ test.describe('Post Creation and Feed', () => {
       // Should show loading state or updated feed
       await page.waitForTimeout(1000)
 
-      // Feed should still be visible
-      await expect(page.locator('text=/post|thread/i')).toBeVisible()
+      // Feed header should still be visible
+      await expect(page.getByRole('heading', { name: 'Feed' })).toBeVisible()
     }
   })
 })

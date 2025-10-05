@@ -1,0 +1,104 @@
+name: Deploy to Zeabur
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch: # Allow manual trigger
+
+# Only allow one deployment at a time
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Deploy to Zeabur
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: ${{ secrets.NEXTAUTH_URL }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma Client
+        run: pnpm prisma:generate
+
+      - name: Build application
+        run: pnpm build
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
+          NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
+
+      - name: Install Zeabur CLI
+        run: npm install -g @zeabur/cli
+
+      - name: Deploy to Zeabur
+        env:
+          ZEABUR_TOKEN: ${{ secrets.ZEABUR_TOKEN }}
+        run: |
+          zeabur deploy \
+            --project=${{ secrets.ZEABUR_PROJECT_ID }} \
+            --service=${{ secrets.ZEABUR_SERVICE_ID }} \
+            --token=$ZEABUR_TOKEN
+
+      - name: Run Database Migrations
+        if: success()
+        env:
+          ZEABUR_TOKEN: ${{ secrets.ZEABUR_TOKEN }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          echo "Running Prisma migrations..."
+          zeabur exec \
+            --project=${{ secrets.ZEABUR_PROJECT_ID }} \
+            --service=${{ secrets.ZEABUR_SERVICE_ID }} \
+            --token=$ZEABUR_TOKEN \
+            -- npx prisma migrate deploy
+
+      - name: Seed Database (Optional)
+        if: success()
+        continue-on-error: true
+        env:
+          ZEABUR_TOKEN: ${{ secrets.ZEABUR_TOKEN }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          echo "Seeding database..."
+          zeabur exec \
+            --project=${{ secrets.ZEABUR_PROJECT_ID }} \
+            --service=${{ secrets.ZEABUR_SERVICE_ID }} \
+            --token=$ZEABUR_TOKEN \
+            -- npx prisma db seed
+
+      - name: Deployment Summary
+        if: always()
+        run: |
+          echo "### Deployment Summary 🚀" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status**: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Deployed by**: ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**App URL**: ${{ secrets.NEXTAUTH_URL }}" >> $GITHUB_STEP_SUMMARY
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "::error::Deployment failed! Check the logs above for details."

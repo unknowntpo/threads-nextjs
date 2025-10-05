@@ -1,0 +1,169 @@
+# Zeabur Template Configuration
+# https://zeabur.com/docs/en-US/template/template-in-code
+
+name: Threads - Social Media App
+description: A modern social media application built with Next.js, Prisma, and PostgreSQL
+tags:
+  - nextjs
+  - prisma
+  - postgresql
+  - social-media
+  - nextauth
+
+icon: https://raw.githubusercontent.com/unknowntpo/threads_supabase/master/public/icon.png
+
+# Template variables for user input
+variables:
+  - key: NEXTAUTH_SECRET
+    type: string
+    name: NextAuth Secret
+    description: Secret key for NextAuth.js session encryption (generate with `openssl rand -base64 32`)
+    required: true
+
+  - key: NEXTAUTH_URL
+    type: domain
+    name: NextAuth URL
+    description: The canonical URL of your site (will be auto-filled with your Zeabur domain)
+    default: ${ZEABUR_WEB_URL}
+    required: true
+
+  - key: NODE_ENV
+    type: select
+    name: Node Environment
+    description: Node.js environment
+    default: production
+    options:
+      - production
+      - development
+    required: true
+
+  - key: GOOGLE_CLIENT_ID
+    type: string
+    name: Google OAuth Client ID
+    description: Google OAuth 2.0 Client ID (optional, for Google sign-in)
+    required: false
+
+  - key: GOOGLE_CLIENT_SECRET
+    type: string
+    name: Google OAuth Client Secret
+    description: Google OAuth 2.0 Client Secret (optional, for Google sign-in)
+    required: false
+
+  - key: GITHUB_CLIENT_ID
+    type: string
+    name: GitHub OAuth Client ID
+    description: GitHub OAuth App Client ID (optional, for GitHub sign-in)
+    required: false
+
+  - key: GITHUB_CLIENT_SECRET
+    type: string
+    name: GitHub OAuth Client Secret
+    description: GitHub OAuth App Client Secret (optional, for GitHub sign-in)
+    required: false
+
+# Services definition
+services:
+  - name: postgres
+    type: postgresql
+    plan: serverless
+    icon: https://cdn.zeabur.com/service-icons/postgresql.svg
+
+    env:
+      POSTGRES_USER: threads_user
+      POSTGRES_DB: threads_db
+
+  - name: app
+    type: git
+    icon: https://cdn.zeabur.com/service-icons/nextjs.svg
+
+    # Build configuration
+    build:
+      buildCommand: pnpm build
+      installCommand: pnpm install
+
+    # Start configuration
+    start:
+      command: pnpm start
+
+    # Port configuration
+    port: 3000
+
+    # Environment variables
+    env:
+      DATABASE_URL: ${POSTGRES_URL}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+      NEXTAUTH_URL: ${NEXTAUTH_URL}
+      NODE_ENV: ${NODE_ENV}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET}
+      NEXT_PUBLIC_APP_URL: ${ZEABUR_WEB_URL}
+
+    # Health check
+    healthCheck:
+      path: /
+      port: 3000
+
+    # Deployment hooks
+    hooks:
+      afterDeploy:
+        - npx prisma migrate deploy
+        - npx prisma db seed || true
+
+    # Resource configuration
+    resources:
+      cpu: 0.5
+      memory: 512
+
+# Deployment instructions
+readme: |
+  # Threads - Social Media Application
+
+  A modern social media platform built with Next.js 15, Prisma, PostgreSQL, and NextAuth v5.
+
+  ## Features
+  - 🔐 Authentication with NextAuth (Email, Google, GitHub)
+  - 📝 Create and share posts
+  - 🔄 Real-time feed updates
+  - 💾 PostgreSQL database with Prisma ORM
+  - 🎨 Modern UI with Tailwind CSS
+  - ✅ Full E2E test coverage
+
+  ## Post-Deployment Steps
+
+  1. **Generate NextAuth Secret** (if not provided):
+     ```bash
+     openssl rand -base64 32
+     ```
+
+  2. **Configure OAuth Providers** (optional):
+     - **Google**: Add redirect URI in Google Cloud Console
+       - `https://your-app.zeabur.app/api/auth/callback/google`
+     - **GitHub**: Add redirect URI in GitHub OAuth App settings
+       - `https://your-app.zeabur.app/api/auth/callback/github`
+
+  3. **Verify Deployment**:
+     - Visit your app URL
+     - Sign up for a new account
+     - Create a test post
+     - Verify all features work
+
+  ## Documentation
+
+  - [Deployment Guide](./docs/DEPLOYMENT.md)
+  - [Quick Start](./docs/ZEABUR_QUICK_START.md)
+  - [GitHub Repository](https://github.com/unknowntpo/threads_supabase)
+
+  ## Support
+
+  For issues or questions:
+  - GitHub Issues: https://github.com/unknowntpo/threads_supabase/issues
+  - Zeabur Docs: https://zeabur.com/docs
+
+# Template metadata
+metadata:
+  version: 1.0.0
+  author: unknowntpo
+  license: MIT
+  repository: https://github.com/unknowntpo/threads_supabase

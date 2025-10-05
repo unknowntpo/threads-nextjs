@@ -1,39 +1,25 @@
-"use client";
+'use client'
 
-import { Button } from "@/components/ui/button";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { Button } from '@/components/ui/button'
+import { signOut } from 'next-auth/react'
+import { useState } from 'react'
 
 export function SignOutButton() {
-  const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false)
 
   const handleSignOut = async () => {
-    setIsLoading(true);
-    
+    setIsLoading(true)
     try {
-      const response = await fetch('/api/auth/signout', {
-        method: 'POST',
-      });
-
-      if (response.ok) {
-        router.push('/');
-        router.refresh();
-      }
+      await signOut({ callbackUrl: '/' })
     } catch (error) {
-      console.error('Sign out error:', error);
-    } finally {
-      setIsLoading(false);
+      console.error('Sign out error:', error)
+      setIsLoading(false)
     }
-  };
+  }
 
   return (
-    <Button 
-      onClick={handleSignOut} 
-      disabled={isLoading}
-      variant="outline"
-    >
-      {isLoading ? "Signing out..." : "Sign Out"}
+    <Button onClick={handleSignOut} disabled={isLoading} variant="outline">
+      {isLoading ? 'Signing out...' : 'Sign Out'}
     </Button>
-  );
+  )
 }

@@ -1,7 +1,16 @@
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
+import { auth } from '@/auth'
 
-export default function Home() {
+export default async function Home() {
+  const session = await auth()
+
+  // Redirect logged-in users to feed
+  if (session?.user) {
+    redirect('/feed')
+  }
+
   return (
     <main className="flex min-h-screen flex-col items-center bg-background">
       <div className="flex w-full flex-1 flex-col items-center">

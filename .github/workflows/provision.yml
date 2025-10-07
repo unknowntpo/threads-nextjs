@@ -57,6 +57,7 @@ jobs:
             -k DATABASE_URL="$DATABASE_URL" \
             -k NEXTAUTH_SECRET="$NEXTAUTH_SECRET" \
             -k NEXTAUTH_URL="$NEXTAUTH_URL" \
+            -k AUTH_SECRET="$NEXTAUTH_SECRET" \
             -k AUTH_TRUST_HOST="true" \
             -y
 

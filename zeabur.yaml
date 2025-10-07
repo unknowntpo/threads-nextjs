@@ -34,20 +34,6 @@ spec:
     3. Verify deployment and test functionality
 
   services:
-    - name: postgres
-      icon: https://cdn.zeabur.com/marketplace/postgresql.svg
-      template: PREBUILT
-      spec:
-        source:
-          image: postgres:18
-        ports:
-          - id: database
-            port: 5432
-            type: TCP
-        volumes:
-          - id: data
-            dir: /var/lib/postgresql/data
-
     - name: app
       icon: https://service-icons.zeabur.com/git/docker/default.svg
       template: PREBUILT
@@ -60,6 +46,6 @@ spec:
             type: HTTP
         env:
           DATABASE_URL:
-            default: ${POSTGRES_CONNECTION_STRING}
+            default: ${DATABASE_URL}
           NODE_ENV:
             default: production

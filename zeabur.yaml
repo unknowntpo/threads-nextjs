@@ -6,7 +6,7 @@ metadata:
 
 spec:
   description: A modern social media application built with Next.js 15, Prisma, PostgreSQL, and NextAuth v5
-  icon: https://raw.githubusercontent.com/unknowntpo/threads-nextjs/master/public/icon.png
+  icon: https://cdn.zeabur.com/service-icons/nextjs.svg
   tags:
     - nextjs
     - prisma

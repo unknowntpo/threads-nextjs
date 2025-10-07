@@ -28,7 +28,10 @@ jobs:
 
       - name: Prepare template with repo ID
         run: |
+          # Replace repo ID placeholder
           sed "s/GITHUB_REPO_ID/${{ steps.repo.outputs.id }}/g" zeabur.yaml > zeabur-deploy.yaml
+
+          echo "Generated template:"
           cat zeabur-deploy.yaml
 
       - name: Provision services from template

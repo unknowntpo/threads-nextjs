@@ -61,7 +61,7 @@ spec:
       spec:
         source:
           source: GITHUB
-          repo: 1051617422
+          repo: GITHUB_REPO_ID
           branch: master
         ports:
           - id: web

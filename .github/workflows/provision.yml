@@ -20,12 +20,23 @@ jobs:
       - name: Install Zeabur CLI
         run: npm install -g @zeabur/cli
 
+      - name: Get repository ID
+        id: repo
+        run: |
+          REPO_ID=$(gh api repos/${{ github.repository }} --jq '.id')
+          echo "id=$REPO_ID" >> $GITHUB_OUTPUT
+
+      - name: Prepare template with repo ID
+        run: |
+          sed "s/GITHUB_REPO_ID/${{ steps.repo.outputs.id }}/g" zeabur.yaml > zeabur-deploy.yaml
+          cat zeabur-deploy.yaml
+
       - name: Provision services from template
         env:
           ZEABUR_TOKEN: ${{ secrets.ZEABUR_TOKEN }}
         run: |
           zeabur template deploy \
-            --file=zeabur.yaml \
+            --file=zeabur-deploy.yaml \
             --project-id=${{ inputs.project_id }} \
             --token=$ZEABUR_TOKEN \
             --interactive=false

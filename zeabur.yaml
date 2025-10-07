@@ -35,7 +35,7 @@ spec:
 
   services:
     - name: postgres
-      icon: https://service-icons.zeabur.com/prebuilt/postgres.svg
+      icon: https://cdn.zeabur.com/marketplace/postgresql.svg
       template: PREBUILT
       spec:
         source:

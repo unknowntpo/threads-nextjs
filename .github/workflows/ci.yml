@@ -52,6 +52,9 @@ jobs:
       - name: Type check
         run: pnpm tsc --noEmit
 
+      - name: Check for circular dependencies
+        run: pnpm circular
+
       - name: Build check
         run: pnpm build
 

@@ -1,0 +1,19 @@
+{
+  "fileExtensions": ["ts", "tsx", "js", "jsx"],
+  "detectiveOptions": {
+    "ts": {
+      "skipTypeImports": true
+    },
+    "tsx": {
+      "skipTypeImports": true
+    }
+  },
+  "excludeRegExp": [
+    "node_modules",
+    ".next",
+    "dist",
+    "build",
+    "coverage",
+    ".git"
+  ]
+}

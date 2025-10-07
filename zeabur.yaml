@@ -35,7 +35,7 @@ spec:
 
   services:
     - name: postgres
-      icon: https://cdn.zeabur.com/service-icons/postgresql.svg
+      icon: https://service-icons.zeabur.com/prebuilt/postgres.svg
       template: PREBUILT
       spec:
         source:
@@ -52,7 +52,7 @@ spec:
             default: threads_db
 
     - name: app
-      icon: https://cdn.zeabur.com/service-icons/nextjs.svg
+      icon: https://service-icons.zeabur.com/git/docker/default.svg
       template: GIT
       spec:
         source:

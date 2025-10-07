@@ -20,6 +20,11 @@ jobs:
       - name: Install Zeabur CLI
         run: npm install -g @zeabur/cli
 
+      - name: Authenticate with Zeabur
+        env:
+          ZEABUR_TOKEN: ${{ secrets.ZEABUR_TOKEN }}
+        run: npx zeabur@latest auth login --token $ZEABUR_TOKEN
+
       - name: Get repository ID
         id: repo
         env:
@@ -36,15 +41,11 @@ jobs:
           echo "Generated template:"
           cat zeabur-deploy.yaml
 
+      - name: Set Zeabur project context
+        run: npx zeabur@latest context set project --id ${{ inputs.project_id }} -y
+
       - name: Provision services from template
-        env:
-          ZEABUR_TOKEN: ${{ secrets.ZEABUR_TOKEN }}
-        run: |
-          zeabur template deploy \
-            --file=zeabur-deploy.yaml \
-            --project-id=${{ inputs.project_id }} \
-            --token=$ZEABUR_TOKEN \
-            --interactive=false
+        run: npx zeabur@latest template deploy -f zeabur-deploy.yaml -i=false
 
       - name: List provisioned services
         env:

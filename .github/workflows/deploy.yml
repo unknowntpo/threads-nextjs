@@ -66,11 +66,9 @@ jobs:
         env:
           ZEABUR_TOKEN: ${{ secrets.ZEABUR_TOKEN }}
         run: |
-          zeabur service update \
-            --project-id=${{ secrets.ZEABUR_PROJECT_ID }} \
-            --service-id=${{ secrets.ZEABUR_SERVICE_ID }} \
-            --image=ghcr.io/${{ github.repository }}:master-${{ github.sha }} \
-            --token=$ZEABUR_TOKEN
+          zeabur auth login --token $ZEABUR_TOKEN
+          zeabur context set project --id ${{ secrets.ZEABUR_PROJECT_ID }} -y
+          zeabur service update tag --id ${{ secrets.ZEABUR_SERVICE_ID }} -t latest -y
 
       - name: Deployment Summary
         if: always()

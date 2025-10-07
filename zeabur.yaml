@@ -5,7 +5,7 @@ metadata:
   name: Threads - Next.js Social Media App
 
 spec:
-  description: A modern social media application built with Next.js, Prisma, and PostgreSQL
+  description: A modern social media application built with Next.js 15, Prisma, PostgreSQL, and NextAuth v5
   icon: https://raw.githubusercontent.com/unknowntpo/threads-nextjs/master/public/icon.png
   tags:
     - nextjs
@@ -13,9 +13,7 @@ spec:
     - postgresql
     - social-media
     - nextauth
-
   variables: []
-
   readme: |
     # Threads - Social Media Application
 
@@ -31,35 +29,39 @@ spec:
 
     ## Post-Deployment Steps
 
-    1. **Generate NextAuth Secret** (if not provided):
-       ```bash
-       openssl rand -base64 32
-       ```
-
-    2. **Configure OAuth Providers** (optional):
-       - **Google**: Add redirect URI in Google Cloud Console
-       - **GitHub**: Add redirect URI in GitHub OAuth App settings
-
-    3. **Verify Deployment**:
-       - Visit your app URL
-       - Sign up for a new account
-       - Create a test post
+    1. Configure environment variables via GitHub Actions secrets
+    2. Set up OAuth providers (optional)
+    3. Verify deployment and test functionality
 
   services:
     - name: postgres
+      icon: https://cdn.zeabur.com/service-icons/postgresql.svg
       template: PREBUILT
       spec:
-        id: postgres
         source:
-          image: postgres
-        icon: https://cdn.zeabur.com/service-icons/postgresql.svg
+          image: postgres:16-alpine
+        ports:
+          - id: database
+            port: 5432
+            type: TCP
+        volumes:
+          - id: data
+            dir: /var/lib/postgresql/data
+        env:
+          POSTGRES_USER:
+            default: threads_user
+          POSTGRES_PASSWORD:
+            default: ${PASSWORD}
+          POSTGRES_DB:
+            default: threads_db
 
     - name: app
+      icon: https://cdn.zeabur.com/service-icons/nextjs.svg
       template: GIT
       spec:
         source:
           source: GITHUB
-          repo: unknowntpo/threads-nextjs
+          repo: 1051617422
           branch: master
         ports:
           - id: web
@@ -67,6 +69,6 @@ spec:
             type: HTTP
         env:
           DATABASE_URL:
-            default: ${POSTGRES_URL}
+            default: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres.zeabur.internal:5432/${POSTGRES_DB}
           NODE_ENV:
             default: production

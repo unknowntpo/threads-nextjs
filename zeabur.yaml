@@ -57,12 +57,10 @@ spec:
 
     - name: app
       icon: https://service-icons.zeabur.com/git/docker/default.svg
-      template: GIT
+      template: PREBUILT
       spec:
         source:
-          source: GITHUB
-          repo: GITHUB_REPO_ID
-          branch: master
+          image: ghcr.io/unknowntpo/threads-nextjs:latest
         ports:
           - id: web
             port: 3000

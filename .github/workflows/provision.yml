@@ -22,6 +22,8 @@ jobs:
 
       - name: Get repository ID
         id: repo
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           REPO_ID=$(gh api repos/${{ github.repository }} --jq '.id')
           echo "id=$REPO_ID" >> $GITHUB_OUTPUT

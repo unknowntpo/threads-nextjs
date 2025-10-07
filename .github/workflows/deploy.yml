@@ -15,9 +15,6 @@ jobs:
   deploy:
     name: Deploy to Zeabur
     runs-on: ubuntu-latest
-    environment:
-      name: production
-      url: ${{ secrets.NEXTAUTH_URL }}
 
     steps:
       - name: Checkout code

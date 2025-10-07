@@ -36,9 +36,17 @@ spec:
   services:
     - name: postgres
       icon: https://cdn.zeabur.com/marketplace/postgresql.svg
-      template: MARKETPLACE
+      template: PREBUILT
       spec:
-        templateCode: B20CX0
+        source:
+          image: postgres:18
+        ports:
+          - id: database
+            port: 5432
+            type: TCP
+        volumes:
+          - id: data
+            dir: /var/lib/postgresql/data
 
     - name: app
       icon: https://service-icons.zeabur.com/git/docker/default.svg
@@ -52,6 +60,6 @@ spec:
             type: HTTP
         env:
           DATABASE_URL:
-            default: ${postgres.DATABASE_URL}
+            default: ${POSTGRES_CONNECTION_STRING}
           NODE_ENV:
             default: production

@@ -75,20 +75,11 @@ services:
   - name: app
     type: git
     icon: https://cdn.zeabur.com/service-icons/nextjs.svg
+    repo: unknowntpo/threads-nextjs
 
-    # Build configuration
-    build:
-      buildCommand: pnpm build
-      installCommand: pnpm install
+    ports:
+      - 3000
 
-    # Start configuration
-    start:
-      command: pnpm start
-
-    # Port configuration
-    port: 3000
-
-    # Environment variables
     env:
       DATABASE_URL: ${POSTGRES_URL}
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
@@ -99,22 +90,6 @@ services:
       GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID}
       GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET}
       NEXT_PUBLIC_APP_URL: ${ZEABUR_WEB_URL}
-
-    # Health check
-    healthCheck:
-      path: /
-      port: 3000
-
-    # Deployment hooks
-    hooks:
-      afterDeploy:
-        - npx prisma migrate deploy
-        - npx prisma db seed || true
-
-    # Resource configuration
-    resources:
-      cpu: 0.5
-      memory: 512
 
 # Deployment instructions
 readme: |

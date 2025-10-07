@@ -1,0 +1,46 @@
+name: Provision Zeabur Services
+
+on:
+  workflow_dispatch:
+    inputs:
+      project_id:
+        description: 'Zeabur Project ID'
+        required: true
+        default: '682fe22e75f92a6870540c4f'
+
+jobs:
+  provision:
+    name: Provision Services
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Zeabur CLI
+        run: npm install -g @zeabur/cli
+
+      - name: Provision services from template
+        env:
+          ZEABUR_TOKEN: ${{ secrets.ZEABUR_TOKEN }}
+        run: |
+          zeabur template deploy \
+            --file=zeabur.yaml \
+            --project-id=${{ inputs.project_id }} \
+            --token=$ZEABUR_TOKEN \
+            --interactive=false
+
+      - name: List provisioned services
+        env:
+          ZEABUR_TOKEN: ${{ secrets.ZEABUR_TOKEN }}
+        run: |
+          zeabur context set project --id=${{ inputs.project_id }} -y
+          zeabur service list
+
+      - name: Provisioning Summary
+        run: |
+          echo "### Provisioning Summary 🚀" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Project ID**: ${{ inputs.project_id }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Template**: zeabur.yaml" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status**: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY

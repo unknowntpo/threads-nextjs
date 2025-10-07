@@ -47,6 +47,18 @@ jobs:
       - name: Provision services from template
         run: npx zeabur@latest template deploy -f zeabur-deploy.yaml -i=false
 
+      - name: Set environment variables for app
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
+          NEXTAUTH_URL: ${{ vars.NEXTAUTH_URL }}
+        run: |
+          zeabur variable create --name app \
+            -k DATABASE_URL="$DATABASE_URL" \
+            -k NEXTAUTH_SECRET="$NEXTAUTH_SECRET" \
+            -k NEXTAUTH_URL="$NEXTAUTH_URL" \
+            -y
+
       - name: List provisioned services
         env:
           ZEABUR_TOKEN: ${{ secrets.ZEABUR_TOKEN }}

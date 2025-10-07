@@ -2,8 +2,11 @@ name: Docker Build and Push
 
 on:
   push:
+    branches:
+      - master
     tags:
       - 'v*.*.*'
+  workflow_dispatch:
 
 env:
   REGISTRY: ghcr.io
@@ -40,6 +43,8 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
             type=raw,value=latest
+            type=sha,prefix={{branch}}-
+            type=ref,event=branch
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5

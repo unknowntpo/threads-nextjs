@@ -13,7 +13,11 @@ spec:
     - postgresql
     - social-media
     - nextauth
-  variables: []
+  variables:
+    - key: PUBLIC_DOMAIN
+      type: DOMAIN
+      name: App Domain
+      description: The domain for your Threads application
   readme: |
     # Threads - Social Media Application
 
@@ -72,3 +76,10 @@ spec:
             default: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres.zeabur.internal:5432/${POSTGRES_DB}
           NODE_ENV:
             default: production
+          NEXTAUTH_URL:
+            default: https://${PUBLIC_DOMAIN}
+            expose: true
+          NEXT_PUBLIC_APP_URL:
+            default: https://${PUBLIC_DOMAIN}
+            expose: true
+      domainKey: PUBLIC_DOMAIN

@@ -20,6 +20,7 @@
     "test:e2e:debug": "playwright test --debug",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
+    "prisma:deploy": "prisma migrate deploy",
     "prisma:studio": "prisma studio",
     "circular": "madge --circular --extensions ts,tsx .",
     "circular:image": "madge --circular --extensions ts,tsx --image graph.svg .",

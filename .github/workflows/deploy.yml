@@ -54,7 +54,7 @@ jobs:
           cache-to: type=gha,mode=max
 
   run-migrations:
-    name: Run Database Migrations in Zeabur
+    name: Trigger Database Migrations in Zeabur
     runs-on: ubuntu-latest
     needs: build-docker
 
@@ -69,8 +69,8 @@ jobs:
           zeabur auth login --token $ZEABUR_TOKEN
           zeabur context set project --id ${{ secrets.ZEABUR_PROJECT_ID }} -y
 
-          # Update migration service to use latest image and trigger restart
-          zeabur service update tag --name migrations -t latest -y || echo "Migration service will be created on first provision"
+          # Update migration service to latest image (triggers restart and runs migrations)
+          zeabur service update tag --name migrations -t latest -y
 
   deploy:
     name: Deploy to Zeabur

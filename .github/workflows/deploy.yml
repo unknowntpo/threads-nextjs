@@ -53,36 +53,31 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  deploy:
-    name: Deploy to Zeabur
+  run-migrations:
+    name: Run Database Migrations in Zeabur
     runs-on: ubuntu-latest
     needs: build-docker
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: Install Zeabur CLI
+        run: npm install -g @zeabur/cli
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: latest
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Generate Prisma Client
-        run: pnpm prisma generate
-
-      - name: Run database migrations
-        run: pnpm prisma migrate deploy
+      - name: Trigger migration service
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          ZEABUR_TOKEN: ${{ secrets.ZEABUR_TOKEN }}
+        run: |
+          zeabur auth login --token $ZEABUR_TOKEN
+          zeabur context set project --id ${{ secrets.ZEABUR_PROJECT_ID }} -y
 
+          # Update migration service to use latest image and trigger restart
+          zeabur service update tag --name migrations -t latest -y || echo "Migration service will be created on first provision"
+
+  deploy:
+    name: Deploy to Zeabur
+    runs-on: ubuntu-latest
+    needs: run-migrations
+
+    steps:
       - name: Install Zeabur CLI
         run: npm install -g @zeabur/cli
 

@@ -63,4 +63,4 @@ spec:
         restartPolicy: Never
         env:
           DATABASE_URL:
-            default: postgresql://root:${POSTGRES_PASSWORD}@postgresql.zeabur.internal:5432/zeabur
+            default: ${POSTGRES_CONNECTION_STRING}

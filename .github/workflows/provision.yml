@@ -25,27 +25,11 @@ jobs:
           ZEABUR_TOKEN: ${{ secrets.ZEABUR_TOKEN }}
         run: npx zeabur@latest auth login --token $ZEABUR_TOKEN
 
-      - name: Get repository ID
-        id: repo
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          REPO_ID=$(gh api repos/${{ github.repository }} --jq '.id')
-          echo "id=$REPO_ID" >> $GITHUB_OUTPUT
-
-      - name: Prepare template with repo ID
-        run: |
-          # Replace repo ID placeholder
-          sed "s/GITHUB_REPO_ID/${{ steps.repo.outputs.id }}/g" zeabur.yaml > zeabur-deploy.yaml
-
-          echo "Generated template:"
-          cat zeabur-deploy.yaml
-
       - name: Set Zeabur project context
         run: npx zeabur@latest context set project --id ${{ inputs.project_id }} -y
 
       - name: Provision services from template
-        run: npx zeabur@latest template deploy -f zeabur-deploy.yaml -i=false
+        run: npx zeabur@latest template deploy -f zeabur.yaml -i=false
 
       - name: Set environment variables for app
         env:

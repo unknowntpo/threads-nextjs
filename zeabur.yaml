@@ -49,18 +49,3 @@ spec:
             default: ${DATABASE_URL}
           NODE_ENV:
             default: production
-
-    - name: migrations
-      icon: https://service-icons.zeabur.com/git/docker/default.svg
-      template: PREBUILT
-      spec:
-        source:
-          image: ghcr.io/unknowntpo/threads-nextjs:latest
-        command:
-          - sh
-          - -c
-          - pnpm prisma migrate deploy
-        restartPolicy: Never
-        env:
-          DATABASE_URL:
-            default: ${POSTGRES_CONNECTION_STRING}

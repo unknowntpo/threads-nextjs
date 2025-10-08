@@ -53,29 +53,10 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  run-migrations:
-    name: Trigger Database Migrations in Zeabur
-    runs-on: ubuntu-latest
-    needs: build-docker
-
-    steps:
-      - name: Install Zeabur CLI
-        run: npm install -g @zeabur/cli
-
-      - name: Trigger migration service
-        env:
-          ZEABUR_TOKEN: ${{ secrets.ZEABUR_TOKEN }}
-        run: |
-          zeabur auth login --token $ZEABUR_TOKEN
-          zeabur context set project --id ${{ secrets.ZEABUR_PROJECT_ID }} -y
-
-          # Update migration service to latest image (triggers restart and runs migrations)
-          zeabur service update tag --name migrations -t latest -y
-
   deploy:
     name: Deploy to Zeabur
     runs-on: ubuntu-latest
-    needs: run-migrations
+    needs: build-docker
 
     steps:
       - name: Install Zeabur CLI

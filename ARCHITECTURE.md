@@ -36,6 +36,7 @@ lib/
 ## Data Flow Pattern
 
 ### 1. Server Components (Pages)
+
 - Use `fetch()` to call API routes **server-side**
 - Initial data loading at request time
 - No client-side JavaScript for data fetching
@@ -52,24 +53,26 @@ export default async function ProtectedPage() {
 ```
 
 ### 2. Client Components (Forms)
+
 - Use `fetch()` to call API routes **client-side**
 - Handle form submissions and mutations
 - Use `router.refresh()` to revalidate server component data
 
 ```typescript
 // components/sign-up-form.tsx
-"use client";
+'use client'
 
 const handleSubmit = async (e: React.FormEvent) => {
   const response = await fetch('/api/auth/signup', {
     method: 'POST',
-    body: JSON.stringify({ email, password, username })
-  });
-  router.push('/protected');
-};
+    body: JSON.stringify({ email, password, username }),
+  })
+  router.push('/protected')
+}
 ```
 
 ### 3. API Routes (Backend)
+
 - Direct Supabase calls with validation
 - Traditional HTTP request/response pattern
 - Swagger documentation ready
@@ -77,18 +80,18 @@ const handleSubmit = async (e: React.FormEvent) => {
 ```typescript
 // app/api/auth/signup/route.ts
 export async function POST(request: NextRequest) {
-  const supabase = await createClient();
-  const body = await request.json();
-  
+  const supabase = await createClient()
+  const body = await request.json()
+
   // Validation
   if (!body.email || !body.password) {
-    return NextResponse.json({ error: "Required fields missing" }, { status: 400 });
+    return NextResponse.json({ error: 'Required fields missing' }, { status: 400 })
   }
-  
+
   // Supabase operations
-  const { data, error } = await supabase.auth.signUp({ email, password });
-  
-  return NextResponse.json({ data });
+  const { data, error } = await supabase.auth.signUp({ email, password })
+
+  return NextResponse.json({ data })
 }
 ```
 

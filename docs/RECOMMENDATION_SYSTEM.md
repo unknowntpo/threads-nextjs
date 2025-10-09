@@ -48,9 +48,8 @@ GET /api/posts → Returns all posts, ordered by createdAt DESC
 graph LR
     Client[Client] -->|GET /api/feeds| API["GET /api/feeds"]
     API -->|fetchRandomPosts| Repo[FeedRepository]
-    Repo -->|Query Posts| DB[(PostgreSQL)]
+    Repo -->|Query All Posts| DB[(PostgreSQL)]
     Repo -->|Fisher-Yates Shuffle| Repo
-    Repo -->|Exclude Own Posts| Repo
     API -->|JSON Response| Client
 
     style API fill:#4CAF50
@@ -60,7 +59,7 @@ graph LR
 **Key Features (Phase 1)**:
 
 - Random post selection using Fisher-Yates algorithm
-- Exclude user's own posts
+- Includes all posts (user can see their own posts)
 - Pagination support (limit/offset)
 - No external dependencies
 - Stateless (no caching)
@@ -478,7 +477,7 @@ export async function GET(request: NextRequest) {
 | Frontend integration | 1h     | /api/feeds        |
 | Code review & deploy | 2h     | All tests passing |
 
-**Total**: ~15 hours (2 working days)
+**Total**: ~15 hours (2 working days) ✅ **COMPLETED**
 
 ### Phase 2 (Month 2-3)
 
@@ -503,7 +502,7 @@ export async function GET(request: NextRequest) {
 
 - ✅ `/api/feeds` endpoint returns 200 OK
 - ✅ Posts are randomized (not chronological)
-- ✅ User's own posts excluded
+- ✅ Includes all posts (user can see their own)
 - ✅ 100% test coverage
 - ✅ Response time < 500ms (p95)
 

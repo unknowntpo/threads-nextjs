@@ -3,11 +3,13 @@
 ## Local Development Setup (Recommended)
 
 ### Prerequisites
+
 - Docker Desktop installed and running
 - Node.js 22+ and pnpm installed
 - Supabase CLI installed
 
 ### Step 1: Install Supabase CLI
+
 ```bash
 # macOS/Linux
 brew install supabase/tap/supabase
@@ -17,19 +19,23 @@ npm install -g supabase
 ```
 
 ### Step 2: Start Local Supabase
+
 ```bash
 # Start all Supabase services locally
 supabase start
 ```
 
 This will:
+
 - Pull required Docker images (first time only, ~5-10 minutes)
 - Start PostgreSQL, GoTrue (auth), PostgREST (API), and other services
 - Apply migrations from `supabase/migrations/`
 - Show you the local credentials
 
 ### Step 3: Get Local Credentials
+
 After `supabase start` completes, you'll see output like:
+
 ```
 API URL: http://127.0.0.1:54321
 DB URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
@@ -40,12 +46,15 @@ service_role key: eyJh...
 ```
 
 ### Step 4: Configure Environment Variables
+
 Create `.env.local` file:
+
 ```bash
 cp .env.example .env.local
 ```
 
 Update `.env.local` with the local credentials from `supabase start`:
+
 ```env
 NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<your-local-anon-key>
@@ -54,34 +63,41 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 
 ### Step 5: Seed Test Data
+
 After Supabase is running, populate the database with test users and posts:
+
 ```bash
 pnpm run seed
 ```
 
 This will create 3 test users:
+
 - **alice@example.com** / password123
 - **bob@example.com** / password123
 - **charlie@example.com** / password123
 
 ### Step 6: Start the Next.js App
+
 ```bash
 pnpm install
 pnpm run dev
 ```
 
 ### Step 7: Access Local Services
+
 - **Next.js App**: http://localhost:3000
 - **Supabase Studio**: http://127.0.0.1:54323
 - **Email Testing (Inbucket)**: http://127.0.0.1:54324
 
 ### Step 8: Test the Setup
+
 1. Go to http://localhost:3000
 2. Sign in with test credentials (e.g., alice@example.com / password123)
 3. View database in Studio (http://127.0.0.1:54323)
 4. Check Inbucket (http://127.0.0.1:54324) for email testing
 
 ### Useful Local Commands
+
 ```bash
 # Stop Supabase
 supabase stop
@@ -132,27 +148,33 @@ supabase gen types typescript --local > types/supabase.ts
 ## Step 4: Set up Database with CLI
 
 1. Install Supabase CLI:
+
    ```bash
    pnpm add -g supabase
    ```
 
 2. Login to Supabase:
+
    ```bash
    supabase login
    ```
 
 3. Initialize Supabase in your project:
+
    ```bash
    supabase init
    ```
 
 4. Link to your remote project:
+
    ```bash
    supabase link --project-ref your-project-id
    ```
+
    (Get project-id from your Supabase URL: `https://your-project-id.supabase.co`)
 
 5. Run the migration:
+
    ```bash
    supabase db push
    ```
@@ -166,16 +188,19 @@ supabase gen types typescript --local > types/supabase.ts
    - Copy the `service_role` key (not anon key)
 
 2. Add to `.env.local`:
+
    ```bash
    SUPABASE_SERVICE_ROLE_KEY=your-service-role-key-here
    ```
 
 3. Start the development server:
+
    ```bash
    pnpm run dev
    ```
 
 4. In another terminal, run the seeding:
+
    ```bash
    pnpm run seed:admin
    ```
@@ -201,6 +226,7 @@ supabase gen types typescript --local > types/supabase.ts
 ## Next Steps
 
 Once authentication is working, we'll:
+
 1. Customize the auth pages
 2. Create a profile setup form
 3. Add basic navigation

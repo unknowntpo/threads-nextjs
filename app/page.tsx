@@ -29,7 +29,7 @@ export default async function Home() {
               Share your thoughts and connect with others in a simple, authentic way.
             </p>
 
-            <div className="flex gap-4 pt-8">
+            <div className="flex justify-center gap-4 pt-8">
               <Button asChild size="lg">
                 <Link href="/auth/sign-up">Join Threads</Link>
               </Button>

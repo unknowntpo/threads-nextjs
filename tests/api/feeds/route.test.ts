@@ -10,7 +10,7 @@ describe('Feeds API - Database Integration', () => {
 
   describe('FeedRepository', () => {
     describe('fetchRandomPosts', () => {
-      it('should fetch random posts excluding user own posts', async () => {
+      it('should fetch random posts including all users posts', async () => {
         // Create test users
         const user1 = await createTestUser({
           email: 'user1@example.com',
@@ -40,11 +40,14 @@ describe('Feeds API - Database Integration', () => {
         const feedRepo = new FeedRepository()
         const feed = await feedRepo.fetchRandomPosts(user1.id, 10)
 
-        // Should only get user2's posts (3 posts)
-        expect(feed).toHaveLength(3)
-        expect(feed.every(post => post.userId === user2.id)).toBe(true)
+        // Should get all posts (5 posts) from both users
+        expect(feed).toHaveLength(5)
         expect(feed.every(post => post.user)).toBeDefined()
-        expect(feed.every(post => post.user.username === 'user2')).toBe(true)
+
+        // Should include posts from both users
+        const userIds = feed.map(post => post.userId)
+        expect(userIds).toContain(user1.id)
+        expect(userIds).toContain(user2.id)
       })
 
       it('should respect limit parameter', async () => {
@@ -231,9 +234,9 @@ describe('Feeds API - Database Integration', () => {
         })
 
         const feedRepo = new FeedRepository()
-        const stats = await feedRepo.getFeedStats(user1.id)
+        const stats = await feedRepo.getFeedStats()
 
-        expect(stats.totalAvailablePosts).toBe(3) // Excludes user1's own post
+        expect(stats.totalAvailablePosts).toBe(4) // Includes all posts
         expect(stats.totalUsers).toBe(3)
       })
     })

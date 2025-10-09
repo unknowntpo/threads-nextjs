@@ -41,7 +41,7 @@ test.describe('Personalized Feed', () => {
     expect(postCount).toBeGreaterThan(0)
   })
 
-  test('should not show user own posts in feed', async ({ page }) => {
+  test('should show user own posts in feed', async ({ page }) => {
     // Login as Alice
     await page.goto('/auth/login')
     await page.getByRole('textbox', { name: 'Email' }).fill('alice@example.com')
@@ -64,9 +64,9 @@ test.describe('Personalized Feed', () => {
     // Wait for refresh to complete
     await page.waitForTimeout(1000)
 
-    // Should NOT see own post in feed (it should be excluded)
+    // Should see own post in feed (it's included now)
     const postTexts = await page.locator('[data-testid="post-content"]').allTextContents()
-    expect(postTexts).not.toContain(newPostContent)
+    expect(postTexts).toContain(newPostContent)
   })
 
   test('should refresh feed on refresh button click', async ({ page }) => {

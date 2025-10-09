@@ -9,11 +9,11 @@ import type { PostWithUser } from './post.repository'
 export class FeedRepository {
   /**
    * Fetch random posts for user's personalized feed
-   * - Excludes user's own posts
+   * - Includes all posts (including user's own posts)
    * - Random shuffle using Fisher-Yates algorithm
    * - Includes user information for display
    *
-   * @param userId - Current user's ID
+   * @param userId - Current user's ID (unused in Phase 1, kept for Phase 2 compatibility)
    * @param limit - Maximum number of posts to return (default: 50)
    * @param offset - Pagination offset (default: 0)
    * @returns Array of posts with user information
@@ -31,16 +31,11 @@ export class FeedRepository {
       throw new Error('Offset must be non-negative')
     }
 
-    // Fetch posts excluding user's own posts
+    // Fetch all posts (including user's own posts)
     // We fetch more than needed to ensure enough posts after shuffle
     const fetchSize = Math.min(limit * 3, 500) // Fetch 3x or 500 max
 
     const allPosts = await prisma.post.findMany({
-      where: {
-        userId: {
-          not: userId, // Exclude own posts
-        },
-      },
       take: fetchSize,
       orderBy: { createdAt: 'desc' }, // Start with recent posts
       include: {
@@ -96,21 +91,14 @@ export class FeedRepository {
   /**
    * Fetch feed statistics for debugging/monitoring
    *
-   * @param userId - Current user's ID
    * @returns Feed statistics
    */
-  async getFeedStats(userId: string): Promise<{
+  async getFeedStats(): Promise<{
     totalAvailablePosts: number
     totalUsers: number
   }> {
     const [totalAvailablePosts, totalUsers] = await Promise.all([
-      prisma.post.count({
-        where: {
-          userId: {
-            not: userId,
-          },
-        },
-      }),
+      prisma.post.count(),
       prisma.user.count(),
     ])
 

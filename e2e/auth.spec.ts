@@ -72,3 +72,67 @@ test.describe('Authentication Flow', () => {
     await expect(page).toHaveURL(/\/(auth\/login|feed)/)
   })
 })
+
+test.describe('Google OAuth Integration', () => {
+  test('should display Google OAuth button on login page', async ({ page }) => {
+    await page.goto('/auth/login')
+
+    // Check that the Google OAuth button exists
+    const googleButton = page.getByRole('button', { name: /Continue with Google/i })
+    await expect(googleButton).toBeVisible()
+
+    // Verify button has the outline variant (visual check via class)
+    await expect(googleButton).toHaveClass(/outline/)
+
+    // Verify Google logo SVG is present
+    const googleLogo = googleButton.locator('svg')
+    await expect(googleLogo).toBeVisible()
+  })
+
+  test('should display Google OAuth button on sign-up page', async ({ page }) => {
+    await page.goto('/auth/sign-up')
+
+    // Check that the Google OAuth button exists
+    const googleButton = page.getByRole('button', { name: /Continue with Google/i })
+    await expect(googleButton).toBeVisible()
+
+    // Verify button has the outline variant (visual check via class)
+    await expect(googleButton).toHaveClass(/outline/)
+
+    // Verify Google logo SVG is present
+    const googleLogo = googleButton.locator('svg')
+    await expect(googleLogo).toBeVisible()
+  })
+
+  test('should display divider text before Google OAuth button on login page', async ({ page }) => {
+    await page.goto('/auth/login')
+
+    // Check for the "Or continue with" divider text
+    const dividerText = page.getByText(/Or continue with/i)
+    await expect(dividerText).toBeVisible()
+  })
+
+  test('should display divider text before Google OAuth button on sign-up page', async ({
+    page,
+  }) => {
+    await page.goto('/auth/sign-up')
+
+    // Check for the "Or continue with" divider text
+    const dividerText = page.getByText(/Or continue with/i)
+    await expect(dividerText).toBeVisible()
+  })
+
+  test('Google OAuth button should be clickable on login page', async ({ page }) => {
+    await page.goto('/auth/login')
+
+    const googleButton = page.getByRole('button', { name: /Continue with Google/i })
+    await expect(googleButton).toBeEnabled()
+  })
+
+  test('Google OAuth button should be clickable on sign-up page', async ({ page }) => {
+    await page.goto('/auth/sign-up')
+
+    const googleButton = page.getByRole('button', { name: /Continue with Google/i })
+    await expect(googleButton).toBeEnabled()
+  })
+})

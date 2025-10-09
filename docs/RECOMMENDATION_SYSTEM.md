@@ -45,38 +45,16 @@ GET /api/posts → Returns all posts, ordered by createdAt DESC
 ### Phase 1: Simple Random Recommendations
 
 ```mermaid
-graph TB
-    subgraph "Client Layer"
-        Browser[Browser/React]
-        FeedComponent[Feed Component]
-    end
+graph LR
+    Client[Client] -->|GET /api/feeds| API["GET /api/feeds"]
+    API -->|fetchRandomPosts| Repo[FeedRepository]
+    Repo -->|Query Posts| DB[(PostgreSQL)]
+    Repo -->|Fisher-Yates Shuffle| Repo
+    Repo -->|Exclude Own Posts| Repo
+    API -->|JSON Response| Client
 
-    subgraph "API Layer"
-        FeedAPI[/api/feeds]
-        PostAPI[/api/posts]
-        Auth[NextAuth Middleware]
-    end
-
-    subgraph "Repository Layer"
-        FeedRepo[FeedRepository]
-        PostRepo[PostRepository]
-    end
-
-    subgraph "Data Layer"
-        DB[(PostgreSQL)]
-    end
-
-    Browser -->|GET /api/feeds| FeedAPI
-    FeedAPI -->|Verify Session| Auth
-    Auth -->|Authorized| FeedRepo
-    FeedRepo -->|fetchRandomPosts| DB
-    FeedRepo -->|Fisher-Yates Shuffle| FeedRepo
-    FeedRepo -->|Exclude Own Posts| FeedRepo
-    FeedRepo -->|Limit 50| FeedAPI
-    FeedAPI -->|JSON Response| Browser
-
-    style FeedAPI fill:#4CAF50
-    style FeedRepo fill:#2196F3
+    style API fill:#4CAF50
+    style Repo fill:#2196F3
 ```
 
 **Key Features (Phase 1)**:
@@ -92,7 +70,7 @@ graph TB
 ```mermaid
 graph TB
     subgraph "Dagster Orchestration"
-        Scheduler[Dagster Scheduler<br/>Daily 2AM UTC]
+        Scheduler["Dagster Scheduler<br/>Daily 2AM UTC"]
         BuildJob[Build Recommendations Job]
 
         Scheduler -->|Trigger| BuildJob
@@ -114,10 +92,10 @@ graph TB
     end
 
     subgraph "Storage"
-        InteractionsDB[(User Interactions)]
-        PostsDB[(Posts)]
-        RecoCache[(Redis Cache<br/>user_recommendations)]
-        RecoDB[(Recommendations Table)]
+        InteractionsDB[("User Interactions")]
+        PostsDB[("Posts")]
+        RecoCache[("Redis Cache<br/>user_recommendations")]
+        RecoDB[("Recommendations Table")]
 
         FetchInteractions -.->|Query| InteractionsDB
         FetchPosts -.->|Query| PostsDB
@@ -127,7 +105,7 @@ graph TB
 
     subgraph "Real-time API"
         Client[Client]
-        FeedAPI[/api/feeds]
+        FeedAPI["GET /api/feeds"]
 
         Client -->|GET /api/feeds| FeedAPI
         FeedAPI -.->|Read| RecoCache
@@ -136,8 +114,8 @@ graph TB
     end
 
     subgraph "Interaction Tracking"
-        UserActions[User Actions<br/>View/Click/Like]
-        TrackingAPI[/api/track]
+        UserActions["User Actions<br/>View/Click/Like"]
+        TrackingAPI["POST /api/track"]
 
         Client -->|POST events| TrackingAPI
         TrackingAPI -->|Store| InteractionsDB

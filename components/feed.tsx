@@ -22,7 +22,8 @@ export function Feed({ currentUserId }: FeedProps) {
     else setLoading(true)
 
     try {
-      const response = await fetch('/api/posts')
+      // Use personalized feed endpoint instead of chronological posts
+      const response = await fetch('/api/feeds')
       const data = await response.json()
 
       if (!response.ok) {

@@ -359,7 +359,7 @@ Each MVP should be:
 
 ## Known Issues
 
-### 1. Forgot Password Page - 404 Not Found
+### 1. Forgot Password Page - 404 Not Found ✅ FIXED
 
 **Issue:** `/auth/forgot-password` route returns 404 error
 
@@ -370,15 +370,21 @@ Each MVP should be:
 - Login form has link to `/auth/forgot-password` (components/login-form.tsx:72)
 - Page route not implemented in `app/auth/forgot-password/page.tsx`
 
-**Impact:** Users cannot reset their password
+**Solution Implemented:**
 
-**Solution:**
+- ✅ Created `app/auth/forgot-password/page.tsx` with password reset form
+- ✅ Added `ForgotPasswordForm` component with email input
+- ✅ Implemented `POST /api/auth/forgot-password` endpoint
+- ✅ Security: No email enumeration (always returns success)
+- ✅ Shows confirmation screen after submission
 
-- Create `app/auth/forgot-password/page.tsx` with password reset form
-- Implement password reset API endpoint
-- Add email sending functionality for reset tokens
+**TODO for Future:**
 
-**Status:** ⏸️ Deferred (prioritizing Phase 2: ML Recommendations)
+- [ ] Implement actual password reset token generation
+- [ ] Add email sending functionality
+- [ ] Create reset password confirmation page
+
+**Status:** ✅ Fixed (basic UI/API implemented, email functionality pending)
 
 ### 2. Chrome Ad Blocker Warning
 

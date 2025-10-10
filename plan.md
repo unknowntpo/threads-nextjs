@@ -354,3 +354,190 @@ Each MVP should be:
 - ✅ **Deployable** - Can be deployed and tested immediately
 - ✅ **Incremental** - Builds on previous MVP without breaking changes
 - ✅ **Testable** - Clear success criteria for manual testing
+
+---
+
+## Known Issues
+
+### 1. Forgot Password Page - 404 Not Found
+
+**Issue:** `/auth/forgot-password` route returns 404 error
+
+**Error URL:** `https://threads-nextjs.zeabur.app/auth/forgot-password?_rsc=1n57a`
+
+**Root Cause:**
+
+- Login form has link to `/auth/forgot-password` (components/login-form.tsx:72)
+- Page route not implemented in `app/auth/forgot-password/page.tsx`
+
+**Impact:** Users cannot reset their password
+
+**Solution:**
+
+- Create `app/auth/forgot-password/page.tsx` with password reset form
+- Implement password reset API endpoint
+- Add email sending functionality for reset tokens
+
+**Status:** ⏸️ Deferred (prioritizing Phase 2: ML Recommendations)
+
+### 2. Chrome Ad Blocker Warning
+
+**Issue:** Chrome showing warning "This site tends to show ads that interrupt, distract, mislead, or prevent user control"
+
+**Potential Causes:**
+
+1. Next.js aggressive prefetching
+2. OAuth redirect flow
+3. Third-party scripts flagged by Chrome
+
+**Possible Solutions:**
+
+1. Disable prefetching for OAuth links: `<Link prefetch={false}>`
+2. Check Chrome Search Console Abusive Experience Report
+3. Review NextAuth redirect configuration
+
+**Status:** ⏸️ Investigating (low priority)
+
+---
+
+## Phase 2: ML-Powered Personalized Feed 🎯
+
+**Epic:** Implement ML-based recommendation system with Dagster pipeline
+
+**Documentation:** See `docs/RECOMMENDATION_SYSTEM.md` for complete architecture
+
+**Goal:** Replace random feed with ML-powered personalized recommendations
+
+**Deliverable:**
+
+- User interaction tracking system
+- Dagster batch pipeline for recommendation generation
+- PostgreSQL-based recommendation storage (no Redis)
+- Fallback to random feed for new users
+
+**Effort Estimate:** ~132 hours (4-6 weeks with team)
+
+### Database Schema Changes
+
+**New Tables:**
+
+```sql
+-- User interaction events
+CREATE TABLE user_interactions (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID NOT NULL REFERENCES users(id),
+  post_id UUID NOT NULL REFERENCES posts(id),
+  interaction_type VARCHAR(20) NOT NULL, -- 'view', 'click', 'like', 'share'
+  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  metadata JSONB,
+
+  INDEX idx_user_interactions_user_id (user_id),
+  INDEX idx_user_interactions_post_id (post_id),
+  INDEX idx_user_interactions_created_at (created_at)
+);
+
+-- Pre-computed recommendations
+CREATE TABLE user_recommendations (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID NOT NULL REFERENCES users(id),
+  post_id UUID NOT NULL REFERENCES posts(id),
+  score FLOAT NOT NULL,
+  generated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  expires_at TIMESTAMP NOT NULL,
+
+  UNIQUE(user_id, post_id)
+);
+
+-- Optimized indexes for fast recommendation queries
+CREATE INDEX idx_user_reco_user_score ON user_recommendations(user_id, score DESC);
+CREATE INDEX idx_user_reco_active ON user_recommendations(user_id, expires_at) WHERE expires_at > NOW();
+CREATE INDEX idx_user_reco_cleanup ON user_recommendations(expires_at) WHERE expires_at <= NOW();
+```
+
+### Implementation Phases
+
+**Phase 2.1: Database Migrations (4h)**
+
+- [ ] Create Prisma migrations for new tables
+- [ ] Add optimized indexes
+- [ ] Test migrations locally
+- [ ] Deploy migrations to Zeabur
+
+**Phase 2.2: Interaction Tracking API (8h)**
+
+- [ ] Create `POST /api/track` endpoint
+- [ ] Implement client-side tracking for views/clicks
+- [ ] Add event batching for performance
+- [ ] Test tracking with real user interactions
+
+**Phase 2.3: Dagster Setup (16h)**
+
+- [ ] Set up Dagster Docker container
+- [ ] Configure PostgreSQL resource
+- [ ] Create basic pipeline structure
+- [ ] Set up daily schedule (2AM UTC)
+- [ ] Add monitoring and alerts
+
+**Phase 2.4: ML Model Development (40h)**
+
+- [ ] Choose ML approach (collaborative filtering vs hybrid)
+- [ ] Implement feature extraction
+- [ ] Build scoring model
+- [ ] Handle cold start for new users
+- [ ] Test model accuracy offline
+
+**Phase 2.5: Pipeline Integration (20h)**
+
+- [ ] Implement batch recommendation generation
+- [ ] Add expired recommendation cleanup
+- [ ] Optimize PostgreSQL queries
+- [ ] Test pipeline end-to-end
+
+**Phase 2.6: PostgreSQL Optimization (6h)**
+
+- [ ] Add connection pooling (pgBouncer)
+- [ ] Configure query performance monitoring
+- [ ] Test recommendation query latency (<100ms p95)
+- [ ] Consider read replicas if needed
+
+**Phase 2.7: API Updates (8h)**
+
+- [ ] Update `GET /api/feeds` to query recommendations
+- [ ] Implement fallback to random posts
+- [ ] Add metadata (source: ml_recommendations vs random_fallback)
+- [ ] Test API performance
+
+**Phase 2.8: Monitoring & Alerts (14h)**
+
+- [ ] Set up Dagster pipeline monitoring
+- [ ] Add PostgreSQL query metrics
+- [ ] Create alerts for pipeline failures
+- [ ] Dashboard for recommendation quality
+
+**Phase 2.9: Testing & Validation (24h)**
+
+- [ ] Unit tests for recommendation logic
+- [ ] Integration tests for Dagster pipeline
+- [ ] E2E tests for tracking and feed API
+- [ ] Performance testing
+- [ ] User acceptance testing
+
+**Total:** ~132 hours
+
+### Success Metrics
+
+- ⚡ Recommendation query latency < 100ms (p95)
+- 🎯 Pipeline success rate > 99%
+- 🔄 Recommendations refresh daily
+- 📊 PostgreSQL query performance tracked
+- 📈 User engagement +20% (target)
+- 📈 Click-through rate +15% (target)
+
+### Architecture Benefits (PostgreSQL-only)
+
+- ✅ No Redis deployment or management overhead
+- ✅ Single source of truth (PostgreSQL only)
+- ✅ Reduced operational complexity
+- ✅ Lower infrastructure costs
+
+**Status:** 📋 Planning - Ready to start implementation

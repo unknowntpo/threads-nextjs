@@ -90,15 +90,13 @@ graph TB
         MLScoring --> SaveReco
     end
 
-    subgraph "Storage"
+    subgraph "Storage (PostgreSQL)"
         InteractionsDB[("User Interactions")]
         PostsDB[("Posts")]
-        RecoCache[("Redis Cache<br/>user_recommendations")]
         RecoDB[("Recommendations Table")]
 
         FetchInteractions -.->|Query| InteractionsDB
         FetchPosts -.->|Query| PostsDB
-        SaveReco -->|Write| RecoCache
         SaveReco -->|Write| RecoDB
     end
 
@@ -107,7 +105,7 @@ graph TB
         FeedAPI["GET /api/feeds"]
 
         Client -->|GET /api/feeds| FeedAPI
-        FeedAPI -.->|Read| RecoCache
+        FeedAPI -.->|Query| RecoDB
         FeedAPI -.->|Fallback| PostsDB
         FeedAPI -->|Response| Client
     end
@@ -122,8 +120,8 @@ graph TB
 
     style Scheduler fill:#FF9800
     style MLScoring fill:#9C27B0
-    style RecoCache fill:#F44336
-    style FeedAPI fill:#4CAF50
+    style RecoDB fill:#4CAF50
+    style FeedAPI fill:#2196F3
 ```
 
 **Key Components (Phase 2)**:
@@ -131,8 +129,8 @@ graph TB
 - **Dagster Pipeline**: Orchestrates batch recommendation generation
 - **User Interaction Tracking**: Captures view, click, like events
 - **ML Scoring Model**: Collaborative filtering or content-based
-- **Redis Cache**: Fast access to pre-computed recommendations
-- **Fallback Logic**: Random recommendations if cache miss
+- **PostgreSQL Recommendations Table**: Stores pre-computed recommendations with optimized indexes
+- **Fallback Logic**: Random recommendations for new users or expired recommendations
 
 ---
 
@@ -247,11 +245,20 @@ CREATE TABLE user_recommendations (
   generated_at TIMESTAMP NOT NULL DEFAULT NOW(),
   expires_at TIMESTAMP NOT NULL,
 
-  UNIQUE(user_id, post_id),
-  INDEX idx_user_recommendations_user_id (user_id),
-  INDEX idx_user_recommendations_score (score),
-  INDEX idx_user_recommendations_expires_at (expires_at)
+  UNIQUE(user_id, post_id)
 );
+
+-- Optimized indexes for PostgreSQL-based recommendation queries
+-- Composite index for fast sorted lookups (most common query pattern)
+CREATE INDEX idx_user_reco_user_score ON user_recommendations(user_id, score DESC);
+
+-- Partial index for active (non-expired) recommendations only
+CREATE INDEX idx_user_reco_active ON user_recommendations(user_id, expires_at)
+  WHERE expires_at > NOW();
+
+-- Index for cleanup queries (deleting expired recommendations)
+CREATE INDEX idx_user_reco_cleanup ON user_recommendations(expires_at)
+  WHERE expires_at <= NOW();
 ```
 
 ### Dagster Pipeline Architecture
@@ -331,7 +338,7 @@ final_score = (
 # dagster_pipeline/jobs/recommendation_builder.py
 
 @job(
-    resource_defs={"db": postgres_resource, "cache": redis_resource},
+    resource_defs={"db": postgres_resource},
     config={
         "schedule": "0 2 * * *",  # Daily at 2AM UTC
         "batch_size": 1000,
@@ -343,9 +350,13 @@ def build_user_recommendations():
     posts = fetch_recent_posts()
 
     scores = calculate_recommendation_scores(interactions, posts)
-    recommendations = persist_recommendations(scores)
 
-    cache_recommendations(recommendations)
+    # Persist recommendations directly to PostgreSQL
+    # Uses batch inserts for efficiency
+    persist_recommendations(scores)
+
+    # Cleanup expired recommendations to prevent table bloat
+    cleanup_expired_recommendations()
 ```
 
 ### API Integration (Phase 2)
@@ -356,32 +367,56 @@ export async function GET(request: NextRequest) {
   const session = await auth()
   const userId = session.user.id
 
-  // Try cache first
-  const cached = await redis.get(`recommendations:${userId}`)
-  if (cached) {
-    return NextResponse.json({ posts: cached, source: 'cache' })
-  }
+  // Query PostgreSQL for pre-computed recommendations
+  // Uses optimized composite index (user_id, score DESC) for fast sorted lookups
+  const recommendations = await feedRepo.fetchPrecomputedRecommendations(userId, limit)
 
-  // Try database recommendations
-  const recommendations = await feedRepo.fetchPrecomputedRecommendations(userId)
   if (recommendations.length > 0) {
-    await redis.set(`recommendations:${userId}`, recommendations, 'EX', 3600)
-    return NextResponse.json({ posts: recommendations, source: 'db' })
+    return NextResponse.json({
+      posts: recommendations,
+      metadata: {
+        source: 'ml_recommendations',
+        total: recommendations.length,
+        generatedAt: recommendations[0]?.generated_at,
+      },
+    })
   }
 
-  // Fallback to random
-  const random = await feedRepo.fetchRandomPosts(userId)
-  return NextResponse.json({ posts: random, source: 'fallback' })
+  // Fallback to random posts if no recommendations available
+  // (e.g., new users, expired recommendations)
+  const random = await feedRepo.fetchRandomPosts(userId, limit)
+  return NextResponse.json({
+    posts: random,
+    metadata: {
+      source: 'random_fallback',
+      total: random.length,
+    },
+  })
 }
 ```
+
+**Performance Optimization Notes**:
+
+- PostgreSQL query uses `idx_user_reco_user_score` index for O(log n) lookup
+- Expected latency: 10-50ms with proper indexing
+- Connection pooling recommended for high-traffic scenarios
+- Consider read replicas if query load exceeds primary database capacity
 
 ### Infrastructure Requirements
 
 - **Dagster**: Docker container for pipeline orchestration
-- **Redis**: Cache layer for recommendations
-- **PostgreSQL**: Additional tables for interactions/recommendations
-- **Python Runtime**: ML model execution
-- **Monitoring**: Pipeline success/failure alerts
+- **PostgreSQL**: Production database with additional tables for interactions/recommendations
+  - Recommended: Connection pooling (pgBouncer or similar)
+  - Recommended: Read replicas for high-traffic scenarios
+- **Python Runtime**: ML model execution environment
+- **Monitoring**: Pipeline success/failure alerts and query performance metrics
+
+**Simplified Architecture Benefits**:
+
+- ✅ No Redis deployment or management overhead
+- ✅ Single source of truth (PostgreSQL only)
+- ✅ Reduced operational complexity
+- ✅ Lower infrastructure costs
 
 ---
 
@@ -398,7 +433,6 @@ export async function GET(request: NextRequest) {
 |-----------|------|---------|-------------|
 | `limit` | number | 50 | Max posts to return (1-100) |
 | `offset` | number | 0 | Pagination offset |
-| `refresh` | boolean | false | Bypass cache (Phase 2 only) |
 
 **Response (200 OK)**:
 
@@ -424,7 +458,7 @@ export async function GET(request: NextRequest) {
     "total": 50,
     "offset": 0,
     "limit": 50,
-    "source": "random" // Phase 1: "random", Phase 2: "cache" | "db" | "fallback"
+    "source": "random" // Phase 1: "random", Phase 2: "ml_recommendations" | "random_fallback"
   }
 }
 ```
@@ -487,12 +521,12 @@ export async function GET(request: NextRequest) {
 | Interaction tracking API | 8h     | Database tables |
 | Dagster setup            | 16h    | Infrastructure  |
 | ML model development     | 40h    | Data collection |
-| Pipeline integration     | 24h    | ML model        |
-| Redis caching            | 8h     | Pipeline        |
-| Monitoring & alerts      | 16h    | Pipeline        |
+| Pipeline integration     | 20h    | ML model        |
+| PostgreSQL optimization  | 6h     | Pipeline        |
+| Monitoring & alerts      | 14h    | Pipeline        |
 | Testing & validation     | 24h    | All components  |
 
-**Total**: ~140 hours (4-6 weeks with team)
+**Total**: ~132 hours (4-6 weeks with team)
 
 ---
 
@@ -511,9 +545,10 @@ export async function GET(request: NextRequest) {
 - 📈 User engagement +20% (time on app)
 - 📈 Click-through rate +15%
 - 📈 Daily active users +10%
-- ⚡ Recommendation latency < 200ms (p95)
+- ⚡ Recommendation query latency < 100ms (p95) - PostgreSQL with optimized indexes
 - 🎯 Pipeline success rate > 99%
 - 🔄 Recommendations refresh daily
+- 📊 PostgreSQL query performance metrics tracked
 
 ---
 
@@ -527,7 +562,9 @@ export async function GET(request: NextRequest) {
    - Which ML model architecture? (Collaborative vs Content-based vs Hybrid)
    - How to handle cold start for new users/posts?
    - Should we use embeddings (requires GPU)?
-   - What's the TTL for cached recommendations?
+   - What should be the expiration time for stored recommendations (expires_at field)?
+   - Should we implement read replicas or stick with primary database only?
+   - What's the strategy for vacuuming expired recommendations (daily cron vs on-demand)?
 
 ---
 
@@ -536,4 +573,5 @@ export async function GET(request: NextRequest) {
 - [Dagster Documentation](https://docs.dagster.io/)
 - [Recommendation Systems - Stanford CS229](https://cs229.stanford.edu/)
 - [Fisher-Yates Shuffle - Wikipedia](https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle)
-- [Redis Best Practices](https://redis.io/docs/management/optimization/)
+- [PostgreSQL Indexing Best Practices](https://www.postgresql.org/docs/current/indexes.html)
+- [PostgreSQL Performance Optimization](https://wiki.postgresql.org/wiki/Performance_Optimization)

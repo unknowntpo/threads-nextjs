@@ -1,0 +1,128 @@
+{
+  "seed_users": [
+    {
+      "id": "seed_user_1",
+      "username": "tech_enthusiast",
+      "display_name": "Alex Chen",
+      "bio": "Full-stack developer | Open source contributor | Always learning new frameworks",
+      "interests": ["technology", "programming", "ai"],
+      "interaction_weight": {
+        "technology": 0.7,
+        "books": 0.2,
+        "daily-life": 0.1
+      }
+    },
+    {
+      "id": "seed_user_2",
+      "username": "foodie_explorer",
+      "display_name": "Maria Rodriguez",
+      "bio": "Home chef | Recipe experimenter | Food photography enthusiast",
+      "interests": ["food", "cooking", "photography"],
+      "interaction_weight": {
+        "food": 0.8,
+        "travel": 0.15,
+        "daily-life": 0.05
+      }
+    },
+    {
+      "id": "seed_user_3",
+      "username": "travel_addict",
+      "display_name": "Kenji Tanaka",
+      "bio": "Digital nomad | 47 countries and counting | Mountain lover",
+      "interests": ["travel", "adventure", "photography"],
+      "interaction_weight": {
+        "travel": 0.7,
+        "food": 0.2,
+        "sports": 0.1
+      }
+    },
+    {
+      "id": "seed_user_4",
+      "username": "sports_fan_247",
+      "display_name": "Jordan Williams",
+      "bio": "Basketball fanatic | Weekend warrior | Living for game day",
+      "interests": ["sports", "basketball", "fitness"],
+      "interaction_weight": {
+        "sports": 0.8,
+        "daily-life": 0.15,
+        "food": 0.05
+      }
+    },
+    {
+      "id": "seed_user_5",
+      "username": "bookworm_jane",
+      "display_name": "Jane Thompson",
+      "bio": "Lifelong learner | Non-fiction reader | Psychology nerd",
+      "interests": ["books", "learning", "psychology"],
+      "interaction_weight": {
+        "books": 0.7,
+        "technology": 0.2,
+        "daily-life": 0.1
+      }
+    },
+    {
+      "id": "seed_user_6",
+      "username": "casual_observer",
+      "display_name": "Sam Park",
+      "bio": "Just here for the vibes | Coffee lover | Work from home life",
+      "interests": ["daily-life", "coffee", "casual"],
+      "interaction_weight": {
+        "daily-life": 0.5,
+        "food": 0.25,
+        "books": 0.15,
+        "technology": 0.1
+      }
+    },
+    {
+      "id": "seed_user_7",
+      "username": "tech_foodie",
+      "display_name": "Emily Zhang",
+      "bio": "Software engineer by day, home chef by night | Best of both worlds",
+      "interests": ["technology", "food", "productivity"],
+      "interaction_weight": {
+        "technology": 0.5,
+        "food": 0.4,
+        "daily-life": 0.1
+      }
+    },
+    {
+      "id": "seed_user_8",
+      "username": "adventure_reader",
+      "display_name": "Carlos Silva",
+      "bio": "Travel writer | Book lover | Always planning the next trip",
+      "interests": ["travel", "books", "writing"],
+      "interaction_weight": {
+        "travel": 0.5,
+        "books": 0.35,
+        "food": 0.15
+      }
+    },
+    {
+      "id": "seed_user_9",
+      "username": "fitness_tech",
+      "display_name": "Priya Patel",
+      "bio": "Data scientist | Marathon runner | Fitness tracker addict",
+      "interests": ["technology", "sports", "health"],
+      "interaction_weight": {
+        "technology": 0.45,
+        "sports": 0.45,
+        "books": 0.1
+      }
+    },
+    {
+      "id": "seed_user_10",
+      "username": "renaissance_soul",
+      "display_name": "David Kim",
+      "bio": "Jack of all trades | Curious about everything | Life is too short to specialize",
+      "interests": ["technology", "food", "travel", "books", "sports", "daily-life"],
+      "interaction_weight": {
+        "technology": 0.2,
+        "food": 0.15,
+        "travel": 0.2,
+        "sports": 0.1,
+        "books": 0.15,
+        "daily-life": 0.2
+      }
+    }
+  ]
+}

@@ -150,7 +150,7 @@ test.describe('Personalized Feed', () => {
 
     // Should show error toast (Sonner toast)
     await expect(page.locator('[data-sonner-toast]').first()).toBeVisible({ timeout: 5000 })
-    await expect(page.getByText(/Failed to load posts/i)).toBeVisible()
+    await expect(page.getByText(/Failed to load posts/i).first()).toBeVisible()
   })
 
   test('should display posts with user information', async ({ page }) => {

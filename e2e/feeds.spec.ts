@@ -1,6 +1,32 @@
 import { test, expect } from '@playwright/test'
 
 test.describe('Personalized Feed', () => {
+  test.beforeEach(async ({ page }) => {
+    // Capture console logs
+    page.on('console', msg => console.log(`[Browser ${msg.type()}]`, msg.text()))
+
+    // Capture network requests and responses
+    page.on('request', request => {
+      if (request.url().includes('/api/')) {
+        console.log(`[Network Request] ${request.method()} ${request.url()}`)
+      }
+    })
+
+    page.on('response', response => {
+      if (response.url().includes('/api/')) {
+        console.log(`[Network Response] ${response.status()} ${response.url()}`)
+      }
+    })
+
+    page.on('requestfailed', request => {
+      if (request.url().includes('/api/')) {
+        console.log(
+          `[Network FAILED] ${request.method()} ${request.url()} - ${request.failure()?.errorText}`
+        )
+      }
+    })
+  })
+
   test('should display feed page after login', async ({ page }) => {
     await page.goto('/auth/login')
 
@@ -28,10 +54,10 @@ test.describe('Personalized Feed', () => {
 
     await page.waitForURL('/feed')
 
-    // Wait for posts to load
-    await page.waitForSelector('[data-testid="post-card"], .space-y-4', {
+    // Wait for posts to load (or loading state to finish)
+    await page.waitForSelector('[data-testid="post-card"]', {
       state: 'visible',
-      timeout: 10000,
+      timeout: 15000,
     })
 
     // Should see posts (from seed data)
@@ -78,8 +104,11 @@ test.describe('Personalized Feed', () => {
 
     await page.waitForURL('/feed')
 
-    // Get initial posts
-    await page.waitForSelector('[data-testid="post-card"], .space-y-4')
+    // Wait for posts to load
+    await page.waitForSelector('[data-testid="post-card"]', {
+      state: 'visible',
+      timeout: 15000,
+    })
 
     // Click refresh
     const refreshButton = page.getByRole('button', { name: /Refresh/i })

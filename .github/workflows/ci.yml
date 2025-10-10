@@ -120,11 +120,6 @@ jobs:
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5433/threads?schema=public
 
-      - name: Seed database
-        run: pnpm seed
-        env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5433/threads?schema=public
-
       - name: Run integration tests
         run: pnpm test
         env:

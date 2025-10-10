@@ -23,15 +23,17 @@ model User {
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")
 
-  accounts      Account[]
-  sessions      Session[]
-  posts         Post[]
-  likes         Like[]
-  comments      Comment[]
-  followers     Follow[]  @relation("UserFollowers")
-  following     Follow[]  @relation("UserFollowing")
-  notifications Notification[] @relation("UserNotifications")
+  accounts          Account[]
+  sessions          Session[]
+  posts             Post[]
+  likes             Like[]
+  comments          Comment[]
+  followers         Follow[]  @relation("UserFollowers")
+  following         Follow[]  @relation("UserFollowing")
+  notifications     Notification[] @relation("UserNotifications")
   sentNotifications Notification[] @relation("RelatedUser")
+  interactions      UserInteraction[]
+  recommendations   UserRecommendation[]
 
   @@map("users")
 }
@@ -87,10 +89,12 @@ model Post {
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
 
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  likes       Like[]
-  comments    Comment[]
-  notifications Notification[]
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  likes           Like[]
+  comments        Comment[]
+  notifications   Notification[]
+  interactions    UserInteraction[]
+  recommendations UserRecommendation[]
 
   @@index([userId, createdAt])
   @@map("posts")
@@ -155,4 +159,41 @@ model Notification {
 
   @@index([userId, read, createdAt])
   @@map("notifications")
+}
+
+// ML Recommendation System Tables
+
+model UserInteraction {
+  id              String    @id @default(uuid())
+  userId          String    @map("user_id")
+  postId          String    @map("post_id")
+  interactionType String    @map("interaction_type") // 'view', 'click', 'like', 'share'
+  metadata        Json?     // Additional metadata (e.g., duration, scroll depth)
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post            Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([postId, createdAt])
+  @@index([createdAt])
+  @@map("user_interactions")
+}
+
+model UserRecommendation {
+  id          String    @id @default(uuid())
+  userId      String    @map("user_id")
+  postId      String    @map("post_id")
+  score       Float     // ML recommendation score
+  generatedAt DateTime  @default(now()) @map("generated_at")
+  expiresAt   DateTime  @map("expires_at")
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post        Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+  @@index([userId, score(sort: Desc)])
+  @@index([userId, expiresAt])
+  @@index([expiresAt])
+  @@map("user_recommendations")
 }

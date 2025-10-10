@@ -18,27 +18,37 @@ export function Feed({ currentUserId }: FeedProps) {
   const { toast } = useToast()
 
   const fetchPosts = async (isRefresh = false) => {
+    console.log('[Feed] fetchPosts called, isRefresh:', isRefresh)
     if (isRefresh) setRefreshing(true)
     else setLoading(true)
 
     try {
-      // Use personalized feed endpoint instead of chronological posts
+      console.log('[Feed] Fetching /api/feeds...')
       const response = await fetch('/api/feeds')
+      console.log('[Feed] Response received, status:', response.status)
+
       const data = await response.json()
+      console.log('[Feed] Data parsed:', {
+        postsCount: data.posts?.length,
+        metadata: data.metadata,
+      })
 
       if (!response.ok) {
+        console.error('[Feed] Response not ok:', data.error)
         throw new Error(data.error || 'Failed to fetch posts')
       }
 
+      console.log('[Feed] Setting posts, count:', data.posts?.length || 0)
       setPosts(data.posts || [])
     } catch (error) {
-      console.error('Error fetching posts:', error)
+      console.error('[Feed] Error fetching posts:', error)
       toast({
         title: 'Error',
         description: 'Failed to load posts',
         variant: 'destructive',
       })
     } finally {
+      console.log('[Feed] Finally block - setting loading to false')
       setLoading(false)
       setRefreshing(false)
     }
@@ -80,6 +90,7 @@ export function Feed({ currentUserId }: FeedProps) {
   }
 
   useEffect(() => {
+    console.log('[Feed] Component mounted, currentUserId:', currentUserId)
     fetchPosts()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])

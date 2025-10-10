@@ -78,7 +78,7 @@ test.describe('Personalized Feed', () => {
 
     // Create a post
     const newPostContent = `My own post ${Date.now()}`
-    await page.getByPlaceholder(/What's on your mind/i).fill(newPostContent)
+    await page.getByPlaceholder(/Share your thoughts/i).fill(newPostContent)
     await page.getByRole('button', { name: 'Post' }).click()
 
     // Wait for post to be created
@@ -149,7 +149,7 @@ test.describe('Personalized Feed', () => {
     await page.getByRole('button', { name: /Refresh/i }).click()
 
     // Should show error toast (Sonner toast)
-    await expect(page.locator('[data-sonner-toast]')).toBeVisible({ timeout: 5000 })
+    await expect(page.locator('[data-sonner-toast]').first()).toBeVisible({ timeout: 5000 })
     await expect(page.getByText(/Failed to load posts/i)).toBeVisible()
   })
 

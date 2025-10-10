@@ -36,20 +36,29 @@ export async function POST(request: NextRequest) {
   const startTime = Date.now()
 
   try {
-    const body: CreatePostDTO = await request.json()
     logger.apiRequest('POST', '/api/posts')
 
-    // Validate required fields
-    if (!body.content?.trim()) {
-      logger.apiError('POST', '/api/posts', 'Content is required')
-      return NextResponse.json({ error: 'Content is required' }, { status: 400 })
-    }
-
+    // Authenticate FIRST before parsing body
     const session = await auth()
 
     if (!session?.user?.id) {
       logger.apiError('POST', '/api/posts', 'Unauthorized')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Now parse and validate the request body
+    let body: CreatePostDTO
+    try {
+      body = await request.json()
+    } catch {
+      logger.apiError('POST', '/api/posts', 'Invalid JSON in request body', session.user.id)
+      return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
+    }
+
+    // Validate required fields
+    if (!body.content?.trim()) {
+      logger.apiError('POST', '/api/posts', 'Content is required', session.user.id)
+      return NextResponse.json({ error: 'Content is required' }, { status: 400 })
     }
 
     // Create the post

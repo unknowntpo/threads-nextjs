@@ -24,7 +24,7 @@ export function PostCard({ post, currentUserId, onEdit, onDelete }: PostCardProp
   const isOwner = currentUserId === post.userId
 
   return (
-    <Card className="w-full">
+    <Card className="w-full" data-testid="post-card">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
@@ -35,7 +35,9 @@ export function PostCard({ post, currentUserId, onEdit, onDelete }: PostCardProp
               </AvatarFallback>
             </Avatar>
             <div className="flex flex-col">
-              <p className="text-sm font-semibold">{post.user.displayName}</p>
+              <p className="text-sm font-semibold" data-testid="post-author">
+                {post.user.displayName}
+              </p>
               <p className="text-xs text-muted-foreground">@{post.user.username}</p>
             </div>
           </div>
@@ -68,7 +70,9 @@ export function PostCard({ post, currentUserId, onEdit, onDelete }: PostCardProp
       </CardHeader>
 
       <CardContent className="pt-0">
-        <p className="whitespace-pre-wrap text-sm">{post.content}</p>
+        <p className="whitespace-pre-wrap text-sm" data-testid="post-content">
+          {post.content}
+        </p>
 
         {post.mediaUrls && post.mediaUrls.length > 0 && (
           <div className="mt-3">

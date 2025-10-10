@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import type { PostWithUser } from './post.repository'
+import { PostRepository } from './post.repository'
 
 /**
  * FeedRepository handles personalized feed recommendations
@@ -7,6 +8,11 @@ import type { PostWithUser } from './post.repository'
  * Phase 2: Will integrate with pre-computed ML recommendations
  */
 export class FeedRepository {
+  private postRepository: PostRepository
+
+  constructor() {
+    this.postRepository = new PostRepository()
+  }
   /**
    * Fetch random posts for user's personalized feed
    * - Includes all posts (including user's own posts)
@@ -86,6 +92,43 @@ export class FeedRepository {
     }
 
     return result
+  }
+
+  /**
+   * Fetch random posts with interaction counts (likes, comments, reposts)
+   * - Includes all posts (including user's own posts)
+   * - Random shuffle using Fisher-Yates algorithm
+   * - Includes interaction counts and user interaction status
+   *
+   * @param userId - Current user's ID
+   * @param limit - Maximum number of posts to return (default: 50)
+   * @param offset - Pagination offset (default: 0)
+   * @returns Array of posts with user information and interaction counts
+   */
+  async fetchRandomPostsWithCounts(
+    userId: string,
+    limit: number = 50,
+    offset: number = 0
+  ): Promise<PostWithUser[]> {
+    // Validate inputs
+    if (limit < 1 || limit > 100) {
+      throw new Error('Limit must be between 1 and 100')
+    }
+    if (offset < 0) {
+      throw new Error('Offset must be non-negative')
+    }
+
+    // Fetch posts with counts (fetch 3x or 500 max for shuffling)
+    const fetchSize = Math.min(limit * 3, 500)
+    const allPosts = await this.postRepository.findAllWithCounts(userId, fetchSize, 0)
+
+    // Apply Fisher-Yates shuffle for randomization
+    const shuffled = this.shuffleArray(allPosts)
+
+    // Apply pagination
+    const paginated = shuffled.slice(offset, offset + limit)
+
+    return paginated
   }
 
   /**

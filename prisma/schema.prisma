@@ -82,12 +82,13 @@ model VerificationToken {
 }
 
 model Post {
-  id          String    @id @default(uuid())
-  userId      String    @map("user_id")
-  content     String
-  mediaUrls   String[]  @map("media_urls")
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
+  id             String    @id @default(uuid())
+  userId         String    @map("user_id")
+  content        String
+  mediaUrls      String[]  @map("media_urls")
+  originalPostId String?   @map("original_post_id") // For reposts - just the ID, no relation
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
 
   user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   likes           Like[]
@@ -97,6 +98,7 @@ model Post {
   recommendations UserRecommendation[]
 
   @@index([userId, createdAt])
+  @@index([originalPostId])
   @@map("posts")
 }
 

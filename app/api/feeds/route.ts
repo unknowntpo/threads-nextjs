@@ -60,8 +60,8 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Fetch random posts (Phase 1 implementation)
-    const posts = await feedRepo.fetchRandomPosts(session.user.id, limit, offset)
+    // Fetch random posts with interaction counts (Phase 1 implementation)
+    const posts = await feedRepo.fetchRandomPostsWithCounts(session.user.id, limit, offset)
 
     // Calculate duration for logging
     const duration = Date.now() - startTime

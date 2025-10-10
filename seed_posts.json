@@ -1,0 +1,74 @@
+{
+  "seeds": [
+    {
+      "id": "seed_1",
+      "topic": "technology",
+      "content": "Just discovered this amazing new framework for building UIs. The developer experience is incredibly smooth - hot reload works flawlessly and the component architecture just makes sense. Spent the whole weekend migrating a side project and I'm genuinely impressed.",
+      "tags": ["tech", "webdev", "framework", "ui"],
+      "tone": "enthusiastic"
+    },
+    {
+      "id": "seed_2",
+      "topic": "technology",
+      "content": "Pro tip: If you're still copying and pasting API responses to debug, try using this REST client extension. It saved me hours this week by letting me test endpoints right in my editor with full history and environment variables.",
+      "tags": ["tech", "productivity", "devtools", "api"],
+      "tone": "helpful"
+    },
+    {
+      "id": "seed_3",
+      "topic": "technology",
+      "content": "Interesting how AI code assistants are changing the way we write software. I'm finding myself spending less time on boilerplate and more time on architecture and problem-solving. The shift feels similar to when we moved from assembly to high-level languages.",
+      "tags": ["tech", "ai", "programming", "future"],
+      "tone": "thoughtful"
+    },
+    {
+      "id": "seed_4",
+      "topic": "food",
+      "content": "Made the best pasta carbonara today! The secret is really simple - take the pan off the heat before adding the eggs, and use pasta water to get that perfect creamy consistency. No cream needed, just eggs, cheese, and patience.",
+      "tags": ["food", "cooking", "italian", "recipe"],
+      "tone": "casual"
+    },
+    {
+      "id": "seed_5",
+      "topic": "food",
+      "content": "Found this small ramen shop in the corner of the neighborhood and WOW. The broth has been simmering for 18 hours and you can taste every minute of it. Rich, complex, absolutely worth the wait in line. Going back this weekend for sure.",
+      "tags": ["food", "ramen", "restaurant", "discovery"],
+      "tone": "excited"
+    },
+    {
+      "id": "seed_6",
+      "topic": "travel",
+      "content": "If you're planning a trip to Japan, skip the overcrowded tourist spots in Tokyo and head to Kanazawa instead. Traditional gardens, fresh seafood market, geisha district, and you'll actually have space to breathe. One of the most underrated destinations I've ever visited.",
+      "tags": ["travel", "japan", "destination", "hidden-gem"],
+      "tone": "inspiring"
+    },
+    {
+      "id": "seed_7",
+      "topic": "travel",
+      "content": "There's something magical about watching the sunrise from a mountaintop after hiking all night. Did this in the Swiss Alps last month and I'm still thinking about it. The cold, the exhaustion, the silence - then that first ray of light. Worth every step.",
+      "tags": ["travel", "hiking", "nature", "adventure"],
+      "tone": "reflective"
+    },
+    {
+      "id": "seed_8",
+      "topic": "sports",
+      "content": "WHAT A GAME! Down by 15 points in the final quarter and they pulled off the comeback. That three-pointer with 8 seconds left was absolutely clutch. This is why I love basketball - it's not over until it's over. Still buzzing from that finish!",
+      "tags": ["sports", "basketball", "game", "comeback"],
+      "tone": "energetic"
+    },
+    {
+      "id": "seed_9",
+      "topic": "books",
+      "content": "Finally finished 'Thinking, Fast and Slow' and it completely changed how I understand decision-making. The concept of System 1 vs System 2 thinking explains so many of our daily biases. Highly recommend if you're into psychology and behavioral economics.",
+      "tags": ["books", "psychology", "learning", "nonfiction"],
+      "tone": "thoughtful"
+    },
+    {
+      "id": "seed_10",
+      "topic": "daily-life",
+      "content": "Coffee tastes different on a rainy morning. Same beans, same machine, but there's something about the sound of rain and the warmth of the cup that just hits different. These small moments are what I appreciate most about working from home.",
+      "tags": ["life", "coffee", "morning", "reflection"],
+      "tone": "casual"
+    }
+  ]
+}

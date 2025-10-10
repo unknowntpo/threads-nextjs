@@ -10,18 +10,24 @@ Generate synthetic realistic data to test ML recommendation system effectiveness
 graph TB
     subgraph "Local Development (Claude Code)"
         LLM[Claude Code LLM]
-        SeedGen[Generate 10 Seed Posts]
-        SeedFile[seed_posts.json]
+        SeedPostGen[Generate 10 Seed Posts]
+        SeedUserGen[Generate 10 Seed Users with Interests]
+        SeedPostFile[seed_posts.json]
+        SeedUserFile[seed_users.json]
 
-        LLM -->|Generate realistic content| SeedGen
-        SeedGen -->|Save locally| SeedFile
+        LLM -->|Generate realistic content| SeedPostGen
+        LLM -->|Generate user profiles| SeedUserGen
+        SeedPostGen -->|Save locally| SeedPostFile
+        SeedUserGen -->|Save locally| SeedUserFile
     end
 
     subgraph "S3/Ozone Storage"
         S3Bucket[S3 Bucket: synthetic-data]
-        S3Seeds[seeds/seed_posts.json]
+        S3SeedPosts[seeds/seed_posts.json]
+        S3SeedUsers[seeds/seed_users.json]
 
-        SeedFile -->|Upload| S3Seeds
+        SeedPostFile -->|Upload| S3SeedPosts
+        SeedUserFile -->|Upload| S3SeedUsers
     end
 
     subgraph "Dagster Pipeline (Synthetic Data Generator)"
@@ -29,13 +35,14 @@ graph TB
         LoadGen[Load Generator Job]
 
         FetchSeeds[Fetch Seeds from S3]
-        GenUsers[Generate Random Users]
+        GenUsers[Generate 25 Users from Seeds]
         GenPosts[Generate 100+ Post Variations]
-        GenInteractions[Generate User Interactions]
+        GenInteractions[Generate Interest-Based Interactions]
 
         Scheduler -->|Trigger| LoadGen
         LoadGen --> FetchSeeds
-        FetchSeeds -->|Download| S3Seeds
+        FetchSeeds -->|Download posts| S3SeedPosts
+        FetchSeeds -->|Download users| S3SeedUsers
         FetchSeeds --> GenUsers
         GenUsers --> GenPosts
         GenPosts --> GenInteractions
@@ -131,6 +138,50 @@ graph TB
 - Books/Learning (1 seed)
 - Daily Life (1 seed)
 
+### 1.5. Seed User Generation (Claude Code - Local)
+
+**Input:** User profile requirements
+**Output:** `seed_users.json` (10 user profiles with interests)
+
+```json
+{
+  "seed_users": [
+    {
+      "id": "seed_user_1",
+      "username": "tech_enthusiast",
+      "display_name": "Alex Chen",
+      "bio": "Full-stack developer | Open source contributor",
+      "interests": ["technology", "programming", "ai"],
+      "interaction_weight": {
+        "technology": 0.7,
+        "books": 0.2,
+        "daily-life": 0.1
+      }
+    }
+  ]
+}
+```
+
+**User Archetypes:**
+
+- Tech Enthusiast (technology + books)
+- Foodie Explorer (food + travel)
+- Travel Addict (travel + food)
+- Sports Fan (sports + daily-life)
+- Bookworm (books + technology)
+- Casual Observer (mixed interests)
+- Tech Foodie (technology + food)
+- Adventure Reader (travel + books)
+- Fitness Tech (technology + sports)
+- Renaissance Soul (all topics)
+
+**Interaction Weight:**
+
+- Defines probability that user will interact with posts of each topic
+- Sum of weights should be ~1.0
+- Higher weight = more likely to view/like posts of that topic
+- Used to generate realistic ML training data
+
 ### 2. S3/Ozone Upload
 
 **Bucket Structure:**
@@ -138,7 +189,8 @@ graph TB
 ```
 synthetic-data/
 ├── seeds/
-│   └── seed_posts.json
+│   ├── seed_posts.json
+│   └── seed_users.json
 └── generated/
     └── run_YYYYMMDD_HHMMSS/
         ├── users.json
@@ -169,17 +221,36 @@ def seed_posts(s3_client):
     )
     return json.loads(seeds['Body'].read())
 
-# Step 2: Generate Random Users (20-30 users)
 @asset
-def synthetic_users(seed_posts):
-    """Create diverse user profiles based on post topics"""
+def seed_users(s3_client):
+    """Download seed users from S3/Ozone"""
+    seeds = s3_client.get_object(
+        Bucket='threads-synthetic-data',
+        Key='seeds/seed_users.json'
+    )
+    return json.loads(seeds['Body'].read())
+
+# Step 2: Generate 25 Users from Seed Templates
+@asset
+def synthetic_users(seed_users):
+    """
+    Create 25 user profiles based on 10 seed user archetypes
+    - Use seed users as templates (interests, interaction weights)
+    - Add variations to usernames and display names
+    - Preserve interest profiles for realistic interactions
+    """
     users = []
     for i in range(25):
+        # Cycle through seed users as templates
+        seed_template = seed_users['seed_users'][i % 10]
+
         users.append({
-            "username": f"user_{i:03d}",
-            "display_name": faker.name(),
-            "bio": faker.sentence(),
-            "email": f"user{i}@synthetic.test"
+            "username": f"{seed_template['username']}_{i:02d}",
+            "display_name": f"{seed_template['display_name']} {i}",
+            "bio": seed_template['bio'],
+            "email": f"synthetic_user_{i}@synthetic.test",
+            "interests": seed_template['interests'],
+            "interaction_weight": seed_template['interaction_weight']
         })
     return users
 
@@ -201,12 +272,13 @@ def synthetic_posts(seed_posts, synthetic_users):
             })
     return posts
 
-# Step 4: Generate User Interactions (500+ interactions)
+# Step 4: Generate Interest-Based User Interactions (500+ interactions)
 @asset
 def synthetic_interactions(synthetic_users, synthetic_posts):
     """
-    Generate realistic interaction patterns:
-    - Users interact more with posts in their topic interest
+    Generate realistic interaction patterns using user interest weights:
+    - Users interact MORE with posts matching their interests
+    - Use interaction_weight to bias post selection
     - Power law distribution (some posts get more interactions)
     - Time-based decay (recent posts get more views)
     """
@@ -214,7 +286,21 @@ def synthetic_interactions(synthetic_users, synthetic_posts):
     for user in synthetic_users:
         # Each user views 20-40 posts
         num_views = random.randint(20, 40)
-        viewed_posts = random.sample(synthetic_posts, num_views)
+
+        # Weighted post selection based on user interests
+        weighted_posts = []
+        for post in synthetic_posts:
+            # Get post topic from tags
+            post_topic = get_post_topic(post)
+
+            # Get user's interest weight for this topic (default 0.05)
+            weight = user['interaction_weight'].get(post_topic, 0.05)
+
+            # Add post multiple times based on weight (higher weight = more likely)
+            weighted_posts.extend([post] * int(weight * 100))
+
+        # Sample from weighted pool
+        viewed_posts = random.sample(weighted_posts, min(num_views, len(weighted_posts)))
 
         for post in viewed_posts:
             # View interaction
@@ -225,8 +311,11 @@ def synthetic_interactions(synthetic_users, synthetic_posts):
                 "created_at": fake_timestamp()
             })
 
-            # 30% chance of like
-            if random.random() < 0.3:
+            # Like probability also based on topic match
+            post_topic = get_post_topic(post)
+            like_probability = user['interaction_weight'].get(post_topic, 0.1) * 0.5
+
+            if random.random() < like_probability:
                 interactions.append({
                     "user_id": user["id"],
                     "post_id": post["id"],
@@ -317,9 +406,9 @@ export async function GET(request: NextRequest) {
 
 ### Phase 1: Seed Generation (Local - 30min)
 
-- [ ] Write prompt for Claude Code to generate 10 seed posts
-- [ ] Generate `seed_posts.json` locally
-- [ ] Upload to S3/Ozone
+- [x] Generate `seed_posts.json` with 10 high-quality seed posts ✅
+- [x] Generate `seed_users.json` with 10 user archetypes and interest weights ✅
+- [ ] Upload both files to S3/Ozone
 
 ### Phase 2: Dagster Load Generator (4h)
 
@@ -371,7 +460,9 @@ export async function GET(request: NextRequest) {
 
 ## Next Steps
 
-1. **Now:** Draw architecture (this doc) ✅
-2. **Next:** Generate 10 seed posts with Claude Code LLM
-3. **Then:** Build Dagster load generator
-4. **Finally:** Build ML recommendation pipeline
+1. **Done:** Draw architecture (this doc) ✅
+2. **Done:** Generate 10 seed posts with Claude Code LLM ✅
+3. **Done:** Generate 10 seed users with interest weights ✅
+4. **Next:** Upload seeds to S3/Ozone
+5. **Then:** Build Dagster load generator
+6. **Finally:** Build ML recommendation pipeline

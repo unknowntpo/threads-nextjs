@@ -50,5 +50,14 @@ export default defineConfig({
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,
+    // Pass environment variables to dev server so it connects to same database as tests
+    // Only override in CI; locally, dev server will use .env file
+    env: process.env.CI
+      ? {
+          DATABASE_URL: process.env.DATABASE_URL || '',
+          NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET || '',
+          NEXTAUTH_URL: process.env.NEXTAUTH_URL || '',
+        }
+      : undefined,
   },
 })

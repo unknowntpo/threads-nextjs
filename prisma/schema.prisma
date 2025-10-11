@@ -35,7 +35,7 @@ model User {
   interactions      UserInteraction[]
   recommendations   UserRecommendation[]
 
-  @@map("users")
+  @@map("user")
 }
 
 model Account {
@@ -57,7 +57,7 @@ model Account {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([provider, providerAccountId])
-  @@map("accounts")
+  @@map("account")
 }
 
 model Session {
@@ -69,7 +69,7 @@ model Session {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  @@map("sessions")
+  @@map("session")
 }
 
 model VerificationToken {
@@ -78,7 +78,7 @@ model VerificationToken {
   expires    DateTime
 
   @@id([identifier, token])
-  @@map("verification_tokens")
+  @@map("verification_token")
 }
 
 model Post {
@@ -99,7 +99,7 @@ model Post {
 
   @@index([userId, createdAt])
   @@index([originalPostId])
-  @@map("posts")
+  @@map("post")
 }
 
 model Follow {
@@ -114,7 +114,7 @@ model Follow {
   @@unique([followerId, followingId])
   @@index([followerId])
   @@index([followingId])
-  @@map("follows")
+  @@map("follow")
 }
 
 model Like {
@@ -128,7 +128,7 @@ model Like {
 
   @@unique([userId, postId])
   @@index([postId])
-  @@map("likes")
+  @@map("like")
 }
 
 model Comment {
@@ -143,7 +143,7 @@ model Comment {
   post      Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
 
   @@index([postId, createdAt])
-  @@map("comments")
+  @@map("comment")
 }
 
 model Notification {
@@ -160,7 +160,7 @@ model Notification {
   relatedPost   Post?     @relation(fields: [relatedPostId], references: [id], onDelete: Cascade)
 
   @@index([userId, read, createdAt])
-  @@map("notifications")
+  @@map("notification")
 }
 
 // ML Recommendation System Tables
@@ -179,7 +179,7 @@ model UserInteraction {
   @@index([userId, createdAt])
   @@index([postId, createdAt])
   @@index([createdAt])
-  @@map("user_interactions")
+  @@map("user_interaction")
 }
 
 model UserRecommendation {
@@ -197,5 +197,5 @@ model UserRecommendation {
   @@index([userId, score(sort: Desc)])
   @@index([userId, expiresAt])
   @@index([expiresAt])
-  @@map("user_recommendations")
+  @@map("user_recommendation")
 }

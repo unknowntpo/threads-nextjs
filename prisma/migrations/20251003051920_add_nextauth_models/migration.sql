@@ -1,17 +1,17 @@
 /*
   Warnings:
 
-  - You are about to drop the column `password_hash` on the `users` table. All the data in the column will be lost.
+  - You are about to drop the column `password_hash` on the `user` table. All the data in the column will be lost.
 
 */
 -- AlterTable
-ALTER TABLE "users" DROP COLUMN "password_hash",
+ALTER TABLE "user" DROP COLUMN "password_hash",
 ADD COLUMN     "email_verified" TIMESTAMP(3),
 ADD COLUMN     "image" TEXT,
 ADD COLUMN     "name" TEXT;
 
 -- CreateTable
-CREATE TABLE "accounts" (
+CREATE TABLE "account" (
     "user_id" TEXT NOT NULL,
     "type" TEXT NOT NULL,
     "provider" TEXT NOT NULL,
@@ -26,11 +26,11 @@ CREATE TABLE "accounts" (
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
-    CONSTRAINT "accounts_pkey" PRIMARY KEY ("provider","provider_account_id")
+    CONSTRAINT "account_pkey" PRIMARY KEY ("provider","provider_account_id")
 );
 
 -- CreateTable
-CREATE TABLE "sessions" (
+CREATE TABLE "session" (
     "session_token" TEXT NOT NULL,
     "user_id" TEXT NOT NULL,
     "expires" TIMESTAMP(3) NOT NULL,
@@ -39,19 +39,19 @@ CREATE TABLE "sessions" (
 );
 
 -- CreateTable
-CREATE TABLE "verification_tokens" (
+CREATE TABLE "verification_token" (
     "identifier" TEXT NOT NULL,
     "token" TEXT NOT NULL,
     "expires" TIMESTAMP(3) NOT NULL,
 
-    CONSTRAINT "verification_tokens_pkey" PRIMARY KEY ("identifier","token")
+    CONSTRAINT "verification_token_pkey" PRIMARY KEY ("identifier","token")
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "sessions_session_token_key" ON "sessions"("session_token");
+CREATE UNIQUE INDEX "session_session_token_key" ON "session"("session_token");
 
 -- AddForeignKey
-ALTER TABLE "accounts" ADD CONSTRAINT "accounts_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "account" ADD CONSTRAINT "account_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "sessions" ADD CONSTRAINT "sessions_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "session" ADD CONSTRAINT "session_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE CASCADE;

@@ -1,5 +1,5 @@
 -- CreateTable
-CREATE TABLE "users" (
+CREATE TABLE "user" (
     "id" TEXT NOT NULL,
     "email" TEXT NOT NULL,
     "password_hash" TEXT NOT NULL,
@@ -10,43 +10,44 @@ CREATE TABLE "users" (
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
-    CONSTRAINT "users_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "user_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "posts" (
+CREATE TABLE "post" (
     "id" TEXT NOT NULL,
     "user_id" TEXT NOT NULL,
     "content" TEXT NOT NULL,
     "media_urls" TEXT[],
+    "original_post_id" TEXT,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
-    CONSTRAINT "posts_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "post_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "follows" (
+CREATE TABLE "follow" (
     "id" TEXT NOT NULL,
     "follower_id" TEXT NOT NULL,
     "following_id" TEXT NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    CONSTRAINT "follows_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "follow_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "likes" (
+CREATE TABLE "like" (
     "id" TEXT NOT NULL,
     "user_id" TEXT NOT NULL,
     "post_id" TEXT NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    CONSTRAINT "likes_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "like_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "comments" (
+CREATE TABLE "comment" (
     "id" TEXT NOT NULL,
     "user_id" TEXT NOT NULL,
     "post_id" TEXT NOT NULL,
@@ -54,11 +55,11 @@ CREATE TABLE "comments" (
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
-    CONSTRAINT "comments_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "comment_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "notifications" (
+CREATE TABLE "notification" (
     "id" TEXT NOT NULL,
     "user_id" TEXT NOT NULL,
     "type" TEXT NOT NULL,
@@ -67,65 +68,68 @@ CREATE TABLE "notifications" (
     "read" BOOLEAN NOT NULL DEFAULT false,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    CONSTRAINT "notifications_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "notification_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
+CREATE UNIQUE INDEX "user_email_key" ON "user"("email");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "users_username_key" ON "users"("username");
+CREATE UNIQUE INDEX "user_username_key" ON "user"("username");
 
 -- CreateIndex
-CREATE INDEX "posts_user_id_created_at_idx" ON "posts"("user_id", "created_at");
+CREATE INDEX "post_user_id_created_at_idx" ON "post"("user_id", "created_at");
 
 -- CreateIndex
-CREATE INDEX "follows_follower_id_idx" ON "follows"("follower_id");
+CREATE INDEX "post_original_post_id_idx" ON "post"("original_post_id");
 
 -- CreateIndex
-CREATE INDEX "follows_following_id_idx" ON "follows"("following_id");
+CREATE INDEX "follow_follower_id_idx" ON "follow"("follower_id");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "follows_follower_id_following_id_key" ON "follows"("follower_id", "following_id");
+CREATE INDEX "follow_following_id_idx" ON "follow"("following_id");
 
 -- CreateIndex
-CREATE INDEX "likes_post_id_idx" ON "likes"("post_id");
+CREATE UNIQUE INDEX "follow_follower_id_following_id_key" ON "follow"("follower_id", "following_id");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "likes_user_id_post_id_key" ON "likes"("user_id", "post_id");
+CREATE INDEX "like_post_id_idx" ON "like"("post_id");
 
 -- CreateIndex
-CREATE INDEX "comments_post_id_created_at_idx" ON "comments"("post_id", "created_at");
+CREATE UNIQUE INDEX "like_user_id_post_id_key" ON "like"("user_id", "post_id");
 
 -- CreateIndex
-CREATE INDEX "notifications_user_id_read_created_at_idx" ON "notifications"("user_id", "read", "created_at");
+CREATE INDEX "comment_post_id_created_at_idx" ON "comment"("post_id", "created_at");
+
+-- CreateIndex
+CREATE INDEX "notification_user_id_read_created_at_idx" ON "notification"("user_id", "read", "created_at");
 
 -- AddForeignKey
-ALTER TABLE "posts" ADD CONSTRAINT "posts_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "post" ADD CONSTRAINT "post_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "follows" ADD CONSTRAINT "follows_follower_id_fkey" FOREIGN KEY ("follower_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "follow" ADD CONSTRAINT "follow_follower_id_fkey" FOREIGN KEY ("follower_id") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "follows" ADD CONSTRAINT "follows_following_id_fkey" FOREIGN KEY ("following_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "follow" ADD CONSTRAINT "follow_following_id_fkey" FOREIGN KEY ("following_id") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "likes" ADD CONSTRAINT "likes_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "like" ADD CONSTRAINT "like_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "likes" ADD CONSTRAINT "likes_post_id_fkey" FOREIGN KEY ("post_id") REFERENCES "posts"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "like" ADD CONSTRAINT "like_post_id_fkey" FOREIGN KEY ("post_id") REFERENCES "post"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "comments" ADD CONSTRAINT "comments_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "comment" ADD CONSTRAINT "comment_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "comments" ADD CONSTRAINT "comments_post_id_fkey" FOREIGN KEY ("post_id") REFERENCES "posts"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "comment" ADD CONSTRAINT "comment_post_id_fkey" FOREIGN KEY ("post_id") REFERENCES "post"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "notifications" ADD CONSTRAINT "notifications_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "notification" ADD CONSTRAINT "notification_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "notifications" ADD CONSTRAINT "notifications_related_user_id_fkey" FOREIGN KEY ("related_user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "notification" ADD CONSTRAINT "notification_related_user_id_fkey" FOREIGN KEY ("related_user_id") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "notifications" ADD CONSTRAINT "notifications_related_post_id_fkey" FOREIGN KEY ("related_post_id") REFERENCES "posts"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "notification" ADD CONSTRAINT "notification_related_post_id_fkey" FOREIGN KEY ("related_post_id") REFERENCES "post"("id") ON DELETE CASCADE ON UPDATE CASCADE;

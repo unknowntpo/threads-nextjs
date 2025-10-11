@@ -105,6 +105,7 @@ export function CreatePostForm({ onPostCreated }: CreatePostFormProps) {
               className="min-h-[120px] resize-none"
               maxLength={500}
               disabled={loading}
+              data-testid="create-post-textarea"
             />
             <div className="flex items-center justify-between text-sm text-muted-foreground">
               <span>{remainingChars} characters remaining</span>
@@ -170,7 +171,11 @@ export function CreatePostForm({ onPostCreated }: CreatePostFormProps) {
               )}
             </div>
 
-            <Button type="submit" disabled={loading || !content.trim() || remainingChars < 0}>
+            <Button
+              type="submit"
+              disabled={loading || !content.trim() || remainingChars < 0}
+              data-testid="create-post-submit-button"
+            >
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

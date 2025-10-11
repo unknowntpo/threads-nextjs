@@ -1,14 +1,16 @@
-import { test, expect } from '@playwright/test'
+import { test, expect, helpers } from './fixtures'
 
 test.describe('Authentication Flow', () => {
-  const testUser = {
-    email: `test-${Date.now()}@example.com`,
-    password: 'Password123!',
-    username: `testuser${Date.now()}`,
-    displayName: 'Test User',
-  }
-
   test('should sign up a new user', async ({ page }) => {
+    // Create unique user data for this test
+    const timestamp = Date.now()
+    const testUser = {
+      email: `test-${timestamp}@example.com`,
+      password: 'Password123!',
+      username: `testuser${timestamp}`,
+      displayName: 'Test User',
+    }
+
     await page.goto('/auth/sign-up')
 
     // Fill signup form using accessible selectors
@@ -26,26 +28,38 @@ test.describe('Authentication Flow', () => {
   })
 
   test('should sign in with existing user', async ({ page }) => {
-    // Use seed data user
+    // Create test user with unique email
+    const { user, password } = await helpers.createUser({
+      displayName: 'Alice Cooper',
+    })
+
     await page.goto('/auth/login')
 
-    await page.getByRole('textbox', { name: 'Email' }).fill('alice@example.com')
-    await page.getByRole('textbox', { name: 'Password' }).fill('password123')
+    await page.getByRole('textbox', { name: 'Email' }).fill(user.email)
+    await page.getByRole('textbox', { name: 'Password' }).fill(password)
 
     await page.getByRole('button', { name: 'Login' }).click()
 
     // Should redirect to feed
     await expect(page).toHaveURL('/feed')
 
+    // Wait for page to load completely
+    await page.waitForLoadState('networkidle')
+
     // Should see user profile indicator in header
     await expect(page.getByText('Welcome back, Alice Cooper!')).toBeVisible()
   })
 
   test('should sign out successfully', async ({ page }) => {
+    // Create test user with unique email
+    const { user, password } = await helpers.createUser({
+      displayName: 'Alice Cooper',
+    })
+
     // First sign in
     await page.goto('/auth/login')
-    await page.getByRole('textbox', { name: 'Email' }).fill('alice@example.com')
-    await page.getByRole('textbox', { name: 'Password' }).fill('password123')
+    await page.getByRole('textbox', { name: 'Email' }).fill(user.email)
+    await page.getByRole('textbox', { name: 'Password' }).fill(password)
     await page.getByRole('button', { name: 'Login' }).click()
 
     await page.waitForURL(/\/(dashboard|feed)?/)

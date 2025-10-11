@@ -7,11 +7,8 @@ async function globalSetup() {
   console.log('📦 Running Prisma migrations...')
   execSync('pnpm prisma migrate deploy', { stdio: 'inherit' })
 
-  // Seed database
-  console.log('🌱 Seeding database...')
-  execSync('pnpm seed', { stdio: 'inherit' })
-
-  console.log('✅ E2E test setup complete!')
+  // No seeding - each test creates its own data for isolation
+  console.log('✅ E2E test setup complete! (Database is clean, tests will create their own data)')
 }
 
 export default globalSetup

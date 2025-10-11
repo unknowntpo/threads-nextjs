@@ -16,7 +16,7 @@ beforeAll(async () => {
   // Create test database if it doesn't exist
   try {
     await execAsync(
-      'docker exec threads_postgres psql -U postgres -c "CREATE DATABASE threads_test;"'
+      'docker compose exec -T postgres psql -U postgres -c "CREATE DATABASE threads_test;"'
     )
     console.log('Created test database')
   } catch {

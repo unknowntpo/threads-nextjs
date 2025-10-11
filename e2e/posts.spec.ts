@@ -1,19 +1,25 @@
-import { test, expect } from '@playwright/test'
+import { test, expect, helpers } from './fixtures'
+import type { Page } from '@playwright/test'
 
 test.describe('Post Creation and Feed', () => {
-  test.beforeEach(async ({ page }) => {
-    // Sign in before each test
+  // Helper function to login
+  async function loginUser(page: Page, email: string, password: string) {
     await page.goto('/auth/login')
-    await page.getByRole('textbox', { name: 'Email' }).fill('alice@example.com')
-    await page.getByRole('textbox', { name: 'Password' }).fill('password123')
+    await page.getByRole('textbox', { name: 'Email' }).fill(email)
+    await page.getByRole('textbox', { name: 'Password' }).fill(password)
     await page.getByRole('button', { name: 'Login' }).click()
-    // Wait for redirect to feed page
     await page.waitForURL('/feed')
     await page.waitForLoadState('networkidle')
-  })
+  }
 
   test('should create a new post', async ({ page }) => {
-    // Already on feed page from beforeEach
+    // Create test user
+    const { user, password } = await helpers.createUser({
+      displayName: 'Alice Cooper',
+    })
+
+    // Login
+    await loginUser(page, user.email, password)
 
     // Find and fill post creation form
     const contentInput = page
@@ -31,15 +37,34 @@ test.describe('Post Creation and Feed', () => {
   })
 
   test('should display posts in feed', async ({ page }) => {
-    // Already on feed page from beforeEach
-    // Should see posts from seed data
+    // Create test user and post
+    const { user, password } = await helpers.createUser({
+      displayName: 'Alice Cooper',
+    })
+
+    await helpers.createPost({
+      userId: user.id,
+      content: 'Just deployed my first Next.js app! 🚀',
+    })
+
+    // Login
+    await loginUser(page, user.email, password)
+
+    // Should see the post
     await expect(page.locator('text=/Just deployed my first Next.js app/i')).toBeVisible({
       timeout: 10000,
     })
   })
 
   test('should create post with image URL', async ({ page }) => {
-    // Already on feed page from beforeEach
+    // Create test user
+    const { user, password } = await helpers.createUser({
+      displayName: 'Alice Cooper',
+    })
+
+    // Login
+    await loginUser(page, user.email, password)
+
     // Fill post content
     const contentInput = page
       .locator('textarea[name="content"], textarea[placeholder*="What"]')
@@ -62,7 +87,19 @@ test.describe('Post Creation and Feed', () => {
   })
 
   test('should show user profile info on posts', async ({ page }) => {
-    // Already on feed page from beforeEach
+    // Create test user and post
+    const { user, password } = await helpers.createUser({
+      displayName: 'Alice Cooper',
+    })
+
+    await helpers.createPost({
+      userId: user.id,
+      content: 'Test post for profile info',
+    })
+
+    // Login
+    await loginUser(page, user.email, password)
+
     // Should see username or display name on posts in a post card
     await expect(
       page.locator('.text-sm.font-semibold').filter({ hasText: 'Alice Cooper' }).first()
@@ -70,7 +107,19 @@ test.describe('Post Creation and Feed', () => {
   })
 
   test('should refresh feed', async ({ page }) => {
-    // Already on feed page from beforeEach
+    // Create test user and post
+    const { user, password } = await helpers.createUser({
+      displayName: 'Alice Cooper',
+    })
+
+    await helpers.createPost({
+      userId: user.id,
+      content: 'Test post for refresh',
+    })
+
+    // Login
+    await loginUser(page, user.email, password)
+
     // Look for refresh button
     const refreshButton = page.locator('button:has-text("Refresh"), button[aria-label="Refresh"]')
 

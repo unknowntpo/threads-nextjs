@@ -5,7 +5,8 @@ import { PostWithUser } from '@/lib/repositories/post.repository'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { MoreHorizontal, Heart, MessageCircle, Repeat2, Share, Check } from 'lucide-react'
+import { Textarea } from '@/components/ui/textarea'
+import { MoreHorizontal, Heart, MessageCircle, Repeat2, Share, Check, Loader2 } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -41,6 +42,22 @@ export function PostCard({
   const [isLiking, setIsLiking] = useState(false)
   const [isReposting, setIsReposting] = useState(false)
   const [linkCopied, setLinkCopied] = useState(false)
+  const [showCommentForm, setShowCommentForm] = useState(false)
+  const [commentText, setCommentText] = useState('')
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false)
+  const [comments, setComments] = useState<
+    Array<{
+      id: string
+      content: string
+      createdAt: string
+      user: {
+        username: string
+        displayName: string | null
+        avatarUrl: string | null
+      }
+    }>
+  >([])
+  const [commentsLoaded, setCommentsLoaded] = useState(false)
 
   const handleLike = async () => {
     if (!currentUserId || isLiking) return
@@ -141,6 +158,71 @@ export function PostCard({
     }
   }
 
+  const handleCommentButtonClick = async () => {
+    if (!currentUserId) return
+
+    setShowCommentForm(!showCommentForm)
+
+    // Load comments if not already loaded
+    if (!commentsLoaded && !showCommentForm) {
+      try {
+        const response = await fetch(`/api/posts/${post.id}/comments`)
+        if (response.ok) {
+          const data = await response.json()
+          setComments(data.comments || [])
+          setCommentsLoaded(true)
+        }
+      } catch {
+        toast({
+          title: 'Error',
+          description: 'Failed to load comments',
+          variant: 'destructive',
+        })
+      }
+    }
+  }
+
+  const handleSubmitComment = async () => {
+    if (!currentUserId || !commentText.trim() || isSubmittingComment) return
+
+    setIsSubmittingComment(true)
+
+    try {
+      const response = await fetch(`/api/posts/${post.id}/comments`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ content: commentText.trim() }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to post comment')
+      }
+
+      const data = await response.json()
+
+      // Add new comment to the list
+      setComments([data.comment, ...comments])
+      setCommentText('')
+
+      toast({
+        title: 'Success',
+        description: 'Comment posted',
+      })
+
+      onInteractionChange?.()
+    } catch {
+      toast({
+        title: 'Error',
+        description: 'Failed to post comment',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsSubmittingComment(false)
+    }
+  }
+
   return (
     <Card className="w-full" data-testid="post-card">
       <CardHeader className="pb-3">
@@ -219,7 +301,9 @@ export function PostCard({
             variant="ghost"
             size="sm"
             className="flex items-center space-x-2"
+            onClick={handleCommentButtonClick}
             disabled={!currentUserId}
+            data-testid="comment-button"
           >
             <MessageCircle className="h-4 w-4" />
             <span className="text-xs">{commentCount}</span>
@@ -244,6 +328,65 @@ export function PostCard({
             )}
           </Button>
         </div>
+
+        {/* Comment Form */}
+        {showCommentForm && (
+          <div className="mt-4 space-y-4 border-t pt-4">
+            <div className="space-y-2">
+              <Textarea
+                placeholder="Write a comment..."
+                value={commentText}
+                onChange={e => setCommentText(e.target.value)}
+                className="min-h-[80px] resize-none"
+                disabled={isSubmittingComment}
+                data-testid="comment-textarea"
+              />
+              <div className="flex justify-end">
+                <Button
+                  size="sm"
+                  onClick={handleSubmitComment}
+                  disabled={!commentText.trim() || isSubmittingComment}
+                  data-testid="comment-submit-button"
+                >
+                  {isSubmittingComment ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Posting...
+                    </>
+                  ) : (
+                    'Post Comment'
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            {/* Comments List */}
+            {comments.length > 0 && (
+              <div className="space-y-3">
+                {comments.map(comment => (
+                  <div key={comment.id} className="flex space-x-3">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={comment.user.avatarUrl || ''} alt={comment.user.username} />
+                      <AvatarFallback>
+                        {comment.user.displayName?.charAt(0).toUpperCase() || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 space-y-1">
+                      <div className="flex items-center space-x-2">
+                        <p className="text-sm font-semibold">{comment.user.displayName}</p>
+                        <p className="text-xs text-muted-foreground">@{comment.user.username}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {formatDistanceToNow(new Date(comment.createdAt))} ago
+                        </p>
+                      </div>
+                      <p className="text-sm">{comment.content}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </CardContent>
     </Card>
   )

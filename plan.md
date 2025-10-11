@@ -337,18 +337,77 @@ notifications (
 - [x] Toast notifications for all interactions
       **Test:** ✅ User can like, repost, and share posts. Comments API ready.
 
-### MVP 7: Enhanced Features
+### MVP 7: Notification System 🔔
 
-**Goal:** Polish and advanced features
-**Deliverable:** Production-ready app
-**Database:** Add `notifications` table
+**Goal:** Users receive notifications for social interactions
+**Deliverable:** Real-time notification system for likes, comments, reposts, and mentions
+**Database:** `notifications` table (already exists in schema)
+**Priority:** High - Essential for user engagement before ML recommendations
+
+**Backend:**
+
+- [ ] `POST /api/notifications/create` - Create notification on interaction
+- [ ] `GET /api/notifications` - Fetch user's notifications with pagination
+- [ ] `PATCH /api/notifications/[id]/read` - Mark notification as read
+- [ ] `PATCH /api/notifications/read-all` - Mark all as read
+- [ ] Database triggers or API hooks for:
+  - Like notifications (when someone likes your post)
+  - Comment notifications (when someone comments on your post)
+  - Repost notifications (when someone reposts your post)
+  - Mention notifications (when someone @mentions you)
+  - Follow notifications (when someone follows you) - future
+
 **Frontend:**
 
-- [ ] Media uploads
-- [ ] @mentions in posts/comments
-- [ ] Notification system
+- [ ] `NotificationBell` - Header notification icon with unread count badge
+- [ ] `NotificationDropdown` - Dropdown panel showing recent notifications
+- [ ] `NotificationList` - Full notifications page with pagination
+- [ ] `NotificationItem` - Individual notification card with:
+  - User avatar and name
+  - Notification type and action
+  - Related post preview (if applicable)
+  - Timestamp
+  - Read/unread status indicator
+- [ ] Real-time updates (polling every 30s or WebSocket for future)
+- [ ] Toast notifications for new interactions (optional)
+
+**Technical Tasks:**
+
+- [ ] Add notification creation hooks to like/comment/repost APIs
+- [ ] Implement efficient notification queries (index on user_id, read, created_at)
+- [ ] Build notification polling system (useEffect with interval)
+- [ ] Add unread count API and badge display
+- [ ] Handle notification navigation (clicking notification goes to related post)
+- [ ] Add notification preferences (future: enable/disable by type)
+
+**Test:**
+
+1. User A likes User B's post → User B receives notification
+2. User A comments on User B's post → User B receives notification
+3. User A reposts User B's post → User B receives notification
+4. User A @mentions User B → User B receives notification
+5. Notification badge shows correct unread count
+6. Clicking notification marks as read and navigates to post
+7. Notifications are sorted by newest first
+
+**Effort Estimate:** ~16-24 hours
+
+**Status:** 📋 Ready to implement
+
+---
+
+### MVP 8: Enhanced Features
+
+**Goal:** Polish and advanced features
+**Deliverable:** Production-ready app with rich media and mentions
+**Frontend:**
+
+- [ ] Media uploads (images/videos in posts)
+- [ ] @mentions autocomplete in posts/comments
 - [ ] Infinite scroll and performance optimizations
-      **Test:** Full social media experience with notifications
+- [ ] Profile pages with user posts
+- [ ] Follow/unfollow functionality
+      **Test:** Full social media experience with rich content
 
 ## Implementation Strategy
 
@@ -417,11 +476,19 @@ Each MVP should be:
 - ✅ Authentication (NextAuth with credentials, Google, GitHub)
 - ✅ Post creation and display
 - ✅ Personalized feed (Phase 1: Random with Fisher-Yates shuffle)
-- ✅ Social interactions (Like, Comment API, Repost, Share)
+- ✅ Social interactions (Like, Comment, Repost, Share)
 - ✅ Full CI/CD pipeline with tests
 - ✅ Deployed on Zeabur
 
-**Next Phase:** ML-Powered Personalized Feed (Phase 2)
+**Next Phase:** MVP 7 - Notification System 🔔
+
+**Why Notifications First:**
+
+- Essential for user engagement and retention
+- Users need to know when others interact with their content
+- Foundation for building an active community
+- Lower complexity than ML recommendations (~16-24h vs ~132h)
+- ML recommendations will be more valuable with active users receiving notifications
 
 ---
 

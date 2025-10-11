@@ -1,5 +1,5 @@
 -- CreateTable
-CREATE TABLE "user_interactions" (
+CREATE TABLE "user_interaction" (
     "id" TEXT NOT NULL,
     "user_id" TEXT NOT NULL,
     "post_id" TEXT NOT NULL,
@@ -7,11 +7,11 @@ CREATE TABLE "user_interactions" (
     "metadata" JSONB,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    CONSTRAINT "user_interactions_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "user_interaction_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "user_recommendations" (
+CREATE TABLE "user_recommendation" (
     "id" TEXT NOT NULL,
     "user_id" TEXT NOT NULL,
     "post_id" TEXT NOT NULL,
@@ -19,38 +19,38 @@ CREATE TABLE "user_recommendations" (
     "generated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "expires_at" TIMESTAMP(3) NOT NULL,
 
-    CONSTRAINT "user_recommendations_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "user_recommendation_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
-CREATE INDEX "user_interactions_user_id_created_at_idx" ON "user_interactions"("user_id", "created_at");
+CREATE INDEX "user_interaction_user_id_created_at_idx" ON "user_interaction"("user_id", "created_at");
 
 -- CreateIndex
-CREATE INDEX "user_interactions_post_id_created_at_idx" ON "user_interactions"("post_id", "created_at");
+CREATE INDEX "user_interaction_post_id_created_at_idx" ON "user_interaction"("post_id", "created_at");
 
 -- CreateIndex
-CREATE INDEX "user_interactions_created_at_idx" ON "user_interactions"("created_at");
+CREATE INDEX "user_interaction_created_at_idx" ON "user_interaction"("created_at");
 
 -- CreateIndex
-CREATE INDEX "user_recommendations_user_id_score_idx" ON "user_recommendations"("user_id", "score" DESC);
+CREATE INDEX "user_recommendation_user_id_score_idx" ON "user_recommendation"("user_id", "score" DESC);
 
 -- CreateIndex
-CREATE INDEX "user_recommendations_user_id_expires_at_idx" ON "user_recommendations"("user_id", "expires_at");
+CREATE INDEX "user_recommendation_user_id_expires_at_idx" ON "user_recommendation"("user_id", "expires_at");
 
 -- CreateIndex
-CREATE INDEX "user_recommendations_expires_at_idx" ON "user_recommendations"("expires_at");
+CREATE INDEX "user_recommendation_expires_at_idx" ON "user_recommendation"("expires_at");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "user_recommendations_user_id_post_id_key" ON "user_recommendations"("user_id", "post_id");
+CREATE UNIQUE INDEX "user_recommendation_user_id_post_id_key" ON "user_recommendation"("user_id", "post_id");
 
 -- AddForeignKey
-ALTER TABLE "user_interactions" ADD CONSTRAINT "user_interactions_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "user_interaction" ADD CONSTRAINT "user_interaction_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "user_interactions" ADD CONSTRAINT "user_interactions_post_id_fkey" FOREIGN KEY ("post_id") REFERENCES "posts"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "user_interaction" ADD CONSTRAINT "user_interaction_post_id_fkey" FOREIGN KEY ("post_id") REFERENCES "post"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "user_recommendations" ADD CONSTRAINT "user_recommendations_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "user_recommendation" ADD CONSTRAINT "user_recommendation_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "user_recommendations" ADD CONSTRAINT "user_recommendations_post_id_fkey" FOREIGN KEY ("post_id") REFERENCES "posts"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "user_recommendation" ADD CONSTRAINT "user_recommendation_post_id_fkey" FOREIGN KEY ("post_id") REFERENCES "post"("id") ON DELETE CASCADE ON UPDATE CASCADE;

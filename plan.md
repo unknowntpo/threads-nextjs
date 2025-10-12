@@ -633,3 +633,53 @@ CREATE INDEX idx_user_reco_cleanup ON user_recommendations(expires_at) WHERE exp
 - ✅ Lower infrastructure costs
 
 **Status:** 📋 Planning - Ready to start implementation
+
+---
+
+## Technical Debt & Refactoring
+
+### Error Handling Improvements 🔧
+
+**Goal:** Implement proper error handling with trace IDs for debugging without exposing sensitive information
+
+**Current Issues:**
+
+- Generic errors like "CredentialsSignin" don't provide enough context for debugging
+- No trace/correlation IDs to track errors across logs
+- Sensitive error details might be exposed to users
+
+**Proposed Solution:**
+
+**Backend (API Routes):**
+
+- [ ] Create error handling utility with trace ID generation
+- [ ] Log full error details server-side with trace ID
+- [ ] Return sanitized errors to client with trace ID
+- [ ] Example:
+  ```typescript
+  {
+    "error": "Authentication failed",
+    "trace_id": "abc123-def456-ghi789",
+    "message": "Please check your credentials and try again"
+  }
+  ```
+
+**Frontend:**
+
+- [ ] Display user-friendly error messages
+- [ ] Show trace ID in error UI for user to report
+- [ ] Log errors to console with trace ID for debugging
+
+**Technical Tasks:**
+
+- [ ] Create `lib/errors.ts` with error handling utilities
+- [ ] Add trace ID middleware for API routes
+- [ ] Update all API error responses
+- [ ] Update frontend error handling components
+- [ ] Add error logging service (optional: Sentry integration)
+
+**Effort Estimate:** ~8-12 hours
+
+**Priority:** Medium - Improves debugging and user experience
+
+**Status:** 📋 Planned

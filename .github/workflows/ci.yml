@@ -122,20 +122,12 @@ jobs:
 
       - name: Run integration tests
         run: pnpm test
-        env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5433/threads_test?schema=public
-          NEXTAUTH_SECRET: test-secret
-          NEXTAUTH_URL: http://localhost:3000
 
       - name: Install Playwright browsers
         run: pnpm exec playwright install --with-deps chromium
 
       - name: Run E2E tests
         run: pnpm test:e2e
-        env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5433/threads?schema=public
-          NEXTAUTH_SECRET: test-secret
-          NEXTAUTH_URL: http://localhost:3000
 
       - name: Stop Docker Compose services
         if: always()

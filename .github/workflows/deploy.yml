@@ -73,35 +73,43 @@ jobs:
       - name: Set Zeabur project context
         run: zeabur context set project --id ${{ secrets.ZEABUR_PROJECT_ID }} -y
 
-      - name: Check if service exists and provision if needed
+      - name: Check if service exists and trigger provision if needed
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           # Check if service exists
           if zeabur service list 2>/dev/null | grep -q "app"; then
             echo "Service 'app' exists"
           else
-            echo "Service 'app' not found, provisioning from template..."
-            echo "Note: Template deploy requires manual intervention. Please run provision.yml workflow first."
-            exit 1
-          fi
+            echo "Service 'app' not found, triggering provision workflow..."
+            gh workflow run provision.yml -f project_id=${{ secrets.ZEABUR_PROJECT_ID }}
+            echo "Waiting for provision to complete..."
+            sleep 10
+            # Wait for provision workflow to complete (timeout after 2 minutes)
+            for i in {1..24}; do
+              latest_run=$(gh run list --workflow=provision.yml --limit 1 --json status,conclusion --jq '.[0]')
+              status=$(echo $latest_run | jq -r '.status')
+              conclusion=$(echo $latest_run | jq -r '.conclusion')
 
-      - name: Set environment variables for app
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
-          NEXTAUTH_URL: ${{ vars.NEXTAUTH_URL }}
-          ALICE_PASSWORD: ${{ secrets.ALICE_PASSWORD }}
-          BOB_PASSWORD: ${{ secrets.BOB_PASSWORD }}
-        run: |
-          zeabur variable create --name app \
-            -k DATABASE_URL="$DATABASE_URL" \
-            -k NEXTAUTH_SECRET="$NEXTAUTH_SECRET" \
-            -k NEXTAUTH_URL="$NEXTAUTH_URL" \
-            -k AUTH_SECRET="$NEXTAUTH_SECRET" \
-            -k AUTH_TRUST_HOST="true" \
-            -k NODE_ENV="production" \
-            -k ALICE_PASSWORD="$ALICE_PASSWORD" \
-            -k BOB_PASSWORD="$BOB_PASSWORD" \
-            -y
+              if [ "$status" = "completed" ]; then
+                if [ "$conclusion" = "success" ]; then
+                  echo "Provision completed successfully"
+                  break
+                else
+                  echo "Provision failed with conclusion: $conclusion"
+                  exit 1
+                fi
+              fi
+
+              echo "Provision still running, waiting... ($i/24)"
+              sleep 5
+            done
+
+            if [ "$status" != "completed" ]; then
+              echo "Provision timed out after 2 minutes"
+              exit 1
+            fi
+          fi
 
       - name: Deploy Docker Image to Zeabur
         run: zeabur service update tag --id ${{ secrets.ZEABUR_SERVICE_ID }} -t latest -y

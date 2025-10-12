@@ -108,7 +108,7 @@ jobs:
               -k BOB_PASSWORD="$BOB_PASSWORD" \
               -y || true
             # Deploy template
-            zeabur template deploy -f zeabur.yaml -i=false || echo "Template deploy failed, continuing..."
+            zeabur template deploy -f zeabur.yaml -i false || echo "Template deploy failed, continuing..."
           fi
 
       - name: Deploy Docker Image to Zeabur

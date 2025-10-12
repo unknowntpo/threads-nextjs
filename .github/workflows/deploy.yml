@@ -59,16 +59,44 @@ jobs:
     needs: build-docker
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Install Zeabur CLI
         run: npm install -g @zeabur/cli
 
-      - name: Deploy Docker Image to Zeabur
+      - name: Authenticate with Zeabur
         env:
           ZEABUR_TOKEN: ${{ secrets.ZEABUR_TOKEN }}
+        run: zeabur auth login --token $ZEABUR_TOKEN
+
+      - name: Set Zeabur project context
+        run: zeabur context set project --id ${{ secrets.ZEABUR_PROJECT_ID }} -y
+
+      - name: Set environment variables for app
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
+          NEXTAUTH_URL: ${{ vars.NEXTAUTH_URL }}
+          ALICE_PASSWORD: ${{ secrets.ALICE_PASSWORD }}
+          BOB_PASSWORD: ${{ secrets.BOB_PASSWORD }}
         run: |
-          zeabur auth login --token $ZEABUR_TOKEN
-          zeabur context set project --id ${{ secrets.ZEABUR_PROJECT_ID }} -y
-          zeabur service update tag --id ${{ secrets.ZEABUR_SERVICE_ID }} -t latest -y
+          zeabur variable create --name app \
+            -k DATABASE_URL="$DATABASE_URL" \
+            -k NEXTAUTH_SECRET="$NEXTAUTH_SECRET" \
+            -k NEXTAUTH_URL="$NEXTAUTH_URL" \
+            -k AUTH_SECRET="$NEXTAUTH_SECRET" \
+            -k AUTH_TRUST_HOST="true" \
+            -k NODE_ENV="production" \
+            -k ALICE_PASSWORD="$ALICE_PASSWORD" \
+            -k BOB_PASSWORD="$BOB_PASSWORD" \
+            -y
+
+      - name: Upsert template
+        run: zeabur template deploy -f zeabur.yaml -i=false
+
+      - name: Deploy Docker Image to Zeabur
+        run: zeabur service update tag --id ${{ secrets.ZEABUR_SERVICE_ID }} -t latest -y
 
       - name: Deployment Summary
         if: always()

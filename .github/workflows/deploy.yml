@@ -92,9 +92,6 @@ jobs:
             -k BOB_PASSWORD="$BOB_PASSWORD" \
             -y
 
-      - name: Upsert template
-        run: zeabur template deploy -f zeabur.yaml -i=false
-
       - name: Deploy Docker Image to Zeabur
         run: zeabur service update tag --id ${{ secrets.ZEABUR_SERVICE_ID }} -t latest -y
 

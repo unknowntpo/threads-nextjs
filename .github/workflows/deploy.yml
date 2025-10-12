@@ -74,6 +74,17 @@ jobs:
         run: zeabur context set project --id ${{ secrets.ZEABUR_PROJECT_ID }} -y
 
       - name: Check if service exists and provision if needed
+        run: |
+          # Check if service exists
+          if zeabur service list 2>/dev/null | grep -q "app"; then
+            echo "Service 'app' exists"
+          else
+            echo "Service 'app' not found, provisioning from template..."
+            echo "Note: Template deploy requires manual intervention. Please run provision.yml workflow first."
+            exit 1
+          fi
+
+      - name: Set environment variables for app
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
@@ -81,38 +92,19 @@ jobs:
           ALICE_PASSWORD: ${{ secrets.ALICE_PASSWORD }}
           BOB_PASSWORD: ${{ secrets.BOB_PASSWORD }}
         run: |
-          # Check if service exists by trying to list services
-          if zeabur service list 2>/dev/null | grep -q "app"; then
-            echo "Service 'app' exists, updating environment variables..."
-            zeabur variable create --name app \
-              -k DATABASE_URL="$DATABASE_URL" \
-              -k NEXTAUTH_SECRET="$NEXTAUTH_SECRET" \
-              -k NEXTAUTH_URL="$NEXTAUTH_URL" \
-              -k AUTH_SECRET="$NEXTAUTH_SECRET" \
-              -k AUTH_TRUST_HOST="true" \
-              -k NODE_ENV="production" \
-              -k ALICE_PASSWORD="$ALICE_PASSWORD" \
-              -k BOB_PASSWORD="$BOB_PASSWORD" \
-              -y
-          else
-            echo "Service 'app' not found, provisioning from template..."
-            # Set variables first
-            zeabur variable create --name app \
-              -k DATABASE_URL="$DATABASE_URL" \
-              -k NEXTAUTH_SECRET="$NEXTAUTH_SECRET" \
-              -k NEXTAUTH_URL="$NEXTAUTH_URL" \
-              -k AUTH_SECRET="$NEXTAUTH_SECRET" \
-              -k AUTH_TRUST_HOST="true" \
-              -k NODE_ENV="production" \
-              -k ALICE_PASSWORD="$ALICE_PASSWORD" \
-              -k BOB_PASSWORD="$BOB_PASSWORD" \
-              -y || true
-            # Deploy template
-            zeabur template deploy -f zeabur.yaml -i false || echo "Template deploy failed, continuing..."
-          fi
+          zeabur variable create --name app \
+            -k DATABASE_URL="$DATABASE_URL" \
+            -k NEXTAUTH_SECRET="$NEXTAUTH_SECRET" \
+            -k NEXTAUTH_URL="$NEXTAUTH_URL" \
+            -k AUTH_SECRET="$NEXTAUTH_SECRET" \
+            -k AUTH_TRUST_HOST="true" \
+            -k NODE_ENV="production" \
+            -k ALICE_PASSWORD="$ALICE_PASSWORD" \
+            -k BOB_PASSWORD="$BOB_PASSWORD" \
+            -y
 
       - name: Deploy Docker Image to Zeabur
-        run: zeabur service update tag --id ${{ secrets.ZEABUR_SERVICE_ID }} -t latest -y || echo "Service update failed, service may not exist yet"
+        run: zeabur service update tag --id ${{ secrets.ZEABUR_SERVICE_ID }} -t latest -y
 
       - name: Deployment Summary
         if: always()

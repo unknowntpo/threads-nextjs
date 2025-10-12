@@ -28,9 +28,6 @@ jobs:
       - name: Set Zeabur project context
         run: npx zeabur@latest context set project --id ${{ inputs.project_id }} -y
 
-      - name: Provision services from template
-        run: npx zeabur@latest template deploy -f zeabur.yaml -i=false
-
       - name: Set environment variables for app
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
@@ -49,6 +46,9 @@ jobs:
             -k ALICE_PASSWORD="$ALICE_PASSWORD" \
             -k BOB_PASSWORD="$BOB_PASSWORD" \
             -y
+
+      - name: Provision services from template
+        run: npx zeabur@latest template deploy -f zeabur.yaml -i=false
 
       - name: List provisioned services
         env:

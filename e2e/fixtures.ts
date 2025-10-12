@@ -1,5 +1,6 @@
 import { test as base, expect } from '@playwright/test'
 import { PrismaClient } from '@prisma/client'
+import bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient()
 
@@ -28,8 +29,7 @@ async function cleanDatabase() {
  */
 const helpers = {
   /**
-   * Create a test user with credentials account
-   * Note: Current auth doesn't verify passwords, just checks if user/account exists
+   * Create a test user with credentials account and hashed password
    *
    * IMPORTANT: For parallel test execution, email and username must be unique across tests.
    * Consider adding timestamps or unique IDs to avoid conflicts.
@@ -50,6 +50,9 @@ const helpers = {
     const displayName = options.displayName || `Test User ${uniqueId}`
     const password = options.password || 'password123'
 
+    // Hash password for authentication
+    const hashedPassword = await bcrypt.hash(password, 10)
+
     const user = await prisma.user.create({
       data: {
         email,
@@ -61,6 +64,7 @@ const helpers = {
             type: 'credentials',
             provider: 'credentials',
             providerAccountId: `${username}-credentials`,
+            refresh_token: hashedPassword, // Store hashed password
           },
         },
       },

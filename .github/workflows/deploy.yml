@@ -27,7 +27,7 @@ jobs:
         run: zeabur auth login --token $ZEABUR_TOKEN
 
       - name: Set Zeabur project context
-        run: zeabur context set project --id ${{ secrets.ZEABUR_PROJECT_ID }} -y
+        run: zeabur context set project --id 682fe22e75f92a6870540c4f -y
 
       - name: Check if service exists
         id: check
@@ -46,7 +46,7 @@ jobs:
     if: needs.check-provision.outputs.needs_provision == 'true'
     uses: ./.github/workflows/provision.yml
     with:
-      project_id: ${{ secrets.ZEABUR_PROJECT_ID }}
+      project_id: '682fe22e75f92a6870540c4f'
     secrets: inherit
 
   build-docker:
@@ -106,7 +106,7 @@ jobs:
         run: zeabur auth login --token $ZEABUR_TOKEN
 
       - name: Set Zeabur project context
-        run: zeabur context set project --id ${{ secrets.ZEABUR_PROJECT_ID }} -y
+        run: zeabur context set project --id 682fe22e75f92a6870540c4f -y
 
       - name: Deploy Docker Image to Zeabur
         run: zeabur service update tag --id ${{ secrets.ZEABUR_SERVICE_ID }} -t latest -y

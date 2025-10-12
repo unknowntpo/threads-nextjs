@@ -1,9 +1,38 @@
 import { PrismaClient } from '@prisma/client'
+import bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient()
 
+// Strong passwords for production seed users from environment variables
+// In non-production environments, use default passwords for simplicity
+const IS_PRODUCTION = process.env.NODE_ENV === 'production'
+const DEFAULT_ALICE_PASSWORD = 'alice123'
+const DEFAULT_BOB_PASSWORD = 'bob123'
+
+const ALICE_PASSWORD =
+  process.env.ALICE_PASSWORD || (!IS_PRODUCTION ? DEFAULT_ALICE_PASSWORD : undefined)
+const BOB_PASSWORD = process.env.BOB_PASSWORD || (!IS_PRODUCTION ? DEFAULT_BOB_PASSWORD : undefined)
+
+if (!ALICE_PASSWORD || !BOB_PASSWORD) {
+  console.error(
+    '❌ ALICE_PASSWORD and BOB_PASSWORD must be set in environment variables for production'
+  )
+  process.exit(1)
+}
+
 async function main() {
   console.log('🌱 Seeding database...')
+
+  // Hash passwords
+  const alicePasswordHash = await bcrypt.hash(ALICE_PASSWORD, 10)
+  const bobPasswordHash = await bcrypt.hash(BOB_PASSWORD, 10)
+
+  // Only log passwords in non-production environments
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('⚠️  Seed user passwords (development only):')
+    console.log(`   alice@example.com: ${ALICE_PASSWORD}`)
+    console.log(`   bob@example.com: ${BOB_PASSWORD}`)
+  }
 
   // Create test users with fixed IDs
   const alice = await prisma.user.upsert({
@@ -24,12 +53,13 @@ async function main() {
           type: 'credentials',
           provider: 'credentials',
           providerAccountId: 'alice-credentials',
+          refresh_token: alicePasswordHash,
         },
       },
     },
   })
 
-  // Ensure alice has credentials account
+  // Ensure alice has credentials account with password
   await prisma.account.upsert({
     where: {
       provider_providerAccountId: {
@@ -37,12 +67,15 @@ async function main() {
         providerAccountId: 'alice-credentials',
       },
     },
-    update: {},
+    update: {
+      refresh_token: alicePasswordHash,
+    },
     create: {
       userId: alice.id,
       type: 'credentials',
       provider: 'credentials',
       providerAccountId: 'alice-credentials',
+      refresh_token: alicePasswordHash,
     },
   })
 
@@ -64,12 +97,13 @@ async function main() {
           type: 'credentials',
           provider: 'credentials',
           providerAccountId: 'bob-credentials',
+          refresh_token: bobPasswordHash,
         },
       },
     },
   })
 
-  // Ensure bob has credentials account
+  // Ensure bob has credentials account with password
   await prisma.account.upsert({
     where: {
       provider_providerAccountId: {
@@ -77,12 +111,15 @@ async function main() {
         providerAccountId: 'bob-credentials',
       },
     },
-    update: {},
+    update: {
+      refresh_token: bobPasswordHash,
+    },
     create: {
       userId: bob.id,
       type: 'credentials',
       provider: 'credentials',
       providerAccountId: 'bob-credentials',
+      refresh_token: bobPasswordHash,
     },
   })
 

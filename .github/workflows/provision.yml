@@ -48,7 +48,7 @@ jobs:
             -y
 
       - name: Provision services from template
-        run: npx zeabur@latest template deploy -f zeabur.yaml -i=false
+        run: npx zeabur@latest template deploy -f zeabur.yaml -i false
 
       - name: List provisioned services
         env:

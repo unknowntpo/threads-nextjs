@@ -36,6 +36,8 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
           NEXTAUTH_URL: ${{ vars.NEXTAUTH_URL }}
+          ALICE_PASSWORD: ${{ secrets.ALICE_PASSWORD }}
+          BOB_PASSWORD: ${{ secrets.BOB_PASSWORD }}
         run: |
           zeabur variable create --name app \
             -k DATABASE_URL="$DATABASE_URL" \
@@ -43,6 +45,9 @@ jobs:
             -k NEXTAUTH_URL="$NEXTAUTH_URL" \
             -k AUTH_SECRET="$NEXTAUTH_SECRET" \
             -k AUTH_TRUST_HOST="true" \
+            -k NODE_ENV="production" \
+            -k ALICE_PASSWORD="$ALICE_PASSWORD" \
+            -k BOB_PASSWORD="$BOB_PASSWORD" \
             -y
 
       - name: List provisioned services

@@ -4,6 +4,7 @@ import GoogleProvider from 'next-auth/providers/google'
 import GitHubProvider from 'next-auth/providers/github'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import { prisma } from '@/lib/prisma'
+import bcrypt from 'bcryptjs'
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: PrismaAdapter(prisma),
@@ -42,11 +43,17 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         const user = await prisma.user.findUnique({
           where: { email: credentials.email as string },
+          include: {
+            accounts: {
+              where: { provider: 'credentials' },
+            },
+          },
         })
 
         if (!user) {
-          // Create new user for credentials signup
+          // Create new user for credentials signup with hashed password
           const username = (credentials.email as string).split('@')[0]
+          const hashedPassword = await bcrypt.hash(credentials.password as string, 10)
 
           const newUser = await prisma.user.create({
             data: {
@@ -57,13 +64,15 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             },
           })
 
-          // Create account entry for credentials
+          // Create account entry for credentials with hashed password
           await prisma.account.create({
             data: {
               userId: newUser.id,
               type: 'credentials',
               provider: 'credentials',
               providerAccountId: newUser.id,
+              // Store hashed password in refresh_token field (since we don't have a password field in Account model)
+              refresh_token: hashedPassword,
             },
           })
 
@@ -75,24 +84,30 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           }
         }
 
-        // For existing users, verify they have a credentials account
-        const account = await prisma.account.findFirst({
-          where: {
-            userId: user.id,
-            provider: 'credentials',
-          },
-        })
+        // For existing users, verify password
+        const credentialsAccount = user.accounts.find(acc => acc.provider === 'credentials')
 
-        if (account) {
-          return {
-            id: user.id,
-            email: user.email,
-            name: user.name,
-            image: user.image,
-          }
+        if (!credentialsAccount || !credentialsAccount.refresh_token) {
+          // User exists but doesn't have credentials provider
+          return null
         }
 
-        return null
+        // Verify password
+        const isPasswordValid = await bcrypt.compare(
+          credentials.password as string,
+          credentialsAccount.refresh_token
+        )
+
+        if (!isPasswordValid) {
+          return null
+        }
+
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          image: user.image,
+        }
       },
     }),
   ],

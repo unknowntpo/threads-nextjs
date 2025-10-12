@@ -38,7 +38,7 @@ async function main() {
     console.log(`   bob@example.com: ${bobPassword}`)
   }
 
-  // Create test users with fixed IDs
+  // Create test users
   const alice = await prisma.user.upsert({
     where: { email: 'alice@example.com' },
     update: {
@@ -47,7 +47,6 @@ async function main() {
       name: 'Alice Cooper',
     },
     create: {
-      id: 'test-user-alice-00000000-0000-0000-0000-000000000001',
       email: 'alice@example.com',
       username: 'alice',
       displayName: 'Alice Cooper',
@@ -91,7 +90,6 @@ async function main() {
       name: 'Bob Builder',
     },
     create: {
-      id: 'test-user-bob-000000000-0000-0000-0000-000000000002',
       email: 'bob@example.com',
       username: 'bob',
       displayName: 'Bob Builder',
@@ -127,28 +125,40 @@ async function main() {
     },
   })
 
-  // Create test posts
-  await prisma.post.upsert({
-    where: { id: 'test-post-1' },
-    update: {},
-    create: {
-      id: 'test-post-1',
-      content: 'Just deployed my first Next.js app! 🚀',
+  // Create test posts (find or create by content to avoid duplicates)
+  const alicePost = await prisma.post.findFirst({
+    where: {
       userId: alice.id,
-      mediaUrls: [],
+      content: 'Just deployed my first Next.js app! 🚀',
     },
   })
 
-  await prisma.post.upsert({
-    where: { id: 'test-post-2' },
-    update: {},
-    create: {
-      id: 'test-post-2',
-      content: 'Learning Prisma is awesome!',
+  if (!alicePost) {
+    await prisma.post.create({
+      data: {
+        content: 'Just deployed my first Next.js app! 🚀',
+        userId: alice.id,
+        mediaUrls: [],
+      },
+    })
+  }
+
+  const bobPost = await prisma.post.findFirst({
+    where: {
       userId: bob.id,
-      mediaUrls: [],
+      content: 'Learning Prisma is awesome!',
     },
   })
+
+  if (!bobPost) {
+    await prisma.post.create({
+      data: {
+        content: 'Learning Prisma is awesome!',
+        userId: bob.id,
+        mediaUrls: [],
+      },
+    })
+  }
 
   console.log('✅ Seeding completed!')
 }

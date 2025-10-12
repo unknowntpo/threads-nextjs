@@ -7,6 +7,13 @@ on:
         description: 'Zeabur Project ID'
         required: true
         default: '682fe22e75f92a6870540c4f'
+  workflow_call:
+    inputs:
+      project_id:
+        description: 'Zeabur Project ID'
+        required: true
+        type: string
+        default: '682fe22e75f92a6870540c4f'
 
 jobs:
   provision:

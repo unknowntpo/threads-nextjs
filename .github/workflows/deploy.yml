@@ -12,6 +12,43 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  check-provision:
+    name: Check if Provisioning Needed
+    runs-on: ubuntu-latest
+    outputs:
+      needs_provision: ${{ steps.check.outputs.needs_provision }}
+    steps:
+      - name: Install Zeabur CLI
+        run: npm install -g @zeabur/cli
+
+      - name: Authenticate with Zeabur
+        env:
+          ZEABUR_TOKEN: ${{ secrets.ZEABUR_TOKEN }}
+        run: zeabur auth login --token $ZEABUR_TOKEN
+
+      - name: Set Zeabur project context
+        run: zeabur context set project --id ${{ secrets.ZEABUR_PROJECT_ID }} -y
+
+      - name: Check if service exists
+        id: check
+        run: |
+          if zeabur service list 2>/dev/null | grep -q "app"; then
+            echo "Service 'app' exists"
+            echo "needs_provision=false" >> $GITHUB_OUTPUT
+          else
+            echo "Service 'app' not found"
+            echo "needs_provision=true" >> $GITHUB_OUTPUT
+          fi
+
+  provision:
+    name: Provision Zeabur Services
+    needs: check-provision
+    if: needs.check-provision.outputs.needs_provision == 'true'
+    uses: ./.github/workflows/provision.yml
+    with:
+      project_id: ${{ secrets.ZEABUR_PROJECT_ID }}
+    secrets: inherit
+
   build-docker:
     name: Build and Push Docker Image
     runs-on: ubuntu-latest
@@ -56,12 +93,10 @@ jobs:
   deploy:
     name: Deploy to Zeabur
     runs-on: ubuntu-latest
-    needs: build-docker
+    needs: [check-provision, build-docker, provision]
+    if: always() && needs.build-docker.result == 'success' && (needs.provision.result == 'success' || needs.provision.result == 'skipped')
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
       - name: Install Zeabur CLI
         run: npm install -g @zeabur/cli
 
@@ -72,44 +107,6 @@ jobs:
 
       - name: Set Zeabur project context
         run: zeabur context set project --id ${{ secrets.ZEABUR_PROJECT_ID }} -y
-
-      - name: Check if service exists and trigger provision if needed
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          # Check if service exists
-          if zeabur service list 2>/dev/null | grep -q "app"; then
-            echo "Service 'app' exists"
-          else
-            echo "Service 'app' not found, triggering provision workflow..."
-            gh workflow run provision.yml -f project_id=${{ secrets.ZEABUR_PROJECT_ID }}
-            echo "Waiting for provision to complete..."
-            sleep 10
-            # Wait for provision workflow to complete (timeout after 2 minutes)
-            for i in {1..24}; do
-              latest_run=$(gh run list --workflow=provision.yml --limit 1 --json status,conclusion --jq '.[0]')
-              status=$(echo $latest_run | jq -r '.status')
-              conclusion=$(echo $latest_run | jq -r '.conclusion')
-
-              if [ "$status" = "completed" ]; then
-                if [ "$conclusion" = "success" ]; then
-                  echo "Provision completed successfully"
-                  break
-                else
-                  echo "Provision failed with conclusion: $conclusion"
-                  exit 1
-                fi
-              fi
-
-              echo "Provision still running, waiting... ($i/24)"
-              sleep 5
-            done
-
-            if [ "$status" != "completed" ]; then
-              echo "Provision timed out after 2 minutes"
-              exit 1
-            fi
-          fi
 
       - name: Deploy Docker Image to Zeabur
         run: zeabur service update tag --id ${{ secrets.ZEABUR_SERVICE_ID }} -t latest -y

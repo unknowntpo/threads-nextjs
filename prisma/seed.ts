@@ -23,15 +23,19 @@ if (!ALICE_PASSWORD || !BOB_PASSWORD) {
 async function main() {
   console.log('🌱 Seeding database...')
 
+  // TypeScript assertion: passwords are guaranteed to be strings after the check above
+  const alicePassword = ALICE_PASSWORD as string
+  const bobPassword = BOB_PASSWORD as string
+
   // Hash passwords
-  const alicePasswordHash = await bcrypt.hash(ALICE_PASSWORD, 10)
-  const bobPasswordHash = await bcrypt.hash(BOB_PASSWORD, 10)
+  const alicePasswordHash = await bcrypt.hash(alicePassword, 10)
+  const bobPasswordHash = await bcrypt.hash(bobPassword, 10)
 
   // Only log passwords in non-production environments
   if (process.env.NODE_ENV !== 'production') {
     console.log('⚠️  Seed user passwords (development only):')
-    console.log(`   alice@example.com: ${ALICE_PASSWORD}`)
-    console.log(`   bob@example.com: ${BOB_PASSWORD}`)
+    console.log(`   alice@example.com: ${alicePassword}`)
+    console.log(`   bob@example.com: ${bobPassword}`)
   }
 
   // Create test users with fixed IDs

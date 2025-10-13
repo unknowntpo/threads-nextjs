@@ -1,7 +1,10 @@
 name: Deploy to Zeabur
 
 on:
-  push:
+  workflow_run:
+    workflows: ['CI']
+    types:
+      - completed
     branches:
       - master
   workflow_dispatch: # Allow manual trigger
@@ -15,6 +18,7 @@ jobs:
   build-docker:
     name: Build and Push Docker Image
     runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
     permissions:
       contents: read
       packages: write

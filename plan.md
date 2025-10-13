@@ -494,20 +494,28 @@ Each MVP should be:
 
 ## Phase 2: ML-Powered Personalized Feed 🎯
 
-**Epic:** Implement ML-based recommendation system with Dagster pipeline
+**Epic:** Build complete MLOps cycle for ML-based recommendation system (Local Development Only)
 
-**Documentation:** See `docs/RECOMMENDATION_SYSTEM.md` for complete architecture
+**Documentation:** See `docs/ML_RECOMMENDATION_SYSTEM.md` for complete architecture with Mermaid diagrams
 
-**Goal:** Replace random feed with ML-powered personalized recommendations
+**Goal:** Demonstrate end-to-end ML recommendation pipeline with fake data using modern Python tooling
+
+**Technology Stack:**
+
+- **Python:** uv (package manager), Ruff (linter/formatter), FastAPI, scikit-learn
+- **Model:** Collaborative Filtering with Content Boosting
+- **Deployment:** Docker Compose (local only, no production deployment yet)
 
 **Deliverable:**
 
-- User interaction tracking system
-- Dagster batch pipeline for recommendation generation
-- PostgreSQL-based recommendation storage (no Redis)
-- Fallback to random feed for new users
+- FastAPI ML service with recommendation endpoints
+- Fake user interaction data generation
+- Collaborative filtering model training pipeline
+- Next.js integration with fallback to random feed
+- Complete MLOps cycle (data → train → evaluate → serve)
+- CI/CD pipeline for ML service
 
-**Effort Estimate:** ~132 hours (4-6 weeks with team)
+**Effort Estimate:** ~40-60 hours (focused on local demo, not production)
 
 ### Database Schema Changes
 

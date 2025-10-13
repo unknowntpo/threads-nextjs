@@ -97,7 +97,7 @@ jobs:
         run: npx zeabur@latest context set project --id 682fe22e75f92a6870540c4f -y
 
       - name: Deploy Docker Image to Zeabur
-        run: npx zeabur@latest service update tag --id ${{ secrets.ZEABUR_SERVICE_ID }} -t latest -y
+        run: echo "latest" | npx zeabur@latest service update tag --id ${{ secrets.ZEABUR_SERVICE_ID }} -y
 
       - name: Calculate duration
         if: always()

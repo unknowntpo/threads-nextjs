@@ -27,18 +27,12 @@ jobs:
     steps:
       - name: Set commit status to pending
         if: github.event_name == 'workflow_run'
-        uses: actions/github-script@v7
+        uses: myrotvorets/set-commit-status-action@master
         with:
-          script: |
-            github.rest.repos.createCommitStatus({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              sha: '${{ github.event.workflow_run.head_sha }}',
-              state: 'pending',
-              target_url: `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
-              description: 'Deploying to Zeabur...',
-              context: 'Deploy to Zeabur'
-            })
+          token: ${{ secrets.GITHUB_TOKEN }}
+          sha: ${{ github.event.workflow_run.head_sha }}
+          status: pending
+          context: Deploy to Zeabur
 
       - name: Install Zeabur CLI
         run: npm install -g @zeabur/cli
@@ -108,33 +102,21 @@ jobs:
 
       - name: Set commit status to success
         if: success() && github.event_name == 'workflow_run'
-        uses: actions/github-script@v7
+        uses: myrotvorets/set-commit-status-action@master
         with:
-          script: |
-            github.rest.repos.createCommitStatus({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              sha: '${{ github.event.workflow_run.head_sha }}',
-              state: 'success',
-              target_url: `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
-              description: 'Deployed successfully to Zeabur',
-              context: 'Deploy to Zeabur'
-            })
+          token: ${{ secrets.GITHUB_TOKEN }}
+          sha: ${{ github.event.workflow_run.head_sha }}
+          status: success
+          context: Deploy to Zeabur
 
       - name: Set commit status to failure
         if: failure() && github.event_name == 'workflow_run'
-        uses: actions/github-script@v7
+        uses: myrotvorets/set-commit-status-action@master
         with:
-          script: |
-            github.rest.repos.createCommitStatus({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              sha: '${{ github.event.workflow_run.head_sha }}',
-              state: 'failure',
-              target_url: `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
-              description: 'Deployment failed',
-              context: 'Deploy to Zeabur'
-            })
+          token: ${{ secrets.GITHUB_TOKEN }}
+          sha: ${{ github.event.workflow_run.head_sha }}
+          status: failure
+          context: Deploy to Zeabur
 
       - name: Notify on failure
         if: failure()

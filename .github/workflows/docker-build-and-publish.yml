@@ -26,6 +26,10 @@ jobs:
       statuses: write
 
     steps:
+      - name: Record start time
+        id: start
+        run: echo "time=$(date +%s)" >> $GITHUB_OUTPUT
+
       - name: Set commit status to pending
         if: github.event_name == 'workflow_run'
         uses: myrotvorets/set-commit-status-action@master
@@ -34,6 +38,8 @@ jobs:
           sha: ${{ github.event.workflow_run.head_sha }}
           status: pending
           context: Docker Build and Push
+          description: Building Docker image...
+          targetUrl: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -72,6 +78,20 @@ jobs:
           cache-to: type=gha,mode=max
           platforms: linux/amd64,linux/arm64
 
+      - name: Calculate duration
+        if: always()
+        id: duration
+        run: |
+          end_time=$(date +%s)
+          duration=$((end_time - ${{ steps.start.outputs.time }}))
+          minutes=$((duration / 60))
+          seconds=$((duration % 60))
+          if [ $minutes -gt 0 ]; then
+            echo "text=${minutes}m ${seconds}s" >> $GITHUB_OUTPUT
+          else
+            echo "text=${seconds}s" >> $GITHUB_OUTPUT
+          fi
+
       - name: Set commit status to success
         if: success() && github.event_name == 'workflow_run'
         uses: myrotvorets/set-commit-status-action@master
@@ -80,6 +100,8 @@ jobs:
           sha: ${{ github.event.workflow_run.head_sha }}
           status: success
           context: Docker Build and Push
+          description: Successful in ${{ steps.duration.outputs.text }}
+          targetUrl: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
       - name: Set commit status to failure
         if: failure() && github.event_name == 'workflow_run'
@@ -89,3 +111,5 @@ jobs:
           sha: ${{ github.event.workflow_run.head_sha }}
           status: failure
           context: Docker Build and Push
+          description: Failed after ${{ steps.duration.outputs.text }}
+          targetUrl: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}

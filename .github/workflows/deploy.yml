@@ -25,6 +25,10 @@ jobs:
     outputs:
       needs_provision: ${{ steps.check.outputs.needs_provision }}
     steps:
+      - name: Record start time
+        id: start
+        run: echo "time=$(date +%s)" >> $GITHUB_OUTPUT
+
       - name: Set commit status to pending
         if: github.event_name == 'workflow_run'
         uses: myrotvorets/set-commit-status-action@master
@@ -33,6 +37,8 @@ jobs:
           sha: ${{ github.event.workflow_run.head_sha }}
           status: pending
           context: Deploy to Zeabur
+          description: Deploying to Zeabur...
+          targetUrl: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
       - name: Install Zeabur CLI
         run: npm install -g @zeabur/cli
@@ -75,6 +81,10 @@ jobs:
       statuses: write
 
     steps:
+      - name: Record start time
+        id: start
+        run: echo "time=$(date +%s)" >> $GITHUB_OUTPUT
+
       - name: Install Zeabur CLI
         run: npm install -g @zeabur/cli
 
@@ -89,12 +99,27 @@ jobs:
       - name: Deploy Docker Image to Zeabur
         run: npx zeabur@latest service update tag --id ${{ secrets.ZEABUR_SERVICE_ID }} -t latest -y
 
+      - name: Calculate duration
+        if: always()
+        id: duration
+        run: |
+          end_time=$(date +%s)
+          duration=$((end_time - ${{ steps.start.outputs.time }}))
+          minutes=$((duration / 60))
+          seconds=$((duration % 60))
+          if [ $minutes -gt 0 ]; then
+            echo "text=${minutes}m ${seconds}s" >> $GITHUB_OUTPUT
+          else
+            echo "text=${seconds}s" >> $GITHUB_OUTPUT
+          fi
+
       - name: Deployment Summary
         if: always()
         run: |
           echo "### Deployment Summary 🚀" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "- **Status**: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Duration**: ${{ steps.duration.outputs.text }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Branch**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Image**: ghcr.io/${{ github.repository }}:master-${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
@@ -108,6 +133,8 @@ jobs:
           sha: ${{ github.event.workflow_run.head_sha }}
           status: success
           context: Deploy to Zeabur
+          description: Deployed in ${{ steps.duration.outputs.text }}
+          targetUrl: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
       - name: Set commit status to failure
         if: failure() && github.event_name == 'workflow_run'
@@ -117,6 +144,8 @@ jobs:
           sha: ${{ github.event.workflow_run.head_sha }}
           status: failure
           context: Deploy to Zeabur
+          description: Failed after ${{ steps.duration.outputs.text }}
+          targetUrl: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
       - name: Notify on failure
         if: failure()

@@ -40,15 +40,15 @@ jobs:
       - name: Authenticate with Zeabur
         env:
           ZEABUR_TOKEN: ${{ secrets.ZEABUR_TOKEN }}
-        run: zeabur auth login --token $ZEABUR_TOKEN
+        run: npx zeabur@latest auth login --token $ZEABUR_TOKEN
 
       - name: Set Zeabur project context
-        run: zeabur context set project --id 682fe22e75f92a6870540c4f -y
+        run: npx zeabur@latest context set project --id 682fe22e75f92a6870540c4f -y
 
       - name: Check if service exists
         id: check
         run: |
-          if zeabur service list 2>/dev/null | grep -q "app"; then
+          if npx zeabur@latest service list 2>/dev/null | grep -q "app"; then
             echo "Service 'app' exists"
             echo "needs_provision=false" >> $GITHUB_OUTPUT
           else
@@ -81,13 +81,13 @@ jobs:
       - name: Authenticate with Zeabur
         env:
           ZEABUR_TOKEN: ${{ secrets.ZEABUR_TOKEN }}
-        run: zeabur auth login --token $ZEABUR_TOKEN --debug
+        run: npx zeabur@latest auth login --token $ZEABUR_TOKEN --debug
 
       - name: Set Zeabur project context
-        run: zeabur context set project --id 682fe22e75f92a6870540c4f -y
+        run: npx zeabur@latest context set project --id 682fe22e75f92a6870540c4f -y
 
       - name: Deploy Docker Image to Zeabur
-        run: zeabur service update tag --id ${{ secrets.ZEABUR_SERVICE_ID }} -t latest -y
+        run: npx zeabur@latest service update tag --id ${{ secrets.ZEABUR_SERVICE_ID }} -t latest -y
 
       - name: Deployment Summary
         if: always()

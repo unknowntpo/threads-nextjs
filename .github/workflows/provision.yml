@@ -46,7 +46,7 @@ jobs:
           ALICE_PASSWORD: ${{ secrets.ALICE_PASSWORD }}
           BOB_PASSWORD: ${{ secrets.BOB_PASSWORD }}
         run: |
-          zeabur variable create --name app \
+          npx zeabur@latest variable create --name app \
             -k DATABASE_URL="$DATABASE_URL" \
             -k NEXTAUTH_SECRET="$NEXTAUTH_SECRET" \
             -k NEXTAUTH_URL="$NEXTAUTH_URL" \
@@ -61,8 +61,8 @@ jobs:
         env:
           ZEABUR_TOKEN: ${{ secrets.ZEABUR_TOKEN }}
         run: |
-          zeabur context set project --id=${{ inputs.project_id }} -y
-          zeabur service list
+          npx zeabur@latest context set project --id=${{ inputs.project_id }} -y
+          npx zeabur@latest service list
 
       - name: Provisioning Summary
         run: |

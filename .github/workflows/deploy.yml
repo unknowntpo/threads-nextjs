@@ -96,8 +96,16 @@ jobs:
       - name: Set Zeabur project context
         run: npx zeabur@latest context set project --id 682fe22e75f92a6870540c4f -y
 
+      - name: Get service ID by name
+        id: service
+        run: |
+          service_list=$(npx zeabur@latest service list)
+          service_id=$(echo "$service_list" | grep app | sed 's/\x1b\[[0-9;]*m//g' | awk '{print $1}')
+          echo "id=$service_id" >> $GITHUB_OUTPUT
+          echo "Service ID for 'app': $service_id"
+
       - name: Deploy Docker Image to Zeabur
-        run: echo "latest" | npx zeabur@latest service update tag --id ${{ secrets.ZEABUR_SERVICE_ID }} -y
+        run: echo "latest" | npx zeabur@latest service update tag --id ${{ steps.service.outputs.id }} -y
 
       - name: Calculate duration
         if: always()

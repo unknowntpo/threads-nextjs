@@ -103,7 +103,7 @@ jobs:
       - name: Authenticate with Zeabur
         env:
           ZEABUR_TOKEN: ${{ secrets.ZEABUR_TOKEN }}
-        run: zeabur auth login --token $ZEABUR_TOKEN
+        run: zeabur auth login --token $ZEABUR_TOKEN --debug
 
       - name: Set Zeabur project context
         run: zeabur context set project --id 682fe22e75f92a6870540c4f -y

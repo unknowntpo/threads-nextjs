@@ -12,43 +12,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  check-provision:
-    name: Check if Provisioning Needed
-    runs-on: ubuntu-latest
-    outputs:
-      needs_provision: ${{ steps.check.outputs.needs_provision }}
-    steps:
-      - name: Install Zeabur CLI
-        run: npm install -g @zeabur/cli
-
-      - name: Authenticate with Zeabur
-        env:
-          ZEABUR_TOKEN: ${{ secrets.ZEABUR_TOKEN }}
-        run: zeabur auth login --token $ZEABUR_TOKEN
-
-      - name: Set Zeabur project context
-        run: zeabur context set project --id 682fe22e75f92a6870540c4f -y
-
-      - name: Check if service exists
-        id: check
-        run: |
-          if zeabur service list 2>/dev/null | grep -q "app"; then
-            echo "Service 'app' exists"
-            echo "needs_provision=false" >> $GITHUB_OUTPUT
-          else
-            echo "Service 'app' not found"
-            echo "needs_provision=true" >> $GITHUB_OUTPUT
-          fi
-
-  provision:
-    name: Provision Zeabur Services
-    needs: check-provision
-    if: needs.check-provision.outputs.needs_provision == 'true'
-    uses: ./.github/workflows/provision.yml
-    with:
-      project_id: '682fe22e75f92a6870540c4f'
-    secrets: inherit
-
   build-docker:
     name: Build and Push Docker Image
     runs-on: ubuntu-latest
@@ -90,10 +53,48 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+  check-provision:
+    name: Check if Provisioning Needed
+    runs-on: ubuntu-latest
+    needs: build-docker
+    outputs:
+      needs_provision: ${{ steps.check.outputs.needs_provision }}
+    steps:
+      - name: Install Zeabur CLI
+        run: npm install -g @zeabur/cli
+
+      - name: Authenticate with Zeabur
+        env:
+          ZEABUR_TOKEN: ${{ secrets.ZEABUR_TOKEN }}
+        run: zeabur auth login --token $ZEABUR_TOKEN
+
+      - name: Set Zeabur project context
+        run: zeabur context set project --id 682fe22e75f92a6870540c4f -y
+
+      - name: Check if service exists
+        id: check
+        run: |
+          if zeabur service list 2>/dev/null | grep -q "app"; then
+            echo "Service 'app' exists"
+            echo "needs_provision=false" >> $GITHUB_OUTPUT
+          else
+            echo "Service 'app' not found"
+            echo "needs_provision=true" >> $GITHUB_OUTPUT
+          fi
+
+  provision:
+    name: Provision Zeabur Services
+    needs: check-provision
+    if: needs.check-provision.outputs.needs_provision == 'true'
+    uses: ./.github/workflows/provision.yml
+    with:
+      project_id: '682fe22e75f92a6870540c4f'
+    secrets: inherit
+
   deploy:
     name: Deploy to Zeabur
     runs-on: ubuntu-latest
-    needs: [check-provision, build-docker, provision]
+    needs: [build-docker, check-provision, provision]
     if: always() && needs.build-docker.result == 'success' && (needs.provision.result == 'success' || needs.provision.result == 'skipped')
 
     steps:

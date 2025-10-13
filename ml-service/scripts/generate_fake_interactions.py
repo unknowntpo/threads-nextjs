@@ -5,6 +5,7 @@ and generates random interactions to simulate user behavior with full type safet
 """
 
 import random
+import argparse
 import sys
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -142,10 +143,7 @@ def generate_interactions(num_interactions: int = 5000, days_back: int = 30) -> 
     finally:
         session.close()
 
-
 if __name__ == "__main__":
-    import argparse
-
     parser = argparse.ArgumentParser(description="Generate fake user interactions with SQLAlchemy")
     parser.add_argument(
         "--count",

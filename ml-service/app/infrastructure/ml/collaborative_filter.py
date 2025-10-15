@@ -1,4 +1,6 @@
 """Collaborative filtering recommendation implementation."""
+import mlflow
+import mlflow.sklearn
 import numpy as np
 from sklearn.neighbors import NearestNeighbors
 
@@ -31,29 +33,54 @@ class CollaborativeFilterRecommender(RecommenderInterface):
         if not self.interactions:
             return
 
-        # Build user-item interaction matrix
-        self.user_ids = sorted(set(i.user_id for i in self.interactions))
-        self.post_ids = sorted(set(i.post_id for i in self.interactions))
+        with mlflow.start_run():
+            # Build user-item interaction matrix
+            self.user_ids = sorted(set(i.user_id for i in self.interactions))
+            self.post_ids = sorted(set(i.post_id for i in self.interactions))
 
-        self.user_id_to_idx = {uid: idx for idx, uid in enumerate(self.user_ids)}
-        self.post_id_to_idx = {pid: idx for idx, pid in enumerate(self.post_ids)}
+            self.user_id_to_idx = {uid: idx for idx, uid in enumerate(self.user_ids)}
+            self.post_id_to_idx = {pid: idx for idx, pid in enumerate(self.post_ids)}
 
-        # Create matrix with weighted interactions
-        self.user_item_matrix = np.zeros((len(self.user_ids), len(self.post_ids)))
+            # Log parameters
+            mlflow.log_param("n_neighbors", self.n_neighbors)
+            mlflow.log_param("n_users", len(self.user_ids))
+            mlflow.log_param("n_posts", len(self.post_ids))
+            mlflow.log_param("n_interactions", len(self.interactions))
+            mlflow.log_param("metric", "cosine")
+            mlflow.log_param("algorithm", "brute")
 
-        for interaction in self.interactions:
-            user_idx = self.user_id_to_idx[interaction.user_id]
-            post_idx = self.post_id_to_idx[interaction.post_id]
-            weight = interaction.get_weight()
-            self.user_item_matrix[user_idx, post_idx] += weight
+            # Create matrix with weighted interactions
+            self.user_item_matrix = np.zeros((len(self.user_ids), len(self.post_ids)))
 
-        # Train KNN model
-        self.model = NearestNeighbors(
-            n_neighbors=min(self.n_neighbors, len(self.user_ids)),
-            metric="cosine",
-            algorithm="brute",
-        )
-        self.model.fit(self.user_item_matrix)
+            for interaction in self.interactions:
+                user_idx = self.user_id_to_idx[interaction.user_id]
+                post_idx = self.post_id_to_idx[interaction.post_id]
+                weight = interaction.get_weight()
+                self.user_item_matrix[user_idx, post_idx] += weight
+
+            # Calculate and log metrics
+            sparsity = 1 - (np.count_nonzero(self.user_item_matrix) / self.user_item_matrix.size)
+            mlflow.log_metric("matrix_sparsity", sparsity)
+
+            avg_interactions_per_user = np.mean(np.sum(self.user_item_matrix > 0, axis=1))
+            mlflow.log_metric("avg_interactions_per_user", float(avg_interactions_per_user))
+
+            avg_interactions_per_post = np.mean(np.sum(self.user_item_matrix > 0, axis=0))
+            mlflow.log_metric("avg_interactions_per_post", float(avg_interactions_per_post))
+
+            # Train KNN model
+            actual_n_neighbors = min(self.n_neighbors, len(self.user_ids))
+            self.model = NearestNeighbors(
+                n_neighbors=actual_n_neighbors,
+                metric="cosine",
+                algorithm="brute",
+            )
+            self.model.fit(self.user_item_matrix)
+
+            mlflow.log_param("actual_n_neighbors", actual_n_neighbors)
+
+            # Log model
+            mlflow.sklearn.log_model(self.model, "knn_model")
 
     async def generate_recommendations(
         self,

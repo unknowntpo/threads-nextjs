@@ -1,13 +1,12 @@
 """End-to-end tests for recommendations API."""
 import pytest
 from httpx import ASGITransport, AsyncClient
+from app.main import app
 
 
 @pytest.mark.asyncio
 async def test_generate_recommendations_endpoint():
     """POST /recommendations/generate should return recommendations."""
-    from app.main import app
-
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.post(
             "/recommendations/generate",
@@ -30,8 +29,6 @@ async def test_generate_recommendations_endpoint():
 @pytest.mark.asyncio
 async def test_generate_recommendations_with_exclude():
     """Should exclude specified post IDs from recommendations."""
-    from app.main import app
-
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.post(
             "/recommendations/generate",
@@ -52,8 +49,6 @@ async def test_generate_recommendations_with_exclude():
 @pytest.mark.asyncio
 async def test_generate_recommendations_validates_limit():
     """Should validate limit parameter bounds."""
-    from app.main import app
-
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         # Test limit too high
         response = await client.post(

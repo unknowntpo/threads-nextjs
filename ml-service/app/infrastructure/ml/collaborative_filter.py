@@ -1,4 +1,5 @@
 """Collaborative filtering recommendation implementation."""
+
 import tempfile
 
 import matplotlib.pyplot as plt
@@ -40,21 +41,11 @@ class CollaborativeFilterRecommender(RecommenderInterface):
 
         with mlflow.start_run():
             # Build user-item interaction matrix
-            self.user_ids = sorted(set(i.user_id for i in self.interactions))
-            self.post_ids = sorted(set(i.post_id for i in self.interactions))
+            self.user_ids = sorted({i.user_id for i in self.interactions})
+            self.post_ids = sorted({i.post_id for i in self.interactions})
 
             self.user_id_to_idx = {uid: idx for idx, uid in enumerate(self.user_ids)}
             self.post_id_to_idx = {pid: idx for idx, pid in enumerate(self.post_ids)}
-            """
-            user: 10 20 30 40
-            
-            user_id_to_idx: {10: 0, 20: 1, 30: 2, 40: 3}
-            post_id_to_idx: {100: 0, 200: 1, 300: 2, 400: 3}
-            
-            
-            
-            
-            """
 
             # Log parameters
             mlflow.log_param("n_neighbors", self.n_neighbors)
@@ -127,11 +118,11 @@ class CollaborativeFilterRecommender(RecommenderInterface):
 
         # Aggregate scores from similar users
         post_scores: dict[str, float] = {}
-        user_interacted_posts = set(
+        user_interacted_posts = {
             self.post_ids[i]
             for i in range(len(self.post_ids))
             if self.user_item_matrix[user_idx, i] > 0
-        )
+        }
 
         for neighbor_idx, distance in zip(indices[0], distances[0], strict=False):
             if neighbor_idx == user_idx:
@@ -195,7 +186,7 @@ class CollaborativeFilterRecommender(RecommenderInterface):
         # Print matrix info
         print("\n=== User-Item Matrix ===")
         print(f"Shape: {self.user_item_matrix.shape} (users x posts)")
-        print(f"\nFirst 10 rows, 10 cols:")
+        print("\nFirst 10 rows, 10 cols:")
         print(df.head(10).select(df.columns[:11]))  # user_id + first 10 posts
 
         # Create heatmap visualization
@@ -249,7 +240,7 @@ class CollaborativeFilterRecommender(RecommenderInterface):
 
         sns.heatmap(
             similarity_matrix,
-            annot=True if n_users_to_plot <= 10 else False,  # Show values if small
+            annot=n_users_to_plot <= 10,  # Show values if small
             fmt=".2f",
             cmap="YlOrRd",
             square=True,
@@ -261,7 +252,9 @@ class CollaborativeFilterRecommender(RecommenderInterface):
             ax=ax,
         )
 
-        ax.set_title(f"User-User Similarity Matrix (Cosine Similarity)\n{n_users_to_plot} users", fontsize=14)
+        ax.set_title(
+            f"User-User Similarity Matrix (Cosine Similarity)\n{n_users_to_plot} users", fontsize=14
+        )
         ax.set_xlabel("Users", fontsize=12)
         ax.set_ylabel("Users", fontsize=12)
 

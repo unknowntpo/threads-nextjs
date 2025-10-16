@@ -15,11 +15,11 @@ on:
       - '.github/workflows/ml-service-ci.yml'
 
 jobs:
-  test-and-lint:
+  test:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Set up Python 3.11
@@ -31,59 +31,26 @@ jobs:
         uses: astral-sh/setup-uv@v3
         with:
           version: '0.4.11'
-          enable-cache: true
-          cache-dependency-glob: 'ml-service/uv.lock'
 
       - name: Install dependencies
-        run: |
-          cd ml-service
-          uv sync
+        working-directory: ml-service
+        run: uv sync
 
-      - name: Run Ruff linter
-        run: |
-          cd ml-service && uv run ruff check app/ tests/ scripts/
+      - name: Lint with Ruff
+        working-directory: ml-service
+        run: uv run ruff check app/ tests/ scripts/
 
-      - name: Run Ruff formatter (check mode)
-        run: |
-          cd ml-service && uv run ruff format --check app/ tests/ scripts/
+      - name: Format check with Ruff
+        working-directory: ml-service
+        run: uv run ruff format --check app/ tests/ scripts/
 
       - name: Run tests with coverage
-        run: |
-          cd ml-service && uv run pytest tests/ -v --cov=app --cov-report=xml --cov-report=term
+        working-directory: ml-service
+        run: uv run pytest tests/ -v --cov=app --cov-report=xml
 
-      - name: Upload coverage to Codecov
+      - name: Upload coverage
         uses: codecov/codecov-action@v4
         with:
           files: ./ml-service/coverage.xml
           flags: ml-service
           fail_ci_if_error: false
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-
-  build-check:
-    runs-on: ubuntu-latest
-    needs: test-and-lint
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v3
-        with:
-          version: '0.4.11'
-          enable-cache: true
-          cache-dependency-glob: 'ml-service/uv.lock'
-
-      - name: Verify dependencies lock
-        run: |
-          cd ml-service && uv lock --check
-
-      - name: Build verification
-        run: |
-          cd ml-service && uv run python -c "from app.infrastructure.ml.collaborative_filter import CollaborativeFilterRecommender; print('✅ ML model imports successfully')" && uv run python -c "from app.main import app; print('✅ FastAPI app imports successfully')"

@@ -1,4 +1,5 @@
 """Pydantic schemas for recommendation API."""
+
 from pydantic import BaseModel, Field
 
 

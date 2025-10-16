@@ -1,4 +1,5 @@
 """FastAPI application entry point."""
+
 from fastapi import FastAPI
 
 from app.presentation.api.routers import recommendations

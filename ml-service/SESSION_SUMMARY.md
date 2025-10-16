@@ -1,18 +1,31 @@
 # ML Recommendation Service Development - Session Summary
 
-**Date**: 2025-10-14
+**Date**: 2025-10-16 (Latest Session)
+**Previous Session**: 2025-10-14
 **Working Directory**: `/Users/unknowntpo/repo/unknowntpo/threads-nextjs/ml-service`
-**Status**: ✅ All tests passing (7/7) - Production-ready for local development
+**Status**: ✅ All tests passing (7/7) - MLflow tracking + Serena MCP integration complete
 
 ---
 
 ## 🎯 Main Achievement
+
+### Session 1 (2025-10-14)
 
 Built a complete **ML-powered feed recommendation service** using:
 
 - **Clean Architecture** (4-layer pattern)
 - **TDD** (Test-Driven Development)
 - **Full Type Safety** (SQLAlchemy 2.0 `Mapped[]` annotations)
+
+### Session 2 (2025-10-16) - Latest
+
+Enhanced ML observability & developer tools:
+
+- ✅ **MLflow Integration**: Experiment tracking with parameters, metrics, and model artifacts
+- ✅ **Matrix Visualization**: Heatmaps for user-item interactions (polars dataframes)
+- ✅ **User Similarity Matrix**: Seaborn correlation-style visualization with cosine similarity
+- ✅ **Controlled Dataset**: Hardcoded user groups (tech, sports, mixed, casual) with clear similarity patterns
+- ✅ **Serena MCP Tools**: Symbolic code analysis for efficient codebase exploration (no full file reads)
 
 ---
 
@@ -485,6 +498,8 @@ uv lock --upgrade
 
 ### ✅ Completed Tasks
 
+**Session 1**:
+
 1. ✅ Set up Python ML service directory structure (Clean Architecture)
 2. ✅ Reference ML docs in plan.md
 3. ✅ Create FastAPI application with health check endpoint
@@ -492,6 +507,8 @@ uv lock --upgrade
 5. ✅ Build simple collaborative filtering recommendation model
 6. ✅ Create ML service recommendation endpoints
 7. ✅ Write documentation and README
+
+**Session 2** (Latest): 8. ✅ Implement MLflow experiment tracking with parameters/metrics/artifacts 9. ✅ Create user-item matrix visualization (heatmap with polars data display) 10. ✅ Build user-user similarity matrix (seaborn correlation-style, cosine similarity) 11. ✅ Create controlled test dataset with hardcoded user groups (clear similarity patterns) 12. ✅ Demonstrate Serena MCP tools (symbolic analysis, references, pattern search) 13. ✅ Refactor test imports to move `app.main` import to top level
 
 ### ⏳ Pending Tasks
 
@@ -587,6 +604,98 @@ unknown field `indent-width`
 **Solution**: Removed unsupported `indent-width` option from `[format]` section
 
 **Result**: Ruff linting works ✅
+
+---
+
+## 🔬 Session 2 Deep Dive: ML Observability & Developer Tools
+
+### MLflow Integration
+
+**What we track**:
+
+```python
+with mlflow.start_run():
+    # Parameters
+    mlflow.log_param("n_neighbors", self.n_neighbors)
+    mlflow.log_param("n_users", len(self.user_ids))
+    mlflow.log_param("n_posts", len(self.post_ids))
+    mlflow.log_param("metric", "cosine")
+
+    # Metrics
+    mlflow.log_metric("matrix_sparsity", sparsity)
+    mlflow.log_metric("avg_interactions_per_user", avg_interactions_per_user)
+    mlflow.log_metric("avg_interactions_per_post", avg_interactions_per_post)
+
+    # Artifacts (visualizations)
+    mlflow.log_artifact("user_item_matrix.png")
+    mlflow.log_artifact("knn_similarity_matrix.png")
+
+    # Model
+    mlflow.sklearn.log_model(self.model, "knn_model")
+```
+
+### Visualization Features Added
+
+**1. User-Item Matrix Heatmap** (`_visualize_matrix()`)
+
+- Shows which users interacted with which posts
+- Weighted by interaction type (view: 0.1, like: 0.7, share: 1.0)
+- Visualizes sparsity patterns
+- Logged to MLflow as artifact
+
+**2. User-User Similarity Matrix** (`_visualize_knn_graph()`)
+
+- Uses `sklearn.metrics.pairwise.cosine_similarity`
+- Seaborn heatmap (NOT NetworkX)
+- Shows which users are most similar
+- Correlations appear as colored blocks
+
+**3. Controlled Dataset for Testing**
+
+- Tech Group (user1-5): overlapping tech interests
+  - user1: python, react, docker
+  - user2: python, react, kubernetes (shares items with user1)
+- Sports Group (user6-10): all like same sports
+- Mixed Group (user11-13): both tech and sports
+- Casual Group (user14-16): minimal interactions
+- Special Users: power users and bridges
+
+**Result**: Clear similarity patterns visible in heatmap
+
+```
+Average user similarity: 0.327
+Min similarity: 0.167
+Max similarity: 1.000
+```
+
+### Serena MCP Tools Demonstration
+
+**Tools Explored**:
+
+1. **`find_symbol`** - Navigate to specific classes/methods
+   - Found CollaborativeFilterRecommender class structure
+   - Explored 5 methods + 8 instance variables
+   - Retrieved just the `train()` method body (lines 35-103)
+
+2. **`find_referencing_symbols`** - Trace where symbols are used
+   - Found 7 usages of CollaborativeFilterRecommender
+   - Includes use cases, tests, and API layers
+   - Shows exact line numbers + code context
+
+3. **`search_for_pattern`** - Pattern matching with regex
+   - Found all MLflow metric logging calls
+   - Filtered to specific files
+   - Included context lines
+
+4. **`get_symbols_overview`** - Explore file structure
+   - Lists top-level symbols without reading full files
+   - Fast navigation for large codebases
+
+**Key Benefit**: Token-efficient exploration
+
+- ✅ Read only `train()` method (~70 lines) instead of 286-line file
+- ✅ Relationship mapping without grepping
+- ✅ Pattern search with context
 
 ---
 
@@ -761,11 +870,34 @@ async def cleanup():
 
 ## 📝 Notes for Future Sessions
 
+### Verification Checklist
+
 1. **Always run tests first**: `uv run pytest` to verify environment
 2. **Check database**: Ensure PostgreSQL is running on port 5433
 3. **Review pending tasks**: See todo list above
 4. **Follow TDD**: Write test first, watch fail, implement, watch pass
 5. **Document decisions**: Update this file with new learnings
+
+### Development Tools
+
+- **Serena MCP**: Use for codebase exploration (symbolic tools are token-efficient)
+  - `find_symbol` - locate specific classes/methods
+  - `find_referencing_symbols` - trace usages
+  - `search_for_pattern` - regex pattern search
+  - `get_symbols_overview` - file structure
+  - Prefer these over reading entire files
+
+- **Claude Haiku**: Fast model ideal for rapid feedback loops
+  - ~3-5x faster than Claude 3.5 Sonnet
+  - Perfect for coding, debugging, tool exploration
+  - Use for iterative development
+
+### MLflow Artifacts Location
+
+- Run `mlflow ui` to view dashboards
+- Artifacts stored in `mlruns/` directory
+- Check visualization artifacts (heatmaps, similarity matrices)
+- Review parameter and metric tracking
 
 ---
 
@@ -784,5 +916,6 @@ When working on this codebase:
 
 **End of Session Summary**
 
-_Last Updated: 2025-10-14_
-_Status: Ready for Next.js integration or Docker Compose setup_
+_Last Updated: 2025-10-16_
+_Session 2 Status: MLflow tracking complete + Serena MCP tools validated_
+_Next Priority: Next.js integration or Docker Compose setup_

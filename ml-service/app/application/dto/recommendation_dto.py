@@ -1,4 +1,5 @@
 """Data Transfer Objects for recommendations."""
+
 from pydantic import BaseModel, Field
 
 

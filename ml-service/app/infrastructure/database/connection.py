@@ -1,4 +1,5 @@
 """Database connection and session management."""
+
 import os
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
@@ -29,9 +30,7 @@ SyncSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=sync_eng
 
 # Async engine for FastAPI
 async_engine = create_async_engine(ASYNC_DATABASE_URL, echo=False, pool_pre_ping=True)
-AsyncSessionLocal = async_sessionmaker(
-    async_engine, class_=AsyncSession, expire_on_commit=False
-)
+AsyncSessionLocal = async_sessionmaker(async_engine, class_=AsyncSession, expire_on_commit=False)
 
 
 def get_sync_session() -> Session:

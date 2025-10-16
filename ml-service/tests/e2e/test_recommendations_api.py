@@ -1,6 +1,8 @@
 """End-to-end tests for recommendations API."""
+
 import pytest
 from httpx import ASGITransport, AsyncClient
+
 from app.main import app
 
 

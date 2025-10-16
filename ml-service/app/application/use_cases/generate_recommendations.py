@@ -1,12 +1,18 @@
 """Generate recommendations use case."""
+
+from typing import TYPE_CHECKING
+
 from app.application.dto.recommendation_dto import (
     GenerateRecommendationsRequest,
     GenerateRecommendationsResponse,
     RecommendationDTO,
 )
 from app.domain.repositories.interaction_repository import InteractionRepository
-from app.domain.services.recommender_interface import RecommenderInterface
 from app.infrastructure.ml.collaborative_filter import CollaborativeFilterRecommender
+
+
+if TYPE_CHECKING:
+    from app.domain.services.recommender_interface import RecommenderInterface
 
 
 class GenerateRecommendationsUseCase:

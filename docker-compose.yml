@@ -34,5 +34,34 @@ services:
       retries: 30
       start_period: 90s
 
+  ml-service:
+    build:
+      context: ./ml-service
+      dockerfile: Dockerfile
+    container_name: threads_ml_service
+    restart: unless-stopped
+    ports:
+      - '8001:8000'
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/threads
+      PYTHONUNBUFFERED: '1'
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'python -c "import socket; socket.create_connection((''localhost'', 8000), timeout=2)" || exit 1',
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    volumes:
+      - ./ml-service:/app
+    networks:
+      - default
+
 volumes:
   postgres_data:

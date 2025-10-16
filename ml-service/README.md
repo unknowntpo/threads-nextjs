@@ -327,19 +327,60 @@ docker run -p 8000:8000 \
   threads-ml-service
 ```
 
-### Docker Compose
+### Docker Compose (Recommended for Local Development)
+
+Run all services at once:
+
+```bash
+# From project root
+docker compose up -d
+
+# Check service status
+docker compose ps
+
+# View logs
+docker compose logs -f ml-service
+docker compose logs -f postgres
+docker compose logs -f keycloak
+
+# Stop all services
+docker compose down -v
+```
+
+**Services Started**:
+
+- **PostgreSQL** (port 5433) - Database for interactions & recommendations
+- **Keycloak** (port 8080) - Authentication service
+- **ML Service** (port 8001) - Recommendation engine
+
+**Health Checks**:
+All services have health checks configured. Check status:
+
+```bash
+# View health status
+docker compose ps
+
+# Test ML Service directly
+curl http://localhost:8001/health
+
+# Test with recommendations
+curl -X POST http://localhost:8001/recommendations/generate \
+  -H "Content-Type: application/json" \
+  -d '{"user_id": "test-user", "limit": 10}'
+```
+
+**Environment Variables** (set in docker-compose.yml):
 
 ```yaml
-services:
-  ml-service:
-    build: ./ml-service
-    ports:
-      - '8000:8000'
-    environment:
-      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/threads
-    depends_on:
-      - postgres
+DATABASE_URL: postgresql://postgres:postgres@postgres:5432/threads
+PYTHONUNBUFFERED: '1' # Real-time logs
 ```
+
+**Development Notes**:
+
+- ML Service volume mounted for live code changes
+- Depends on PostgreSQL health check before starting
+- 30s startup period for dependency initialization
 
 ## Contributing
 

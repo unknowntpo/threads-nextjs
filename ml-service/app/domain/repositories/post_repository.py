@@ -1,4 +1,5 @@
 """Post repository interface (port)."""
+
 from abc import ABC, abstractmethod
 
 from app.domain.entities.post import Post

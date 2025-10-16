@@ -1,4 +1,5 @@
 """Recommender service interface (port)."""
+
 from abc import ABC, abstractmethod
 
 from app.domain.entities.recommendation import Recommendation

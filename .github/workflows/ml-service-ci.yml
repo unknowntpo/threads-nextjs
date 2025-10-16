@@ -1,0 +1,130 @@
+name: ML Service CI
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'ml-service/**'
+      - '.github/workflows/ml-service-ci.yml'
+  pull_request:
+    branches:
+      - master
+    paths:
+      - 'ml-service/**'
+      - '.github/workflows/ml-service-ci.yml'
+
+jobs:
+  test-and-lint:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        python-version: ['3.11']
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Verify Docker installation
+        run: |
+          docker --version
+          docker compose version
+
+      - name: Start Docker Compose services
+        run: docker compose up -d
+
+      - name: Wait for PostgreSQL to be healthy
+        run: |
+          echo "Waiting for PostgreSQL..."
+          timeout 60 sh -c 'until docker inspect --format="{{.State.Health.Status}}" threads_postgres | grep -q healthy; do echo "Waiting for postgres..."; sleep 2; done'
+          echo "PostgreSQL is healthy!"
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+          cache-dependency-glob: 'ml-service/uv.lock'
+
+      - name: Install dependencies
+        run: |
+          cd ml-service
+          uv sync --all-groups
+
+      - name: Initialize database
+        run: |
+          cd ml-service
+          uv run python -c "
+          from app.infrastructure.database.connection import init_db
+          init_db()
+          print('✅ Database tables created')
+          "
+
+      - name: Run Ruff linter
+        run: |
+          cd ml-service
+          uv run ruff check app/ tests/ scripts/
+
+      - name: Run Ruff formatter (check mode)
+        run: |
+          cd ml-service
+          uv run ruff format --check app/ tests/ scripts/
+
+      - name: Run tests with coverage
+        run: |
+          cd ml-service
+          uv run pytest tests/ -v --cov=app --cov-report=xml --cov-report=term
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./ml-service/coverage.xml
+          flags: ml-service
+          fail_ci_if_error: false
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Type check with pyright (optional)
+        run: |
+          cd ml-service
+          uv run pyright app/ || true
+
+      - name: Stop Docker Compose services
+        if: always()
+        run: docker compose down -v
+
+  build-check:
+    runs-on: ubuntu-latest
+    needs: test-and-lint
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+          cache-dependency-glob: 'ml-service/uv.lock'
+
+      - name: Verify dependencies lock
+        run: |
+          cd ml-service
+          uv lock --check
+
+      - name: Build verification
+        run: |
+          cd ml-service
+          # Just verify imports work
+          uv run python -c "from app.infrastructure.ml.collaborative_filter import CollaborativeFilterRecommender; print('✅ ML model imports successfully')"
+          uv run python -c "from app.main import app; print('✅ FastAPI app imports successfully')"

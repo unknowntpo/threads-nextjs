@@ -4,8 +4,8 @@ This script connects to the database using SQLAlchemy, fetches existing users an
 and generates random interactions to simulate user behavior with full type safety.
 """
 
-import random
 import argparse
+import random
 import sys
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -122,13 +122,9 @@ def generate_interactions(num_interactions: int = 5000, days_back: int = 30) -> 
 
         # Get counts with type-safe queries
         view_count = session.query(UserInteraction).filter_by(interaction_type="view").count()
-        click_count = (
-            session.query(UserInteraction).filter_by(interaction_type="click").count()
-        )
+        click_count = session.query(UserInteraction).filter_by(interaction_type="click").count()
         like_count = session.query(UserInteraction).filter_by(interaction_type="like").count()
-        share_count = (
-            session.query(UserInteraction).filter_by(interaction_type="share").count()
-        )
+        share_count = session.query(UserInteraction).filter_by(interaction_type="share").count()
 
         print("\nInteraction statistics:")
         print(f"  view: {view_count}")
@@ -142,6 +138,7 @@ def generate_interactions(num_interactions: int = 5000, days_back: int = 30) -> 
         raise
     finally:
         session.close()
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate fake user interactions with SQLAlchemy")

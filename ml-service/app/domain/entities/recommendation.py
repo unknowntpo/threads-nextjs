@@ -1,4 +1,5 @@
 """Recommendation domain entity."""
+
 from dataclasses import dataclass
 
 

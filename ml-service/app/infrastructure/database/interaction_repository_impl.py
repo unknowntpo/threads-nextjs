@@ -1,4 +1,5 @@
 """Interaction repository implementation using SQLAlchemy."""
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 

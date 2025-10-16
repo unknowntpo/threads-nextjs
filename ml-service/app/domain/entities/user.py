@@ -1,4 +1,5 @@
 """User domain entity."""
+
 from dataclasses import dataclass
 from datetime import datetime
 

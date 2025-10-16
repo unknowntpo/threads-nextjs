@@ -1,4 +1,5 @@
 """Unit tests for collaborative filtering recommender."""
+
 from datetime import datetime
 
 import pytest
@@ -141,7 +142,9 @@ def large_interaction_dataset():
             interaction_id += 1
 
     # Group E: Power user (user17) - interacts with EVERYTHING
-    all_posts = ["python", "react", "docker", "kubernetes", "typescript"] + sports_posts + casual_posts
+    all_posts = (
+        ["python", "react", "docker", "kubernetes", "typescript"] + sports_posts + casual_posts
+    )
     for post in all_posts:
         interactions.append(
             Interaction(

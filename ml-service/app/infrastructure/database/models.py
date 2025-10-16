@@ -1,4 +1,5 @@
 """SQLAlchemy database models matching Prisma schema."""
+
 from datetime import datetime
 from typing import Any
 

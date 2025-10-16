@@ -60,8 +60,8 @@ jobs:
         run: |
           cd ml-service
           uv run python -c "
-          from app.infrastructure.database.connection import get_sync_session, Base, engine
-          Base.metadata.create_all(engine)
+          from app.infrastructure.database.connection import init_db
+          init_db()
           print('✅ Database tables created')
           "
 

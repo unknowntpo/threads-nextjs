@@ -41,18 +41,15 @@ jobs:
 
       - name: Run Ruff linter
         run: |
-          cd ml-service
-          uv run ruff check app/ tests/ scripts/
+          cd ml-service && uv run ruff check app/ tests/ scripts/
 
       - name: Run Ruff formatter (check mode)
         run: |
-          cd ml-service
-          uv run ruff format --check app/ tests/ scripts/
+          cd ml-service && uv run ruff format --check app/ tests/ scripts/
 
       - name: Run tests with coverage
         run: |
-          cd ml-service
-          uv run pytest tests/ -v --cov=app --cov-report=xml --cov-report=term
+          cd ml-service && uv run pytest tests/ -v --cov=app --cov-report=xml --cov-report=term
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
@@ -85,12 +82,8 @@ jobs:
 
       - name: Verify dependencies lock
         run: |
-          cd ml-service
-          uv lock --check
+          cd ml-service && uv lock --check
 
       - name: Build verification
         run: |
-          cd ml-service
-          # Verify imports work
-          uv run python -c "from app.infrastructure.ml.collaborative_filter import CollaborativeFilterRecommender; print('✅ ML model imports successfully')"
-          uv run python -c "from app.main import app; print('✅ FastAPI app imports successfully')"
+          cd ml-service && uv run python -c "from app.infrastructure.ml.collaborative_filter import CollaborativeFilterRecommender; print('✅ ML model imports successfully')" && uv run python -c "from app.main import app; print('✅ FastAPI app imports successfully')"

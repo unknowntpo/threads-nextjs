@@ -1,12 +1,7 @@
 name: ML Service CI
 
 on:
-  push:
-    branches:
-      - master
-    paths:
-      - 'ml-service/**'
-      - '.github/workflows/ml-service-ci.yml'
+  workflow_dispatch:
   pull_request:
     branches:
       - master

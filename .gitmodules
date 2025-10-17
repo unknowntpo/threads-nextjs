@@ -1,0 +1,3 @@
+[submodule "ml-service"]
+	path = ml-service
+	url = git@github.com:unknowntpo/threads-ml.git

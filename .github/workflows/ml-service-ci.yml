@@ -32,21 +32,29 @@ jobs:
         with:
           version: '0.4.11'
 
-      - name: Install dependencies
-        working-directory: ml-service
-        run: uv sync
+      - name: Install ml-service dependencies
+        shell: bash
+        run: |
+          cd ml-service
+          uv sync
 
       - name: Lint with Ruff
-        working-directory: ml-service
-        run: uv run ruff check app/ tests/ scripts/
+        shell: bash
+        run: |
+          cd ml-service
+          uv run ruff check app/ tests/ scripts/
 
       - name: Format check with Ruff
-        working-directory: ml-service
-        run: uv run ruff format --check app/ tests/ scripts/
+        shell: bash
+        run: |
+          cd ml-service
+          uv run ruff format --check app/ tests/ scripts/
 
       - name: Run tests with coverage
-        working-directory: ml-service
-        run: uv run pytest tests/ -v --cov=app --cov-report=xml
+        shell: bash
+        run: |
+          cd ml-service
+          uv run pytest tests/ -v --cov=app --cov-report=xml
 
       - name: Upload coverage
         uses: codecov/codecov-action@v4

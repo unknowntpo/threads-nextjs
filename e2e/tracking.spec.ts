@@ -82,6 +82,9 @@ test.describe('Interaction Tracking', () => {
     // Track share interaction
     await firstPost.getByRole('button').last().click()
 
+    // Wait a bit for share tracking to queue
+    await page.waitForTimeout(500)
+
     // Wait for tracking requests to be batched and sent (5 second batch interval)
     // We'll wait a bit longer to ensure they're flushed
     await page.waitForTimeout(6000)

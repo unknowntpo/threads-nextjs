@@ -76,12 +76,24 @@ test.describe('Interaction Tracking', () => {
     // Wait a bit for like to register
     await page.waitForTimeout(500)
 
+    // Grant clipboard permissions for share tracking
+    await page.context().grantPermissions(['clipboard-write', 'clipboard-read'])
+
     // Track share interaction
     await firstPost.getByRole('button').last().click()
 
     // Wait for tracking requests to be batched and sent (5 second batch interval)
     // We'll wait a bit longer to ensure they're flushed
     await page.waitForTimeout(6000)
+
+    // Force flush the tracking queue by evaluating in browser context
+    await page.evaluate(() => {
+      const win = window as unknown as { trackingService?: { flush?: () => Promise<void> } }
+      return win.trackingService?.flush?.()
+    })
+
+    // Wait a bit for the flush request to complete
+    await page.waitForTimeout(1000)
 
     // Verify interactions were stored in database
     const interactions = await prisma.userInteraction.findMany({

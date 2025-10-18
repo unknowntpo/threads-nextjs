@@ -130,6 +130,11 @@ class TrackingService {
 // Singleton instance
 export const trackingService = new TrackingService()
 
+// Expose to window for E2E testing
+if (typeof window !== 'undefined') {
+  ;(window as unknown as { trackingService: TrackingService }).trackingService = trackingService
+}
+
 /**
  * Track a post view
  */

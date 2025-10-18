@@ -15,6 +15,8 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { formatDistanceToNow } from '@/lib/utils'
 import { useToast } from '@/hooks/use-toast'
+import { usePostViewTracking } from '@/hooks/use-post-tracking'
+import { trackClick, trackLike, trackShare } from '@/lib/utils/tracking'
 
 interface PostCardProps {
   post: PostWithUser
@@ -33,6 +35,14 @@ export function PostCard({
 }: PostCardProps) {
   const isOwner = currentUserId === post.userId
   const { toast } = useToast()
+
+  // Track post views
+  const postRef = usePostViewTracking({
+    postId: post.id,
+    threshold: 0.5,
+    minDuration: 1000,
+    source: 'feed',
+  })
 
   const [isLiked, setIsLiked] = useState(post.isLikedByUser || false)
   const [likeCount, setLikeCount] = useState(post._count?.likes || 0)
@@ -77,6 +87,11 @@ export function PostCard({
 
       if (!response.ok) {
         throw new Error('Failed to toggle like')
+      }
+
+      // Track like interaction (only on like, not unlike)
+      if (!previousLiked) {
+        trackLike(post.id, { source: 'feed' })
       }
 
       onInteractionChange?.()
@@ -143,6 +158,9 @@ export function PostCard({
       await navigator.clipboard.writeText(shareUrl)
       setLinkCopied(true)
 
+      // Track share interaction
+      trackShare(post.id, { source: 'feed', method: 'clipboard' })
+
       toast({
         title: 'Success',
         description: 'Link copied to clipboard',
@@ -156,6 +174,11 @@ export function PostCard({
         variant: 'destructive',
       })
     }
+  }
+
+  const handlePostClick = () => {
+    // Track click interaction on post content
+    trackClick(post.id, { source: 'feed' })
   }
 
   const handleCommentButtonClick = async () => {
@@ -224,7 +247,7 @@ export function PostCard({
   }
 
   return (
-    <Card className="w-full" data-testid="post-card">
+    <Card className="w-full" data-testid="post-card" ref={postRef}>
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
@@ -270,7 +293,11 @@ export function PostCard({
       </CardHeader>
 
       <CardContent className="pt-0">
-        <p className="whitespace-pre-wrap text-sm" data-testid="post-content">
+        <p
+          className="cursor-pointer whitespace-pre-wrap text-sm"
+          data-testid="post-content"
+          onClick={handlePostClick}
+        >
           {post.content}
         </p>
 

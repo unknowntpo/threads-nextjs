@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { logger } from '@/lib/logger'
 import { auth } from '@/auth'
 import { FeedRepository } from '@/lib/repositories/feed.repository'
+import { mlServiceClient } from '@/lib/services/ml-service'
 
 const feedRepo = new FeedRepository()
 
@@ -60,8 +61,51 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Fetch random posts with interaction counts (Phase 1 implementation)
-    const posts = await feedRepo.fetchRandomPostsWithCounts(session.user.id, limit, offset)
+    // Phase 2: Try ML recommendations first, fallback to random
+    let posts = []
+    let source = 'random'
+    let mlRecommendations = null
+
+    // Try to get ML recommendations
+    try {
+      mlRecommendations = await mlServiceClient.generateRecommendations(
+        session.user.id,
+        limit,
+        [] // exclude_post_ids - can be populated from query params in future
+      )
+    } catch (error) {
+      logger.error('Failed to fetch ML recommendations', { error })
+    }
+
+    if (mlRecommendations && mlRecommendations.count > 0) {
+      // ML recommendations available - fetch post details
+      source = 'ml_recommendations'
+      const postIds = mlRecommendations.recommendations.map(r => r.post_id)
+
+      // Fetch posts with counts for recommended post IDs
+      const allPosts = await feedRepo.fetchRandomPostsWithCounts(session.user.id, 500, 0)
+
+      // Filter and order by ML recommendations
+      const postMap = new Map(allPosts.map(p => [p.id, p]))
+      posts = postIds
+        .map(id => postMap.get(id))
+        .filter(p => p !== undefined)
+        .slice(offset, offset + limit)
+
+      logger.info('Using ML recommendations', {
+        userId: session.user.id,
+        mlCount: mlRecommendations.count,
+        postsFound: posts.length,
+        modelVersion: mlRecommendations.model_version,
+      })
+    } else {
+      // Fallback to random posts
+      posts = await feedRepo.fetchRandomPostsWithCounts(session.user.id, limit, offset)
+      logger.info('Using random fallback', {
+        userId: session.user.id,
+        reason: mlRecommendations ? 'no_recommendations' : 'ml_service_unavailable',
+      })
+    }
 
     // Calculate duration for logging
     const duration = Date.now() - startTime
@@ -74,7 +118,8 @@ export async function GET(request: NextRequest) {
         total: posts.length,
         offset,
         limit,
-        source: 'random', // Phase 1: always random
+        source, // 'ml_recommendations' or 'random'
+        modelVersion: mlRecommendations?.model_version,
         generatedAt: new Date().toISOString(),
       },
     })

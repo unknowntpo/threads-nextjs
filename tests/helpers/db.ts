@@ -5,6 +5,8 @@ import { prisma } from '@/lib/prisma'
  */
 export async function cleanupDatabase() {
   // Delete in reverse order of dependencies
+  await prisma.userRecommendation.deleteMany()
+  await prisma.userInteraction.deleteMany()
   await prisma.notification.deleteMany()
   await prisma.comment.deleteMany()
   await prisma.like.deleteMany()

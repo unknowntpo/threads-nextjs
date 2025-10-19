@@ -1,4 +1,4 @@
-# Threads clone with Supabase backend
+# Threads clone
 
 Reference: https://www.threads.com
 
@@ -10,75 +10,6 @@ Framework:
 - PostgreSQL
 - Prisma ORM
 - NextAuth (or custom JWT auth)
-
-**Migration Note:** Originally built with Supabase, now migrating to plain PostgreSQL + Prisma for simpler development and better control. See Epic #15 for migration details.
-
-## Database Schema
-
-```sql
--- Users table (with built-in auth)
-users (
-  id: uuid PRIMARY KEY,
-  email: varchar unique,
-  password_hash: varchar,
-  username: varchar unique,
-  display_name: varchar,
-  bio: text,
-  avatar_url: text,
-  created_at: timestamp,
-  updated_at: timestamp
-)
-
--- Posts table
-posts (
-  id: uuid PRIMARY KEY,
-  user_id: uuid (FK users.id),
-  content: text,
-  media_urls: text[],
-  original_post_id: uuid NULL (FK posts.id), -- For reposts
-  created_at: timestamp,
-  updated_at: timestamp
-)
-
--- Follows relationship
-follows (
-  id: uuid PRIMARY KEY,
-  follower_id: uuid (FK users.id),
-  following_id: uuid (FK users.id),
-  created_at: timestamp,
-  UNIQUE(follower_id, following_id)
-)
-
--- Likes
-likes (
-  id: uuid PRIMARY KEY,
-  user_id: uuid (FK users.id),
-  post_id: uuid (FK posts.id),
-  created_at: timestamp,
-  UNIQUE(user_id, post_id)
-)
-
--- Comments
-comments (
-  id: uuid PRIMARY KEY,
-  user_id: uuid (FK users.id),
-  post_id: uuid (FK posts.id),
-  content: text,
-  created_at: timestamp,
-  updated_at: timestamp
-)
-
--- Notifications
-notifications (
-  id: uuid PRIMARY KEY,
-  user_id: uuid (FK users.id),
-  type: varchar, -- 'new_post', 'like', 'comment', 'follow'
-  related_user_id: uuid (FK users.id),
-  related_post_id: uuid (FK posts.id) NULL,
-  read: boolean DEFAULT false,
-  created_at: timestamp
-)
-```
 
 ## Features Implementation
 
@@ -492,155 +423,32 @@ Each MVP should be:
 
 ---
 
-## Phase 2: ML-Powered Personalized Feed 🎯
+## Phase 2: ML-Powered Personalized Feed ✅ CORE COMPLETE
 
-**Epic:** Build complete MLOps cycle for ML-based recommendation system (Local Development Only)
+**Status:** Core integration complete, advanced features pending
 
-**Documentation:** See `docs/ML_RECOMMENDATION_SYSTEM.md` for complete architecture with Mermaid diagrams
+**Documentation:**
 
-**Goal:** Demonstrate end-to-end ML recommendation pipeline with fake data using modern Python tooling
+- Architecture: `docs/ML_RECOMMENDATION_SYSTEM.md`
+- Implementation Phases: `docs/ML_IMPLEMENTATION_PHASES.md`
+- Tracking System: `docs/TRACKING_SYSTEM.md`
 
-**Technology Stack:**
+**What's Complete:**
 
-- **Python:** uv (package manager), Ruff (linter/formatter), FastAPI, scikit-learn
-- **Model:** Collaborative Filtering with Content Boosting
-- **Deployment:** Docker Compose (local only, no production deployment yet)
+- ✅ FastAPI ML service with collaborative filtering
+- ✅ Interaction tracking API (view, click, like, share)
+- ✅ Next.js integration with fallback to random
+- ✅ Client-side batching (95% API call reduction)
+- ✅ Comprehensive test coverage (9/9 unit tests)
 
-**Deliverable:**
+**What's Pending:**
 
-- FastAPI ML service with recommendation endpoints
-- Fake user interaction data generation
-- Collaborative filtering model training pipeline
-- Next.js integration with fallback to random feed
-- Complete MLOps cycle (data → train → evaluate → serve)
-- CI/CD pipeline for ML service
+- ⏳ Docker Compose setup
+- ⏳ Production deployment
+- ⏳ Model retraining pipeline
+- ⏳ Advanced monitoring
 
-**Effort Estimate:** ~40-60 hours (focused on local demo, not production)
-
-### Database Schema Changes
-
-**New Tables:**
-
-```sql
--- User interaction events
-CREATE TABLE user_interactions (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID NOT NULL REFERENCES users(id),
-  post_id UUID NOT NULL REFERENCES posts(id),
-  interaction_type VARCHAR(20) NOT NULL, -- 'view', 'click', 'like', 'share'
-  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-  metadata JSONB,
-
-  INDEX idx_user_interactions_user_id (user_id),
-  INDEX idx_user_interactions_post_id (post_id),
-  INDEX idx_user_interactions_created_at (created_at)
-);
-
--- Pre-computed recommendations
-CREATE TABLE user_recommendations (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID NOT NULL REFERENCES users(id),
-  post_id UUID NOT NULL REFERENCES posts(id),
-  score FLOAT NOT NULL,
-  generated_at TIMESTAMP NOT NULL DEFAULT NOW(),
-  expires_at TIMESTAMP NOT NULL,
-
-  UNIQUE(user_id, post_id)
-);
-
--- Optimized indexes for fast recommendation queries
-CREATE INDEX idx_user_reco_user_score ON user_recommendations(user_id, score DESC);
-CREATE INDEX idx_user_reco_active ON user_recommendations(user_id, expires_at) WHERE expires_at > NOW();
-CREATE INDEX idx_user_reco_cleanup ON user_recommendations(expires_at) WHERE expires_at <= NOW();
-```
-
-### Implementation Phases
-
-**Phase 2.1: Database Migrations (4h)**
-
-- [ ] Create Prisma migrations for new tables
-- [ ] Add optimized indexes
-- [ ] Test migrations locally
-- [ ] Deploy migrations to Zeabur
-
-**Phase 2.2: Interaction Tracking API (8h)**
-
-- [ ] Create `POST /api/track` endpoint
-- [ ] Implement client-side tracking for views/clicks
-- [ ] Add event batching for performance
-- [ ] Test tracking with real user interactions
-
-**Phase 2.3: Dagster Setup (16h)**
-
-- [ ] Set up Dagster Docker container
-- [ ] Configure PostgreSQL resource
-- [ ] Create basic pipeline structure
-- [ ] Set up daily schedule (2AM UTC)
-- [ ] Add monitoring and alerts
-
-**Phase 2.4: ML Model Development (40h)**
-
-- [ ] Choose ML approach (collaborative filtering vs hybrid)
-- [ ] Implement feature extraction
-- [ ] Build scoring model
-- [ ] Handle cold start for new users
-- [ ] Test model accuracy offline
-
-**Phase 2.5: Pipeline Integration (20h)**
-
-- [ ] Implement batch recommendation generation
-- [ ] Add expired recommendation cleanup
-- [ ] Optimize PostgreSQL queries
-- [ ] Test pipeline end-to-end
-
-**Phase 2.6: PostgreSQL Optimization (6h)**
-
-- [ ] Add connection pooling (pgBouncer)
-- [ ] Configure query performance monitoring
-- [ ] Test recommendation query latency (<100ms p95)
-- [ ] Consider read replicas if needed
-
-**Phase 2.7: API Updates (8h)**
-
-- [ ] Update `GET /api/feeds` to query recommendations
-- [ ] Implement fallback to random posts
-- [ ] Add metadata (source: ml_recommendations vs random_fallback)
-- [ ] Test API performance
-
-**Phase 2.8: Monitoring & Alerts (14h)**
-
-- [ ] Set up Dagster pipeline monitoring
-- [ ] Add PostgreSQL query metrics
-- [ ] Create alerts for pipeline failures
-- [ ] Dashboard for recommendation quality
-
-**Phase 2.9: Testing & Validation (24h)**
-
-- [ ] Unit tests for recommendation logic
-- [ ] Integration tests for Dagster pipeline
-- [ ] E2E tests for tracking and feed API
-- [ ] Performance testing
-- [ ] User acceptance testing
-
-**Total:** ~132 hours
-
-### Success Metrics
-
-- ⚡ Recommendation query latency < 100ms (p95)
-- 🎯 Pipeline success rate > 99%
-- 🔄 Recommendations refresh daily
-- 📊 PostgreSQL query performance tracked
-- 📈 User engagement +20% (target)
-- 📈 Click-through rate +15% (target)
-
-### Architecture Benefits (PostgreSQL-only)
-
-- ✅ No Redis deployment or management overhead
-- ✅ Single source of truth (PostgreSQL only)
-- ✅ Reduced operational complexity
-- ✅ Lower infrastructure costs
-
-**Status:** 📋 Planning - Ready to start implementation
+**See `docs/ML_IMPLEMENTATION_PHASES.md` for detailed tracking.**
 
 ---
 

@@ -180,7 +180,7 @@ Framework:
 - [x] Test image locally before deployment
       **Test:** Git tag triggers automated Docker build with proper version tags
 
-### MVP 4: PostgreSQL + Prisma Migration & DevOps Setup 🚧
+### MVP 4: PostgreSQL + Prisma Migration & DevOps Setup ✅
 
 **Goal:** Migrate to PostgreSQL + Prisma with complete development tooling and deployment
 **Deliverable:** Live application on Zeabur with professional development workflow
@@ -193,12 +193,12 @@ Framework:
 
 **Phase 1: Database & Auth Migration**
 
-- [ ] Set up PostgreSQL with Docker Compose locally
-- [ ] Initialize Prisma with schema
-- [ ] Migrate existing schema to Prisma
-- [ ] Implement NextAuth or custom JWT auth
-- [ ] Replace all Supabase client calls with Prisma
-- [ ] Update middleware for new auth
+- [x] Set up PostgreSQL with Docker Compose locally
+- [x] Initialize Prisma with schema
+- [x] Migrate existing schema to Prisma
+- [x] Implement NextAuth or custom JWT auth
+- [x] Replace all Supabase client calls with Prisma
+- [x] Update middleware for new auth
 
 **Phase 2: Development Tooling**
 
@@ -210,28 +210,27 @@ Framework:
 
 **Phase 3: Testing Updates**
 
-- [ ] Update Vitest integration tests for Prisma
-- [ ] Update E2E tests for new auth
-- [ ] Add Prisma test database setup/teardown
-- [ ] Ensure all tests pass locally
+- [x] Update Vitest integration tests for Prisma
+- [x] Update E2E tests for new auth
+- [x] Add Prisma test database setup/teardown
+- [x] Ensure all tests pass locally
 
 **Phase 4: CI/CD Pipeline**
 
-- [ ] Add Prisma generate step to CI
-- [ ] Add linter check to CI
-- [ ] Add Prisma migration check to CI
-- [ ] Run unit + E2E tests in CI
-- [ ] Build Docker image on merge
+- [x] Add Prisma generate step to CI
+- [x] Add linter check to CI
+- [x] Add Prisma migration check to CI
+- [x] Run unit + E2E tests in CI
+- [x] Build Docker image on merge
 
 **Phase 5: Zeabur Deployment**
 
-- [ ] Create Zeabur project
-- [ ] Add PostgreSQL service in Zeabur
-- [ ] Configure environment variables
-- [ ] Deploy application
-- [ ] Run Prisma migrations in production
-- [ ] Verify live application works
-- [ ] Set up custom domain (optional)
+- [x] Create Zeabur project
+- [x] Add PostgreSQL service in Zeabur
+- [x] Configure environment variables
+- [x] Deploy application
+- [x] Run Prisma migrations in production
+- [x] Verify live application works
 
 **Test:**
 
@@ -248,9 +247,9 @@ Framework:
 **Database:** Add `follows` table
 **Frontend:**
 
-- [ ] User search and profile pages
-- [ ] Follow/unfollow buttons
-- [ ] Timeline showing followed users' posts
+- [x] User search and profile pages
+- [x] Follow/unfollow buttons
+- [x] Timeline showing followed users' posts
       **Test:** User can follow others and see their posts in timeline
 
 ### MVP 6: Basic Interactions ✅
@@ -429,7 +428,7 @@ Each MVP should be:
 
 **Documentation:**
 
-- Architecture: `docs/ML_RECOMMENDATION_SYSTEM.md`
+- Architecture: @docs `docs/ML_RECOMMENDATION_SYSTEM.md`
 - Implementation Phases: `docs/ML_IMPLEMENTATION_PHASES.md`
 - Tracking System: `docs/TRACKING_SYSTEM.md`
 

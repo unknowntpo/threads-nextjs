@@ -51,3 +51,6 @@ next-env.d.ts
 /lib/generated/prisma
 graph.svg
 zeabur-deploy.yaml
+
+# LLM agents
+**/.agents

@@ -267,12 +267,80 @@ Framework:
 - [x] Toast notifications for all interactions
       **Test:** ✅ User can like, repost, and share posts. Comments API ready.
 
-### MVP 7: Notification System 🔔
+### MVP 7: ML-Powered Personalized Feed ✅ CORE COMPLETE
+
+**Goal:** Build complete MLOps cycle for ML-based recommendation system
+**Deliverable:** ML service with collaborative filtering integrated into Next.js feed
+**Status:** Core integration complete, advanced features pending
+
+**Documentation:**
+
+- Architecture: [ML_RECOMMENDATION_SYSTEM.md](docs/ML_RECOMMENDATION_SYSTEM.md)
+- Implementation Phases: [ML_IMPLEMENTATION_PHASES.md](docs/ML_IMPLEMENTATION_PHASES.md)
+- Tracking System: [TRACKING_SYSTEM.md](docs/TRACKING_SYSTEM.md)
+
+**What's Complete:**
+
+- ✅ FastAPI ML service with collaborative filtering
+- ✅ Database migrations (user_interactions, user_recommendations tables)
+- ✅ Interaction tracking API (view, click, like, share)
+- ✅ Client-side batching (95% API call reduction)
+- ✅ Next.js integration with fallback to random
+- ✅ Comprehensive test coverage (9/9 unit tests, 2/3 E2E)
+
+**What's Pending:**
+
+- ⏳ Docker Compose setup
+- ⏳ Production deployment
+- ⏳ Model retraining pipeline
+- ⏳ Advanced monitoring
+
+**Backend:**
+
+- [x] `POST /api/track` - Interaction tracking (single + batch)
+- [x] `GET /api/feeds` - ML recommendations with fallback
+- [x] Prisma migrations for user_interactions, user_recommendations
+- [ ] Dagster pipeline setup (may skip for simpler cron approach)
+- [ ] PostgreSQL optimization (pgBouncer, read replicas)
+
+**Frontend:**
+
+- [x] `usePostViewTracking()` - Intersection Observer based view tracking
+- [x] `trackingService` - Auto-batching (5s interval, max 20 items)
+- [x] Component integration in PostCard
+- [ ] Monitoring dashboard for tracking metrics
+
+**ML Service:**
+
+- [x] User-based collaborative filtering (KNN with cosine similarity)
+- [x] `/api/recommendations/{user_id}` endpoint
+- [x] MLflow experiment tracking
+- [x] Cold start handling
+- [ ] Model retraining automation
+- [ ] Performance optimization (caching, batch processing)
+
+**Test:**
+
+1. ✅ User interactions tracked (view, click, like, share)
+2. ✅ Tracking batched efficiently (95% API call reduction)
+3. ✅ ML recommendations returned for active users
+4. ✅ Fallback to random when ML unavailable
+5. ⏳ E2E test coverage (2/3 passing, 1 flaky skipped)
+
+**Effort Estimate:** ~132 hours (estimated) / ~20 hours (actual core work)
+
+**Status:** ✅ Core MVP complete, production deployment pending
+
+**See [ML_IMPLEMENTATION_PHASES.md](docs/ML_IMPLEMENTATION_PHASES.md) for detailed tracking.**
+
+---
+
+### MVP 8: Notification System 🔔
 
 **Goal:** Users receive notifications for social interactions
 **Deliverable:** Real-time notification system for likes, comments, reposts, and mentions
 **Database:** `notifications` table (already exists in schema)
-**Priority:** High - Essential for user engagement before ML recommendations
+**Priority:** High - Essential for user engagement
 
 **Backend:**
 
@@ -326,7 +394,7 @@ Framework:
 
 ---
 
-### MVP 8: Enhanced Features
+### MVP 9: Enhanced Features
 
 **Goal:** Polish and advanced features
 **Deliverable:** Production-ready app with rich media and mentions
@@ -399,55 +467,26 @@ Each MVP should be:
 
 ---
 
-## Current Status: MVP 6 Completed ✅
+## Current Status: MVP 7 Completed ✅
 
 **What's Working:**
 
 - ✅ Authentication (NextAuth with credentials, Google, GitHub)
 - ✅ Post creation and display
-- ✅ Personalized feed (Phase 1: Random with Fisher-Yates shuffle)
 - ✅ Social interactions (Like, Comment, Repost, Share)
+- ✅ ML-powered personalized feed (collaborative filtering)
+- ✅ Interaction tracking (view, click, like, share)
 - ✅ Full CI/CD pipeline with tests
 - ✅ Deployed on Zeabur
 
-**Next Phase:** MVP 7 - Notification System 🔔
+**Next Phase:** MVP 8 - Notification System 🔔
 
-**Why Notifications First:**
+**Why Notifications Next:**
 
 - Essential for user engagement and retention
 - Users need to know when others interact with their content
 - Foundation for building an active community
-- Lower complexity than ML recommendations (~16-24h vs ~132h)
-- ML recommendations will be more valuable with active users receiving notifications
-
----
-
-## Phase 2: ML-Powered Personalized Feed ✅ CORE COMPLETE
-
-**Status:** Core integration complete, advanced features pending
-
-**Documentation:**
-
-- Architecture: @docs `docs/ML_RECOMMENDATION_SYSTEM.md`
-- Implementation Phases: `docs/ML_IMPLEMENTATION_PHASES.md`
-- Tracking System: `docs/TRACKING_SYSTEM.md`
-
-**What's Complete:**
-
-- ✅ FastAPI ML service with collaborative filtering
-- ✅ Interaction tracking API (view, click, like, share)
-- ✅ Next.js integration with fallback to random
-- ✅ Client-side batching (95% API call reduction)
-- ✅ Comprehensive test coverage (9/9 unit tests)
-
-**What's Pending:**
-
-- ⏳ Docker Compose setup
-- ⏳ Production deployment
-- ⏳ Model retraining pipeline
-- ⏳ Advanced monitoring
-
-**See `docs/ML_IMPLEMENTATION_PHASES.md` for detailed tracking.**
+- Complements ML recommendations (users get notified about relevant interactions)
 
 ---
 

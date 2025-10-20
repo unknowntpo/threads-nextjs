@@ -335,6 +335,51 @@ Framework:
 
 ---
 
+### MVP 7.5: Dagster + Ollama Fake User Simulation 🤖
+
+**Goal:** Automate realistic user behavior simulation for ML training data
+**Deliverable:** Dagster-orchestrated fake users generating interest-based posts and interactions
+**Status:** 📋 Planned
+**Priority:** Medium - Enhances ML model training with realistic data
+
+**Documentation:** [DAGSTER_FAKE_USER_SIMULATION.md](docs/DAGSTER_FAKE_USER_SIMULATION.md)
+
+**Architecture:**
+
+- Dagster orchestration (continuous 1-min + manual triggers)
+- Ollama LLM (Gemma 3 270M) for content generation
+- 5-10 fake users with interests (sports, tech, anime, cars, food)
+- Docker Compose integration (all services in one place)
+
+**Components:**
+
+- **LLM Service** (`app/infrastructure/llm/ollama_service.py`)
+  - Generate posts, comments based on interest
+  - Interest-based interaction matching
+- **Fake User Factory** (`app/domain/factories/fake_user_factory.py`)
+  - Create users with "FAKE_USER" bio marker
+  - No schema changes (uses existing Prisma tables)
+- **Dagster Assets**
+  - `fake_users` - Ensure 5-10 bots exist
+  - `generated_posts` - Create posts every 1 min
+  - `simulated_interactions` - Generate likes, views, comments
+- **Docker Services**
+  - Ollama (auto-pulls gemma3:270m on startup)
+  - Dagster webserver (UI at :3000)
+
+**Test:**
+
+1. ✅ All services start via `docker-compose up`
+2. ✅ Fake users created with bio marker
+3. ✅ Posts generated every 1 min
+4. ✅ Interactions match user interests
+5. ✅ Manual trigger from Dagster UI works
+6. ✅ ML model trains on synthetic data
+
+**Effort Estimate:** ~16-24 hours
+
+---
+
 ### MVP 8: Notification System 🔔
 
 **Goal:** Users receive notifications for social interactions

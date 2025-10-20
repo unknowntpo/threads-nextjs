@@ -1,0 +1,2 @@
+DATABASE_URL="postgresql://root:ov4kZqAL05rUHfc8w691NnizTPb3Ex27@43.128.107.86:31664/threads" pnpm
+   prisma migrate reset --force

@@ -98,6 +98,7 @@ services:
       - '3001:3001'
     environment:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/threads
+      DAGSTER_DATABASE_URL: postgresql://postgres:postgres@postgres:5432/dagster
       OLLAMA_BASE_URL: http://ollama:11434
       DAGSTER_HOME: /app/dagster_home
     depends_on:
@@ -131,6 +132,7 @@ services:
     restart: unless-stopped
     environment:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/threads
+      DAGSTER_DATABASE_URL: postgresql://postgres:postgres@postgres:5432/dagster
       OLLAMA_BASE_URL: http://ollama:11434
       DAGSTER_HOME: /app/dagster_home
     depends_on:

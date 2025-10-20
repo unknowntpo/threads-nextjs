@@ -63,5 +63,92 @@ services:
     networks:
       - default
 
+  ollama:
+    image: ollama/ollama:latest
+    container_name: threads_ollama
+    restart: unless-stopped
+    ports:
+      - '11434:11434'
+    volumes:
+      - ollama_data:/root/.ollama
+    healthcheck:
+      test: ['CMD', 'ollama', 'list']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    # Auto-pull Gemma model on startup
+    entrypoint: >
+      sh -c "
+        ollama serve &
+        OLLAMA_PID=$$!
+        sleep 5
+        ollama pull gemma3:270m
+        wait $$OLLAMA_PID
+      "
+    networks:
+      - default
+
+  dagster_webserver:
+    build:
+      context: ./ml-service
+      dockerfile: Dockerfile.dagster
+    container_name: threads_dagster_webserver
+    restart: unless-stopped
+    ports:
+      - '3001:3001'
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/threads
+      OLLAMA_BASE_URL: http://ollama:11434
+      DAGSTER_HOME: /app/dagster_home
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - dagster_data:/app/dagster_home
+    entrypoint:
+      - uv
+      - run
+      - dagster-webserver
+      - -h
+      - 0.0.0.0
+      - -p
+      - '3001'
+      - -w
+      - /app/workspace.yaml
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:3001/server_info']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - default
+
+  dagster_daemon:
+    build:
+      context: ./ml-service
+      dockerfile: Dockerfile.dagster
+    container_name: threads_dagster_daemon
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/threads
+      OLLAMA_BASE_URL: http://ollama:11434
+      DAGSTER_HOME: /app/dagster_home
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ollama:
+        condition: service_healthy
+    volumes:
+      - dagster_data:/app/dagster_home
+    entrypoint:
+      - uv
+      - run
+      - dagster-daemon
+      - run
+    networks:
+      - default
+
 volumes:
   postgres_data:
+  ollama_data:
+  dagster_data:

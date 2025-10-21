@@ -14,10 +14,10 @@ services:
       sh -c 'cat <<'\''EOF'\'' | sh
       #!/bin/sh
       docker-entrypoint.sh postgres &
-      PID=$$!
-      until pg_isready -U $${POSTGRES_USER} -h localhost; do sleep 1; done
-      psql -U $${POSTGRES_USER} -d $${POSTGRES_DB} -c "CREATE DATABASE dagster" 2>/dev/null || true
-      wait $$PID
+      PID=$!
+      until pg_isready -U ${POSTGRES_USER} -h localhost; do sleep 1; done
+      psql -U ${POSTGRES_USER} -d ${POSTGRES_DB} -c "CREATE DATABASE dagster" 2>/dev/null || true
+      wait $PID
       EOF
       '
     healthcheck:

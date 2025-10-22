@@ -35,7 +35,6 @@ resource "google_project_service" "required_apis" {
   for_each = toset([
     "compute.googleapis.com",
     "run.googleapis.com",
-    "artifactregistry.googleapis.com",
     "secretmanager.googleapis.com",
     "cloudresourcemanager.googleapis.com",
     "iam.googleapis.com",

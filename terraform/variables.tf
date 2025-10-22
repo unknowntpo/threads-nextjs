@@ -33,13 +33,13 @@ variable "env" {
 variable "nextjs_image" {
   description = "Next.js Docker image URL"
   type        = string
-  default     = "us-east1-docker.pkg.dev/PROJECT_ID/threads-nextjs/nextjs:latest"
+  default     = "ghcr.io/unknowntpo/threads-nextjs:latest"
 }
 
 variable "ml_service_image" {
   description = "ML service Docker image URL"
   type        = string
-  default     = "us-east1-docker.pkg.dev/PROJECT_ID/threads-nextjs/ml-service:latest"
+  default     = "ghcr.io/unknowntpo/threads-ml:latest"
 }
 
 # Database Credentials

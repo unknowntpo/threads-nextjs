@@ -380,6 +380,158 @@ Framework:
 
 ---
 
+### MVP 7.7: GCP Deployment with Terraform 🚀
+
+**Goal:** Deploy entire application stack to GCP using Infrastructure as Code
+**Deliverable:** Production-ready GCP deployment with Terraform, maximizing free tier
+**Status:** 📋 Planned
+**Priority:** High - Required for cost optimization and production deployment
+
+**Documentation:** [GCP_DEPLOYMENT.md](docs/GCP_DEPLOYMENT.md) (to be created)
+
+**Architecture:**
+
+```
+Terraform-managed GCP Resources (us-east1)
+├── VPC & Networking
+│   ├── Custom VPC network
+│   ├── Firewall rules (PostgreSQL :5432, Dagster :3001)
+│   └── Cloud NAT (for VM egress)
+├── Compute Engine e2-micro (always-free tier)
+│   ├── PostgreSQL 16 (threads + dagster databases)
+│   ├── Dagster daemon (job orchestration)
+│   ├── Dagster webserver (:3001)
+│   └── Ollama service (:11434) - if fits in 1GB RAM
+├── Cloud Run Services (2M requests/mo free)
+│   ├── nextjs-app (Next.js 15 application)
+│   └── ml-service (FastAPI collaborative filtering)
+├── Secret Manager
+│   ├── Database credentials
+│   ├── NextAuth secrets
+│   └── OAuth credentials
+└── Artifact Registry
+    └── Docker images (nextjs, ml-service)
+```
+
+**Free Tier Optimization:**
+
+- **Compute Engine:** 1x e2-micro (us-east1) - always free
+  - 0.25-0.5 vCPU, 1 GB RAM
+  - 30 GB standard persistent disk
+  - Hosts: PostgreSQL, Dagster daemon, Dagster webserver
+- **Cloud Run:** 2M requests/mo, 360K GB-seconds, 180K vCPU-seconds - free
+  - Next.js app (serverless, auto-scaling)
+  - ML service (serverless, auto-scaling)
+- **Networking:** 1 GB egress/mo (North America) - free
+- **Secret Manager:** 6 active secrets - free
+- **Artifact Registry:** 0.5 GB storage - free
+
+**Infrastructure as Code (Terraform):**
+
+- [x] Terraform project structure (`terraform/`)
+- [ ] State backend (GCS bucket with versioning)
+- [ ] VPC and networking resources
+- [ ] Compute Engine VM with startup script
+- [ ] Cloud Run services (Next.js + ML)
+- [ ] Secret Manager integration
+- [ ] IAM service accounts and roles
+- [ ] Firewall rules (minimal exposure)
+- [ ] Cloud NAT for VM egress
+
+**VM Setup (e2-micro):**
+
+- [ ] Install Docker and Docker Compose
+- [ ] PostgreSQL container (threads + dagster DBs)
+- [ ] Dagster daemon container
+- [ ] Dagster webserver container (:3001)
+- [ ] Automated backups (Cloud Storage)
+- [ ] Monitoring and health checks
+- [ ] Auto-restart policies
+
+**Cloud Run Deployment:**
+
+- [ ] Build and push Docker images to Artifact Registry
+- [ ] Deploy Next.js app to Cloud Run
+- [ ] Deploy ML service to Cloud Run
+- [ ] Configure environment variables via Secret Manager
+- [ ] Set up Cloud Run service-to-service auth
+- [ ] Configure custom domain (if applicable)
+- [ ] Enable Cloud Run logging and monitoring
+
+**CI/CD Integration:**
+
+- [ ] Update GitHub Actions workflow
+- [ ] Terraform plan on PR
+- [ ] Terraform apply on merge to main
+- [ ] Docker build and push to Artifact Registry
+- [ ] Cloud Run deployment automation
+- [ ] Prisma migrations in CI/CD
+- [ ] Smoke tests after deployment
+
+**Monitoring & Observability:**
+
+- [ ] Cloud Monitoring dashboards
+- [ ] Uptime checks for all services
+- [ ] Alert policies (CPU, memory, errors)
+- [ ] Log aggregation (Cloud Logging)
+- [ ] Cost monitoring and budgets
+
+**Migration Strategy:**
+
+1. **Setup Phase:**
+   - Create GCP project
+   - Set up Terraform state backend
+   - Configure service accounts and IAM
+2. **Infrastructure Phase:**
+   - Deploy VM with PostgreSQL + Dagster
+   - Verify database connectivity
+   - Restore database backup from Zeabur
+3. **Application Phase:**
+   - Deploy Next.js to Cloud Run
+   - Deploy ML service to Cloud Run
+   - Run Prisma migrations
+4. **Verification Phase:**
+   - Test all endpoints
+   - Verify ML recommendations
+   - Test Dagster pipelines
+5. **Cutover Phase:**
+   - Update DNS (if applicable)
+   - Monitor for 24-48 hours
+   - Archive Zeabur deployment (keep config)
+
+**Rollback Strategy:**
+
+- Keep Zeabur configuration files (docker-compose, env vars)
+- Database backup before migration
+- DNS quick-switch capability
+- Terraform destroy plan ready
+
+**Test:**
+
+1. ✅ Terraform plan succeeds without errors
+2. ✅ All GCP resources created in us-east1
+3. ✅ PostgreSQL accessible from Cloud Run services
+4. ✅ Dagster webserver UI accessible
+5. ✅ Next.js app responds on Cloud Run URL
+6. ✅ ML service returns recommendations
+7. ✅ Fake user simulation runs via Dagster
+8. ✅ CI/CD pipeline deploys successfully
+9. ✅ Monthly cost ≤ $5 (post free-tier credits)
+
+**Effort Estimate:** ~40-60 hours
+
+**Future Enhancements:**
+
+- [ ] Dagster Cloud Code Location on Cloud Run
+- [ ] Cloud SQL migration (if budget allows)
+- [ ] Multi-region deployment
+- [ ] CDN integration (Cloud CDN)
+- [ ] Load balancing for high availability
+
+**Status:** 📋 Ready to implement
+
+---
+
 ### MVP 8: Notification System 🔔
 
 **Goal:** Users receive notifications for social interactions

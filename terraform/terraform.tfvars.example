@@ -1,0 +1,29 @@
+# Terraform Variables Template
+# Copy this file to terraform.tfvars and fill in your values
+# Never commit terraform.tfvars to version control!
+
+# GCP Project Configuration
+project_id = "your-gcp-project-id"
+region     = "us-east1"  # Free tier eligible
+zone       = "us-east1-b"
+env        = "prod"
+
+# Container Images (update after building)
+nextjs_image     = "us-east1-docker.pkg.dev/your-project-id/threads-nextjs/nextjs:latest"
+ml_service_image = "us-east1-docker.pkg.dev/your-project-id/threads-nextjs/ml-service:latest"
+
+# Database Credentials (generate strong passwords)
+postgres_password         = "CHANGE_ME_STRONG_PASSWORD"
+dagster_postgres_password = "CHANGE_ME_STRONG_PASSWORD"
+
+# NextAuth Configuration
+nextauth_secret = "CHANGE_ME_RANDOM_STRING_32_CHARS"  # openssl rand -base64 32
+nextauth_url    = "https://your-cloudrun-url.run.app"  # Update after deployment
+
+# Google OAuth (get from Google Cloud Console)
+google_client_id     = "your-google-client-id.apps.googleusercontent.com"
+google_client_secret = "CHANGE_ME_GOOGLE_SECRET"
+
+# GitHub OAuth (get from GitHub Settings > Developer settings)
+github_client_id     = "your-github-client-id"
+github_client_secret = "CHANGE_ME_GITHUB_SECRET"

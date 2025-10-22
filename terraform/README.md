@@ -65,21 +65,59 @@ gsutil mb -p YOUR_PROJECT_ID -l us-east1 gs://YOUR_PROJECT_ID-terraform-state
 gsutil versioning set on gs://YOUR_PROJECT_ID-terraform-state
 ```
 
-### 3. Configure Variables
+### 3. Configure Secrets (GitHub Secrets - Recommended)
+
+**🔐 All secrets are stored in GitHub Secrets for security!**
+
+Secrets are centrally managed in GitHub and never committed to the repository. This prevents:
+
+- ✅ Accidental exposure of credentials
+- ✅ Cost exploitation from bucket enumeration
+- ✅ Secrets scattered across local files
+
+**Required GitHub Secrets:**
 
 ```bash
-cp terraform.tfvars.example terraform.tfvars
-# Edit terraform.tfvars with your values
+# Critical secrets (already configured)
+TF_STATE_BUCKET              # Random bucket name: threads-tf-state-{16-char-hex}
+GCP_PROJECT_ID               # web-service-design
+POSTGRES_PASSWORD            # Auto-generated strong password
+DAGSTER_POSTGRES_PASSWORD    # Auto-generated strong password
+NEXTAUTH_SECRET              # Auto-generated secret
+GOOGLE_CLIENT_SECRET         # Already configured
+
+# Still needed (get from OAuth providers)
+GOOGLE_CLIENT_ID             # From Google Cloud Console
+GITHUB_CLIENT_ID             # From GitHub Settings > Developer
+GITHUB_CLIENT_SECRET         # From GitHub Settings > Developer
+NEXTAUTH_URL                 # Update after first Cloud Run deployment
 ```
 
-**Required variables:**
+**Add missing secrets:**
 
-- `project_id`: Your GCP project ID
-- `postgres_password`: Strong password for PostgreSQL
-- `dagster_postgres_password`: Strong password for Dagster database
-- `nextauth_secret`: Random 32-character string (`openssl rand -base64 32`)
-- `nextauth_url`: Cloud Run URL (update after first deployment)
-- OAuth credentials (Google, GitHub)
+```bash
+# Google OAuth (get from https://console.cloud.google.com/apis/credentials)
+echo 'your-google-client-id' | gh secret set GOOGLE_CLIENT_ID
+
+# GitHub OAuth (get from https://github.com/settings/developers)
+echo 'your-github-client-id' | gh secret set GITHUB_CLIENT_ID
+echo 'your-github-client-secret' | gh secret set GITHUB_CLIENT_SECRET
+```
+
+**For local development:**
+
+```bash
+# Run helper script to check secrets
+./scripts/setup-terraform-secrets.sh
+
+# Copy example and fill in values manually
+cp terraform.tfvars.example terraform.tfvars
+# Edit terraform.tfvars with values from GitHub Secrets
+```
+
+**For CI/CD (recommended):**
+
+Secrets are automatically injected in GitHub Actions - no local `terraform.tfvars` needed!
 
 ### 4. Initialize Terraform
 
@@ -210,11 +248,22 @@ sudo docker exec -it threads-postgres-1 psql -U postgres -d threads
 
 ## Security Notes
 
-- **Never commit `terraform.tfvars`** - it contains sensitive data
-- Use IAP for SSH access instead of exposing port 22
-- Restrict Dagster UI access to your IP in production
-- Rotate secrets regularly
-- Enable VPC Service Controls for production
+### GitHub Secrets Management
+
+- ✅ **All secrets in GitHub Secrets** - Central, encrypted storage
+- ✅ **Bucket name randomized** - `threads-tf-state-{16-char-hex}` prevents enumeration
+- ✅ **No local secret files** - `terraform.tfvars` is gitignored
+- ✅ **CI/CD ready** - GitHub Actions automatically injects secrets
+- ✅ **Access control** - Only authorized GitHub users can view/edit
+
+### Additional Security
+
+- **Never commit `terraform.tfvars`** - Use GitHub Secrets instead
+- **Use IAP for SSH access** - Don't expose port 22 publicly
+- **Restrict Dagster UI** - Limit to your IP in production
+- **Rotate secrets regularly** - Update GitHub Secrets monthly
+- **Enable VPC Service Controls** - For production deployments
+- **Monitor bucket access** - Check GCS logs for unauthorized attempts
 
 ## Next Steps
 

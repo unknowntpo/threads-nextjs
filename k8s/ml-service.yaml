@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ml-service
+  namespace: threads
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ml-service
+  template:
+    metadata:
+      labels:
+        app: ml-service
+    spec:
+      imagePullSecrets:
+        - name: gcr-json-key
+      containers:
+        - name: ml-service
+          image: us-east1-docker.pkg.dev/web-service-design/threads/ml-service:arm64
+          ports:
+            - containerPort: 8000
+          env:
+            - name: DATABASE_URL
+              value: 'postgresql://postgres:${POSTGRES_PASSWORD}@postgres:5432/threads'
+            - name: PYTHONUNBUFFERED
+              value: '1'
+          resources:
+            requests:
+              memory: '512Mi'
+              cpu: '500m'
+            limits:
+              memory: '2Gi'
+              cpu: '1000m'
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 60
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ml-service
+  namespace: threads
+spec:
+  selector:
+    app: ml-service
+  ports:
+    - port: 8000
+      targetPort: 8000
+  type: ClusterIP

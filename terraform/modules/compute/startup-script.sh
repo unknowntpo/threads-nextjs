@@ -29,6 +29,18 @@ if ! command -v docker-compose &> /dev/null; then
     ln -sf /usr/local/bin/docker-compose /usr/bin/docker-compose
 fi
 
+# Install gcloud CLI for Docker authentication
+if ! command -v gcloud &> /dev/null; then
+    echo "Installing gcloud CLI..."
+    curl https://sdk.cloud.google.com | bash
+    exec -l $SHELL
+    gcloud init
+fi
+
+# Configure Docker to use gcloud as credential helper for Artifact Registry
+echo "Configuring Docker authentication for Artifact Registry..."
+gcloud auth configure-docker us-east1-docker.pkg.dev --quiet
+
 # Create docker-compose directory
 mkdir -p /opt/threads
 cd /opt/threads
@@ -84,60 +96,42 @@ services:
         wait \$\$OLLAMA_PID
       "
 
-  dagster_webserver:
-    image: ghcr.io/unknowntpo/threads-ml:latest
+  ml-service:
+    image: us-east1-docker.pkg.dev/${PROJECT_ID}/threads/ml-service:arm64
+    container_name: ml-service
     restart: unless-stopped
     ports:
-      - '3001:3001'
+      - "8000:8000"
+    networks:
+      - threads-network
     environment:
-      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD}@postgres:5432/threads
-      DAGSTER_DATABASE_URL: postgresql://postgres:${DAGSTER_POSTGRES_PASSWORD}@postgres:5432/dagster
-      OLLAMA_BASE_URL: http://ollama:11434
-      DAGSTER_HOME: /app/dagster_home
+      - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD}@postgres:5432/threads
+      - PYTHONUNBUFFERED=1
     depends_on:
       postgres:
         condition: service_healthy
-    volumes:
-      - dagster_data:/app/dagster_home
-    entrypoint:
-      - uv
-      - run
-      - dagster-webserver
-      - -h
-      - 0.0.0.0
-      - -p
-      - '3001'
-      - -w
-      - /app/workspace.yaml
     healthcheck:
-      test: ['CMD', 'curl', '-f', 'http://localhost:3001/server_info']
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
 
-  dagster_daemon:
-    image: ghcr.io/unknowntpo/threads-ml:latest
+  dockge:
+    image: louislam/dockge:1
     restart: unless-stopped
-    environment:
-      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD}@postgres:5432/threads
-      DAGSTER_DATABASE_URL: postgresql://postgres:${DAGSTER_POSTGRES_PASSWORD}@postgres:5432/dagster
-      OLLAMA_BASE_URL: http://ollama:11434
-      DAGSTER_HOME: /app/dagster_home
-    depends_on:
-      postgres:
-        condition: service_healthy
+    ports:
+      - '5001:5001'
     volumes:
-      - dagster_data:/app/dagster_home
-    entrypoint:
-      - uv
-      - run
-      - dagster-daemon
-      - run
+      - /var/run/docker.sock:/var/run/docker.sock
+      - dockge_data:/app/data
+      - /opt/stacks:/opt/stacks
+    environment:
+      - DOCKGE_STACKS_DIR=/opt/stacks
 
 volumes:
   postgres_data:
   ollama_data:
-  dagster_data:
+  dockge_data:
 EOF
 
 # Create .env file with secrets

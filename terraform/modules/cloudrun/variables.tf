@@ -18,11 +18,6 @@ variable "nextjs_image" {
   type        = string
 }
 
-variable "ml_service_image" {
-  description = "ML service Docker image URL"
-  type        = string
-}
-
 variable "service_account_email" {
   description = "Service account email for Cloud Run"
   type        = string
@@ -65,5 +60,10 @@ variable "github_client_secret_secret" {
 
 variable "vm_internal_ip" {
   description = "VM internal IP for database connection"
+  type        = string
+}
+
+variable "vpc_connector_id" {
+  description = "VPC Connector ID for Cloud Run"
   type        = string
 }

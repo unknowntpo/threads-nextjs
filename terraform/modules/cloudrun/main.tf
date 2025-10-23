@@ -100,7 +100,7 @@ resource "google_cloud_run_v2_service" "nextjs" {
 
       env {
         name  = "ML_SERVICE_URL"
-        value = "http://threads-${var.env}-ml-service"
+        value = "http://${var.vm_internal_ip}:8000"
       }
 
       env {
@@ -114,6 +114,12 @@ resource "google_cloud_run_v2_service" "nextjs" {
     }
 
     service_account = var.service_account_email
+
+    # VPC access for database connection
+    vpc_access {
+      connector = var.vpc_connector_id
+      egress    = "PRIVATE_RANGES_ONLY"  # Route only private IPs through VPC
+    }
   }
 
   traffic {
@@ -127,76 +133,12 @@ resource "google_cloud_run_v2_service" "nextjs" {
   }
 }
 
-# ML Service
-resource "google_cloud_run_v2_service" "ml_service" {
-  name     = "threads-${var.env}-ml-service"
-  location = var.region
-
-  template {
-    scaling {
-      min_instance_count = 0  # Scale to zero for cost savings
-      max_instance_count = 5
-    }
-
-    containers {
-      image = var.ml_service_image
-
-      resources {
-        limits = {
-          cpu    = "1"
-          memory = "512Mi"
-        }
-        cpu_idle = true
-      }
-
-      env {
-        name = "DATABASE_URL"
-        value_source {
-          secret_key_ref {
-            secret  = var.database_url_secret
-            version = "latest"
-          }
-        }
-      }
-
-      env {
-        name  = "PYTHONUNBUFFERED"
-        value = "1"
-      }
-
-      ports {
-        container_port = 8000
-      }
-    }
-
-    service_account = var.service_account_email
-  }
-
-  traffic {
-    type    = "TRAFFIC_TARGET_ALLOCATION_TYPE_LATEST"
-    percent = 100
-  }
-
-  labels = {
-    environment = var.env
-    component   = "ml-service"
-  }
-}
-
 # IAM: Allow public access to Next.js (unauthenticated users)
 resource "google_cloud_run_v2_service_iam_member" "nextjs_public" {
   location = google_cloud_run_v2_service.nextjs.location
   name     = google_cloud_run_v2_service.nextjs.name
   role     = "roles/run.invoker"
   member   = "allUsers"
-}
-
-# IAM: Allow Next.js service to invoke ML service
-resource "google_cloud_run_v2_service_iam_member" "ml_service_invoker" {
-  location = google_cloud_run_v2_service.ml_service.location
-  name     = google_cloud_run_v2_service.ml_service.name
-  role     = "roles/run.invoker"
-  member   = "serviceAccount:${var.service_account_email}"
 }
 
 # IAM: Grant service account access to secrets

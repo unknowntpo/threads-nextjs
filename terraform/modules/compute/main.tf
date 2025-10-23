@@ -1,14 +1,14 @@
 /**
  * Compute Module
  *
- * Creates e2-micro VM with PostgreSQL + Dagster services via Docker Compose.
+ * Creates c4a-standard-2 VM with PostgreSQL + Dagster services via Docker Compose.
  */
 
 # Service account for the VM
 resource "google_service_account" "vm_sa" {
   account_id   = "threads-${var.env}-vm-sa"
   display_name = "Threads VM Service Account"
-  description  = "Service account for e2-micro VM running PostgreSQL and Dagster"
+  description  = "Service account for c4a-standard-2 VM running PostgreSQL and Dagster"
 }
 
 # IAM role bindings for service account
@@ -29,20 +29,29 @@ data "local_file" "startup_script" {
   filename = "${path.module}/startup-script.sh"
 }
 
-# e2-micro VM instance (always-free tier eligible)
+# C4A Spot Preemptible VM instance (ARM architecture, 2 vCPU, 8GB RAM)
 resource "google_compute_instance" "vm" {
   name         = "threads-${var.env}-vm"
-  machine_type = "e2-micro"  # 0.25-0.5 vCPU, 1 GB RAM - always free
+  machine_type = "c4a-standard-2"  # 2 vCPU, 8 GB RAM - ARM (Axion) processor
   zone         = var.zone
 
-  tags = ["ssh", "dagster", "database"]
+  tags = ["ssh", "http-server", "database"]
 
   boot_disk {
     initialize_params {
-      image = "ubuntu-os-cloud/ubuntu-2204-lts"  # Ubuntu 22.04 LTS - supports Docker Compose
-      size  = 30  # GB - free tier allows up to 30 GB
-      type  = "pd-standard"
+      image = "debian-13-arm64"
+      size  = 50  # GB
+      type  = "hyperdisk-balanced"
     }
+  }
+
+  # Spot/Preemptible configuration for cost savings (~80% cheaper)
+  scheduling {
+    preemptible                 = true
+    automatic_restart           = false
+    on_host_maintenance         = "TERMINATE"
+    provisioning_model          = "SPOT"
+    instance_termination_action = "STOP"
   }
 
   network_interface {
@@ -56,9 +65,12 @@ resource "google_compute_instance" "vm" {
   }
 
   metadata = {
-    startup-script = templatefile("${path.module}/startup-script.sh", {
+    startup-script = templatefile("${path.module}/startup-script-k0s.sh", {
+      PROJECT_ID                = var.project_id
       POSTGRES_PASSWORD         = var.postgres_password
       DAGSTER_POSTGRES_PASSWORD = var.dagster_postgres_password
+      POSTGRES_USER             = "postgres"
+      POSTGRES_DB               = "threads"
     })
   }
 

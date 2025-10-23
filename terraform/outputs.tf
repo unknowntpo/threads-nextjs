@@ -15,18 +15,23 @@ output "vm_internal_ip" {
 }
 
 output "nextjs_url" {
-  description = "Cloud Run URL for Next.js application"
-  value       = module.cloudrun.nextjs_url
+  description = "Next.js application URL on k8s"
+  value       = "http://${module.compute.vm_external_ip}:3000"
 }
 
 output "ml_service_url" {
-  description = "Cloud Run URL for ML service"
-  value       = module.cloudrun.ml_service_url
+  description = "ML service URL on k8s"
+  value       = "http://${module.compute.vm_internal_ip}:8000"
 }
 
 output "dagster_ui_url" {
   description = "URL to access Dagster UI"
   value       = "http://${module.compute.vm_external_ip}:3001"
+}
+
+output "dockge_ui_url" {
+  description = "URL to access Dockge UI"
+  value       = "http://${module.compute.vm_external_ip}:5001"
 }
 
 output "postgres_connection_string" {

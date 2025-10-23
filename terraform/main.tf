@@ -40,6 +40,7 @@ resource "google_project_service" "required_apis" {
     "iam.googleapis.com",
     "logging.googleapis.com",
     "monitoring.googleapis.com",
+    "vpcaccess.googleapis.com",
   ])
 
   service            = each.value
@@ -101,31 +102,5 @@ module "secrets" {
   depends_on = [google_project_service.required_apis]
 }
 
-# Cloud Run module - Next.js app + ML service
-module "cloudrun" {
-  source = "./modules/cloudrun"
-
-  project_id = var.project_id
-  region     = var.region
-  env        = var.env
-
-  # Container images
-  nextjs_image = var.nextjs_image
-  ml_service_image = var.ml_service_image
-
-  # Service account for Cloud Run
-  service_account_email = module.compute.service_account_email
-
-  # Secrets from Secret Manager
-  database_url_secret = module.secrets.database_url_secret_id
-  nextauth_secret_id = module.secrets.nextauth_secret_id
-  google_client_id_secret = module.secrets.google_client_id_secret_id
-  google_client_secret_secret = module.secrets.google_client_secret_secret_id
-  github_client_id_secret = module.secrets.github_client_id_secret_id
-  github_client_secret_secret = module.secrets.github_client_secret_secret_id
-
-  # Database connection
-  vm_internal_ip = module.compute.vm_internal_ip
-
-  depends_on = [module.secrets, module.compute]
-}
+# k0s Kubernetes cluster runs on the VM
+# Applications deployed via k8s manifests

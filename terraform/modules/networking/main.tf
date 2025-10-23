@@ -46,39 +46,43 @@ resource "google_compute_firewall" "allow_internal" {
   description   = "Allow all internal traffic within VPC"
 }
 
-# Firewall rule: Allow SSH from IAP (Identity-Aware Proxy)
-resource "google_compute_firewall" "allow_ssh" {
-  name    = "threads-${var.env}-allow-ssh"
+# Firewall rule: Allow SSH and k8s API from IAP (Identity-Aware Proxy)
+resource "google_compute_firewall" "allow_iap" {
+  name    = "threads-${var.env}-allow-iap"
   network = google_compute_network.vpc.name
 
   allow {
     protocol = "tcp"
-    ports    = ["22"]
+    ports    = ["22", "6443"]  # SSH and k8s API
   }
 
-  # IAP IP ranges for SSH tunneling
+  # IAP IP ranges for tunneling
   source_ranges = ["35.235.240.0/20"]
   target_tags   = ["ssh"]
-  description   = "Allow SSH via Identity-Aware Proxy"
+  description   = "Allow SSH and k8s API access via Identity-Aware Proxy"
 }
 
-# Firewall rule: Allow Dagster UI access (temporary for development)
-resource "google_compute_firewall" "allow_dagster_ui" {
-  name    = "threads-${var.env}-allow-dagster-ui"
+# Firewall rule: Allow HTTP traffic to Next.js on port 3000
+resource "google_compute_firewall" "allow_http" {
+  name    = "threads-${var.env}-allow-http"
   network = google_compute_network.vpc.name
 
   allow {
     protocol = "tcp"
-    ports    = ["3001"]
+    ports    = ["3000"]
   }
 
-  # TODO: Restrict to your IP or use IAP in production
   source_ranges = ["0.0.0.0/0"]
-  target_tags   = ["dagster"]
-  description   = "Allow access to Dagster UI (restrict in production)"
+  target_tags   = ["http-server"]
+  description   = "Allow HTTP traffic to Next.js application"
 }
 
-# Firewall rule: Allow PostgreSQL from Cloud Run
+# NOTE: Dagster UI and Dockge UI are NOT exposed publicly
+# Access only via IAP tunnel:
+#   gcloud compute start-iap-tunnel threads-prod-vm 3001 --local-host-port=localhost:3001 --zone=us-east1-b
+#   gcloud compute start-iap-tunnel threads-prod-vm 5001 --local-host-port=localhost:5001 --zone=us-east1-b
+
+# Firewall rule: Allow PostgreSQL within VPC
 resource "google_compute_firewall" "allow_postgres" {
   name    = "threads-${var.env}-allow-postgres"
   network = google_compute_network.vpc.name

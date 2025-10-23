@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nextjs
+  namespace: threads
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: nextjs
+  template:
+    metadata:
+      labels:
+        app: nextjs
+    spec:
+      imagePullSecrets:
+        - name: gcr-json-key
+      containers:
+        - name: nextjs
+          image: us-east1-docker.pkg.dev/web-service-design/threads/nextjs:arm64
+          ports:
+            - containerPort: 3000
+          env:
+            - name: DATABASE_URL
+              value: 'postgresql://postgres:${POSTGRES_PASSWORD}@postgres:5432/threads'
+            - name: ML_SERVICE_URL
+              value: 'http://ml-service:8000'
+            - name: NODE_ENV
+              value: 'production'
+          # Add NextAuth secrets from GCP Secret Manager
+          # These should be injected via GCP Workload Identity or external secrets operator
+          resources:
+            requests:
+              memory: '256Mi'
+              cpu: '250m'
+            limits:
+              memory: '512Mi'
+              cpu: '500m'
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            initialDelaySeconds: 60
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nextjs
+  namespace: threads
+spec:
+  selector:
+    app: nextjs
+  ports:
+    - port: 3000
+      targetPort: 3000
+      nodePort: 30000
+  type: NodePort

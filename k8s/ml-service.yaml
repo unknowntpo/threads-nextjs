@@ -17,7 +17,7 @@ spec:
         - name: gcr-json-key
       containers:
         - name: ml-service
-          image: us-east1-docker.pkg.dev/web-service-design/threads/ml-service:arm64
+          image: us-east1-docker.pkg.dev/web-service-design/threads/ml-service:latest
           ports:
             - containerPort: 8000
           env:

@@ -1,0 +1,87 @@
+name: Deploy to GKE Production
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+env:
+  GCP_PROJECT_ID: web-service-design
+  GCP_REGION: us-east1
+  ARTIFACT_REGISTRY: us-east1-docker.pkg.dev/web-service-design/threads
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker us-east1-docker.pkg.dev
+
+      - name: Build and push Next.js
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/arm64
+          push: true
+          tags: ${{ env.ARTIFACT_REGISTRY }}/nextjs:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push ML Service
+        uses: docker/build-push-action@v5
+        with:
+          context: ./ml-service
+          platforms: linux/arm64
+          push: true
+          tags: ${{ env.ARTIFACT_REGISTRY }}/ml-service:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Install kustomize
+        run: |
+          curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
+          sudo mv kustomize /usr/local/bin/
+
+      - name: Update kustomization with new image tags
+        run: |
+          cd k8s/overlays/prod
+          kustomize edit set image \
+            ${{ env.ARTIFACT_REGISTRY }}/nextjs=${{ env.ARTIFACT_REGISTRY }}/nextjs:${{ github.sha }} \
+            ${{ env.ARTIFACT_REGISTRY }}/ml-service=${{ env.ARTIFACT_REGISTRY }}/ml-service:${{ github.sha }}
+
+      - name: Commit and push kustomization update
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add k8s/overlays/prod/kustomization.yaml
+          git diff --staged --quiet || git commit -m "deploy: update images to ${{ github.sha }}"
+          git push
+
+      - name: Deployment summary
+        run: |
+          echo "### Deployment Summary 🚀" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Images built and pushed:" >> $GITHUB_STEP_SUMMARY
+          echo "- \`nextjs:${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`ml-service:${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Kustomization updated and committed" >> $GITHUB_STEP_SUMMARY
+          echo "⏳ ArgoCD will sync automatically within 3 minutes" >> $GITHUB_STEP_SUMMARY

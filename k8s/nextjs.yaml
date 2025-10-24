@@ -18,6 +18,7 @@ spec:
       containers:
         - name: nextjs
           image: us-east1-docker.pkg.dev/web-service-design/threads/nextjs:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 3000
           env:

@@ -18,6 +18,7 @@ spec:
       containers:
         - name: ml-service
           image: us-east1-docker.pkg.dev/web-service-design/threads/ml-service:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 8000
           env:

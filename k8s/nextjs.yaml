@@ -38,9 +38,9 @@ spec:
           # These should be injected via GCP Workload Identity or external secrets operator
           resources:
             requests:
-              memory: '256Mi'
+              memory: '512M'
             limits:
-              memory: '512Mi'
+              memory: '2G'
           livenessProbe:
             httpGet:
               path: /api/health

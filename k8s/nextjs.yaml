@@ -17,7 +17,7 @@ spec:
         - name: gcr-json-key
       containers:
         - name: nextjs
-          image: us-east1-docker.pkg.dev/web-service-design/threads/nextjs:arm64
+          image: us-east1-docker.pkg.dev/web-service-design/threads/nextjs:latest
           ports:
             - containerPort: 3000
           env:

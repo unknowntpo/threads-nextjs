@@ -4,6 +4,7 @@ metadata:
   name: postgres-pvc
   namespace: threads
 spec:
+  storageClassName: local-path
   accessModes:
     - ReadWriteOnce
   resources:

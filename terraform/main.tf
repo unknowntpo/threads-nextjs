@@ -43,31 +43,18 @@ provider "google" {
 # Port 16443 to avoid conflict with local OrbStack on 6443
 provider "kubernetes" {
   host                   = "https://localhost:16443"
-  cluster_ca_certificate = base64decode(yamldecode(data.external.kubeconfig.result.kubeconfig).clusters[0].cluster.certificate-authority-data)
-
-  exec {
-    api_version = "client.authentication.k8s.io/v1beta1"
-    command     = "bash"
-    args = [
-      "-c",
-      "gcloud compute ssh ${module.compute.vm_name} --zone=${var.zone} --tunnel-through-iap --command='sudo k0s kubeconfig admin' 2>/dev/null | grep -A 999 'apiVersion:' | base64 | tr -d '\n'"
-    ]
-  }
+  cluster_ca_certificate = base64decode(yamldecode(base64decode(data.external.kubeconfig.result.kubeconfig)).clusters[0].cluster.certificate-authority-data)
+  client_certificate     = base64decode(yamldecode(base64decode(data.external.kubeconfig.result.kubeconfig)).users[0].user.client-certificate-data)
+  client_key             = base64decode(yamldecode(base64decode(data.external.kubeconfig.result.kubeconfig)).users[0].user.client-key-data)
 }
 
 # Configure kubectl provider
 provider "kubectl" {
   host                   = "https://localhost:16443"
-  cluster_ca_certificate = base64decode(yamldecode(data.external.kubeconfig.result.kubeconfig).clusters[0].cluster.certificate-authority-data)
-
-  exec {
-    api_version = "client.authentication.k8s.io/v1beta1"
-    command     = "bash"
-    args = [
-      "-c",
-      "gcloud compute ssh ${module.compute.vm_name} --zone=${var.zone} --tunnel-through-iap --command='sudo k0s kubeconfig admin' 2>/dev/null | grep -A 999 'apiVersion:' | base64 | tr -d '\n'"
-    ]
-  }
+  cluster_ca_certificate = base64decode(yamldecode(base64decode(data.external.kubeconfig.result.kubeconfig)).clusters[0].cluster.certificate-authority-data)
+  client_certificate     = base64decode(yamldecode(base64decode(data.external.kubeconfig.result.kubeconfig)).users[0].user.client-certificate-data)
+  client_key             = base64decode(yamldecode(base64decode(data.external.kubeconfig.result.kubeconfig)).users[0].user.client-key-data)
+  load_config_file       = false
 }
 
 # Data source to fetch kubeconfig
@@ -84,34 +71,11 @@ data "external" "kubeconfig" {
   depends_on = [module.compute]
 }
 
-# Null resource to manage IAP tunnel
-resource "null_resource" "iap_tunnel" {
-  # Start tunnel before applying k8s resources
-  provisioner "local-exec" {
-    command = <<-EOT
-      # Kill any existing tunnel on port 16443
-      lsof -ti:16443 | xargs kill -9 2>/dev/null || true
-
-      # Start IAP tunnel in background
-      gcloud compute start-iap-tunnel ${module.compute.vm_name} 6443 \
-        --local-host-port=localhost:16443 \
-        --zone=${var.zone} \
-        --project=${var.project_id} &
-
-      # Wait for tunnel to be ready
-      echo "Waiting for IAP tunnel..."
-      sleep 10
-    EOT
-  }
-
-  # Cleanup tunnel on destroy
-  provisioner "local-exec" {
-    when    = destroy
-    command = "lsof -ti:16443 | xargs kill -9 2>/dev/null || true"
-  }
-
-  depends_on = [module.compute]
-}
+# NOTE: IAP tunnel must be started manually before running terraform apply
+# Run this in a separate terminal:
+#   gcloud compute start-iap-tunnel threads-prod-vm 6443 \
+#     --local-host-port=localhost:16443 \
+#     --zone=us-east1-b
 
 # Enable required GCP APIs
 resource "google_project_service" "required_apis" {
@@ -198,7 +162,7 @@ module "argocd" {
   # Get GCP access token for Artifact Registry
   gcp_access_token = data.google_client_config.default.access_token
 
-  depends_on = [module.compute, null_resource.iap_tunnel]
+  depends_on = [module.compute]
 }
 
 # Data source for GCP access token

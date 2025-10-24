@@ -2,12 +2,12 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-  - ../../base
+- ../../base
 
 images:
-  - name: us-east1-docker.pkg.dev/web-service-design/threads/ml-service
-    newName: us-east1-docker.pkg.dev/web-service-design/threads/ml-service
-    newTag: 438439f
-  - name: us-east1-docker.pkg.dev/web-service-design/threads/nextjs
-    newName: us-east1-docker.pkg.dev/web-service-design/threads/nextjs
-    newTag: 438439f
+- name: us-east1-docker.pkg.dev/web-service-design/threads/ml-service
+  newName: us-east1-docker.pkg.dev/web-service-design/threads/ml-service
+  newTag: 52534bfff1b7ca286ad1f1f32fe1c8672afae9b8
+- name: us-east1-docker.pkg.dev/web-service-design/threads/nextjs
+  newName: us-east1-docker.pkg.dev/web-service-design/threads/nextjs
+  newTag: 52534bfff1b7ca286ad1f1f32fe1c8672afae9b8

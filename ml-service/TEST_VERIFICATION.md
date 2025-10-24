@@ -1,0 +1,673 @@
+# Test Verification Plan - Dagster + Ollama Fake User Simulation
+
+## Test Criteria & Verification Steps
+
+### Phase 1: Infrastructure Setup ✓
+
+**1.1 Docker Services Start Successfully**
+
+```bash
+cd /Users/unknowntpo/repo/unknowntpo/threads-nextjs/ml-service
+docker-compose up -d --build
+```
+
+**Expected**:
+
+- ✅ 4 containers running: `ml_postgres`, `ml_ollama`, `ml_service`, `ml_dagster`
+- ✅ All containers show "healthy" status
+
+**Verify**:
+
+```bash
+docker ps
+```
+
+**Expected Output**:
+
+```
+CONTAINER ID   IMAGE             STATUS                    PORTS
+xxxxx          ml_postgres       Up 30s (healthy)         0.0.0.0:5433->5432/tcp
+xxxxx          ml_ollama         Up 30s (healthy)         0.0.0.0:11434->11434/tcp
+xxxxx          ml_service        Up 30s (healthy)         0.0.0.0:8001->8000/tcp
+xxxxx          ml_dagster        Up 30s (healthy)         0.0.0.0:3000->3000/tcp
+```
+
+---
+
+**1.2 Ollama Model Auto-Pulled**
+
+```bash
+docker logs ml_ollama | grep "gemma3:270m"
+```
+
+**Expected**:
+
+- ✅ Log shows "pulling gemma3:270m"
+- ✅ Log shows "success" or model download complete
+
+**Verify Model Available**:
+
+```bash
+docker exec ml_ollama ollama list
+```
+
+**Expected Output**:
+
+```
+NAME             ID              SIZE      MODIFIED
+gemma3:270m      xxxxx           150MB     X minutes ago
+```
+
+---
+
+**1.3 Dagster UI Accessible**
+
+```bash
+curl -s http://localhost:3000/server_info | head -5
+```
+
+**Expected**:
+
+- ✅ Returns JSON response
+- ✅ Status code 200
+
+**Manual Check**:
+
+- Open http://localhost:3000 in browser
+- Should see Dagster UI dashboard
+
+---
+
+**1.4 ML Service API Running**
+
+```bash
+curl -s http://localhost:8001/health
+```
+
+**Expected**:
+
+- ✅ Returns `{"status": "healthy"}` or similar
+- ✅ Status code 200
+
+---
+
+### Phase 2: Database Connection ✓
+
+**2.1 Database Accessible**
+
+```bash
+docker exec ml_postgres psql -U postgres -d threads -c "SELECT 1;"
+```
+
+**Expected Output**:
+
+```
+ ?column?
+----------
+        1
+(1 row)
+```
+
+**2.2 Tables Exist**
+
+```bash
+docker exec ml_postgres psql -U postgres -d threads -c "\dt" | grep -E "user|post|user_interactions"
+```
+
+**Expected**:
+
+- ✅ `user` table exists
+- ✅ `post` table exists
+- ✅ `user_interactions` table exists
+
+---
+
+### Phase 3: Dagster Assets Loaded ✓
+
+**3.1 Check Dagster Assets**
+
+Open http://localhost:3000/assets
+
+**Expected**:
+
+- ✅ 3 assets visible:
+  - `fake_users`
+  - `generated_posts`
+  - `simulated_interactions`
+
+**3.2 Check Dagster Jobs**
+
+Navigate to http://localhost:3000/jobs
+
+**Expected**:
+
+- ✅ 2 jobs visible:
+  - `continuous_simulation`
+  - `manual_simulation`
+
+**3.3 Check Dagster Schedules**
+
+Navigate to http://localhost:3000/schedules
+
+**Expected**:
+
+- ✅ 1 schedule visible: `continuous_simulation_schedule`
+- ✅ Status: OFF (initially)
+- ✅ Cron: `*/1 * * * *` (every 1 minute)
+
+---
+
+### Phase 4: Manual Job Execution ✓
+
+**4.1 Trigger Manual Simulation**
+
+1. Go to http://localhost:3000/jobs/manual_simulation
+2. Click **"Launch Run"**
+3. Click **"Launch Run"** again (confirm)
+
+**Expected**:
+
+- ✅ Run starts with status "STARTED"
+- ✅ Run progresses through assets:
+  - `fake_users` → SUCCESS
+  - `generated_posts` → SUCCESS
+  - `simulated_interactions` → SUCCESS
+- ✅ Final status: "SUCCESS"
+
+**4.2 Check Run Logs**
+
+Click on the run → View logs
+
+**Expected Logs**:
+
+```
+fake_users: {"status": "created", "count": 8, "created": 8}
+generated_posts: {"status": "success", "posts_created": 3}
+simulated_interactions: {"status": "success", "interactions": 15}
+```
+
+---
+
+### Phase 5: Fake Users Created ✓
+
+**5.1 Count Fake Users**
+
+```bash
+docker exec ml_postgres psql -U postgres -d threads -c \
+  "SELECT COUNT(*) FROM \"user\" WHERE bio LIKE 'FAKE_USER%';"
+```
+
+**Expected**:
+
+```
+ count
+-------
+     8
+(1 row)
+```
+
+**5.2 Verify Fake User Format**
+
+```bash
+docker exec ml_postgres psql -U postgres -d threads -c \
+  "SELECT username, bio FROM \"user\" WHERE bio LIKE 'FAKE_USER%' LIMIT 3;"
+```
+
+**Expected Output**:
+
+```
+    username      |              bio
+------------------+-------------------------------
+ sports_bot_abc123| FAKE_USER: sports enthusiast
+ tech_bot_def456  | FAKE_USER: tech enthusiast
+ anime_bot_ghi789 | FAKE_USER: anime enthusiast
+```
+
+**Criteria**:
+
+- ✅ Username format: `{interest}_bot_{id}`
+- ✅ Bio format: `FAKE_USER: {interest} enthusiast`
+- ✅ 5-10 users total
+- ✅ Different interests: sports, tech, anime, cars, food
+
+---
+
+### Phase 6: Posts Generated ✓
+
+**6.1 Count Posts from Fake Users**
+
+```bash
+docker exec ml_postgres psql -U postgres -d threads -c \
+  "SELECT COUNT(*) FROM post WHERE user_id IN (
+    SELECT id FROM \"user\" WHERE bio LIKE 'FAKE_USER%'
+  );"
+```
+
+**Expected**:
+
+```
+ count
+-------
+     3
+(1 row)
+```
+
+**6.2 View Generated Posts**
+
+```bash
+docker exec ml_postgres psql -U postgres -d threads -c \
+  "SELECT p.content, u.username
+   FROM post p
+   JOIN \"user\" u ON p.user_id = u.id
+   WHERE u.bio LIKE 'FAKE_USER%'
+   ORDER BY p.created_at DESC
+   LIMIT 5;"
+```
+
+**Expected**:
+
+- ✅ Posts exist
+- ✅ Content is coherent (generated by LLM)
+- ✅ Content length ≤ 280 chars
+- ✅ Posts match user interest
+
+**Example**:
+
+```
+         content                  |    username
+----------------------------------+-----------------
+ Excited for the big game today! | sports_bot_abc
+ New AI breakthrough announced   | tech_bot_def
+ Latest anime episode was epic   | anime_bot_ghi
+```
+
+---
+
+### Phase 7: Interactions Created ✓
+
+**7.1 Count Interactions from Fake Users**
+
+```bash
+docker exec ml_postgres psql -U postgres -d threads -c \
+  "SELECT COUNT(*) FROM user_interactions WHERE user_id IN (
+    SELECT id FROM \"user\" WHERE bio LIKE 'FAKE_USER%'
+  );"
+```
+
+**Expected**:
+
+```
+ count
+-------
+    15
+(1 row)
+```
+
+**7.2 Verify Interaction Types**
+
+```bash
+docker exec ml_postgres psql -U postgres -d threads -c \
+  "SELECT interaction_type, COUNT(*)
+   FROM user_interactions
+   WHERE user_id IN (SELECT id FROM \"user\" WHERE bio LIKE 'FAKE_USER%')
+   GROUP BY interaction_type
+   ORDER BY COUNT(*) DESC;"
+```
+
+**Expected Distribution** (weighted: view 50%, like 30%, comment 20%):
+
+```
+ interaction_type | count
+------------------+-------
+ view             |     8
+ like             |     5
+ comment          |     2
+```
+
+**Criteria**:
+
+- ✅ Views are most common
+- ✅ Likes are second
+- ✅ Comments are least common
+
+**7.3 Check Likes Table**
+
+```bash
+docker exec ml_postgres psql -U postgres -d threads -c \
+  "SELECT COUNT(*) FROM \"like\" WHERE user_id IN (
+    SELECT id FROM \"user\" WHERE bio LIKE 'FAKE_USER%'
+  );"
+```
+
+**Expected**:
+
+- ✅ Likes exist in `like` table
+- ✅ Match count from `user_interactions`
+
+---
+
+### Phase 8: Continuous Simulation ✓
+
+**8.1 Enable Continuous Schedule**
+
+1. Go to http://localhost:3000/schedules
+2. Find `continuous_simulation_schedule`
+3. Toggle switch to **ON**
+
+**Expected**:
+
+- ✅ Status changes to "Running"
+- ✅ Next run time shows (within 1 minute)
+
+**8.2 Monitor Automatic Runs**
+
+Wait 1-2 minutes, then:
+
+1. Go to http://localhost:3000/runs
+2. Check recent runs
+
+**Expected**:
+
+- ✅ New runs appear every 1 minute
+- ✅ Each run status: SUCCESS
+- ✅ Assets materialize: `generated_posts`, `simulated_interactions`
+
+**8.3 Verify Data Growth**
+
+Check posts count before and after:
+
+```bash
+# Before
+docker exec ml_postgres psql -U postgres -d threads -c \
+  "SELECT COUNT(*) FROM post WHERE user_id IN (
+    SELECT id FROM \"user\" WHERE bio LIKE 'FAKE_USER%'
+  );"
+
+# Wait 2 minutes
+
+# After
+docker exec ml_postgres psql -U postgres -d threads -c \
+  "SELECT COUNT(*) FROM post WHERE user_id IN (
+    SELECT id FROM \"user\" WHERE bio LIKE 'FAKE_USER%'
+  );"
+```
+
+**Expected**:
+
+- ✅ Post count increases by 3-6 (1-3 posts per run × 2 runs)
+- ✅ Interaction count increases
+
+---
+
+### Phase 9: Ollama LLM Integration ✓
+
+**9.1 Test Ollama Directly**
+
+```bash
+docker exec ml_ollama ollama run gemma3:270m "Create a short social media post about sports. Max 280 chars."
+```
+
+**Expected**:
+
+- ✅ Returns coherent text about sports
+- ✅ Text length ≤ 280 chars
+
+**9.2 Test via Python**
+
+```bash
+docker exec ml_dagster python -c "
+from app.infrastructure.llm.ollama_service import OllamaService
+service = OllamaService(base_url='http://ollama:11434')
+print(service.generate_post('tech'))
+"
+```
+
+**Expected**:
+
+- ✅ No errors
+- ✅ Returns tech-related post content
+
+**9.3 Verify Interest Matching**
+
+```bash
+docker exec ml_dagster python -c "
+from app.infrastructure.llm.ollama_service import OllamaService
+service = OllamaService(base_url='http://ollama:11434')
+print(service.should_interact('New AI breakthrough!', 'tech'))
+print(service.should_interact('Football game tonight!', 'tech'))
+"
+```
+
+**Expected**:
+
+- ✅ First result: `True` (tech user interested in AI)
+- ✅ Second result: `False` (tech user not interested in football)
+
+---
+
+### Phase 10: No Schema Changes ✓
+
+**10.1 Verify Prisma Schema Untouched**
+
+```bash
+cd /Users/unknowntpo/repo/unknowntpo/threads-nextjs
+git status prisma/schema.prisma
+```
+
+**Expected**:
+
+```
+nothing to commit, working tree clean
+```
+
+**10.2 Check No New Migrations**
+
+```bash
+ls prisma/migrations/ | grep -E "fake_user|bot"
+```
+
+**Expected**:
+
+```
+(no output - no fake user migrations)
+```
+
+**Criteria**:
+
+- ✅ No `is_fake_user` column added
+- ✅ No `fake_user_metadata` column added
+- ✅ Uses existing `bio` field only
+
+---
+
+### Phase 11: Edge Cases & Error Handling ✓
+
+**11.1 Ollama Service Down**
+
+Stop Ollama:
+
+```bash
+docker stop ml_ollama
+```
+
+Trigger manual job:
+
+- Go to http://localhost:3000/jobs/manual_simulation
+- Launch Run
+
+**Expected**:
+
+- ✅ Job fails gracefully
+- ✅ Error logged: "Connection refused" or "Ollama unavailable"
+- ✅ No database corruption
+
+Restart:
+
+```bash
+docker start ml_ollama
+```
+
+**11.2 Database Connection Failure**
+
+Stop postgres temporarily:
+
+```bash
+docker stop ml_postgres
+```
+
+**Expected**:
+
+- ✅ Dagster shows connection errors
+- ✅ Jobs fail with clear error messages
+- ✅ No crashes
+
+Restart:
+
+```bash
+docker start ml_postgres
+```
+
+**11.3 Duplicate User Prevention**
+
+Run manual job 3 times:
+
+```bash
+# Run 1, 2, 3
+```
+
+Check user count:
+
+```bash
+docker exec ml_postgres psql -U postgres -d threads -c \
+  "SELECT COUNT(*) FROM \"user\" WHERE bio LIKE 'FAKE_USER%';"
+```
+
+**Expected**:
+
+```
+ count
+-------
+     8
+(1 row)
+```
+
+**Criteria**:
+
+- ✅ Count stays at 8 (target)
+- ✅ No duplicate users created
+- ✅ `fake_users` asset returns `{"status": "sufficient", "count": 8}`
+
+---
+
+## Summary Test Checklist
+
+### Infrastructure ✅
+
+- [ ] All 4 Docker containers running and healthy
+- [ ] Ollama model `gemma3:270m` auto-pulled
+- [ ] Dagster UI accessible at :3000
+- [ ] ML Service API running at :8001
+- [ ] Database accessible
+
+### Dagster ✅
+
+- [ ] 3 assets loaded (fake_users, generated_posts, simulated_interactions)
+- [ ] 2 jobs loaded (continuous_simulation, manual_simulation)
+- [ ] 1 schedule loaded (continuous_simulation_schedule)
+- [ ] Manual job runs successfully
+- [ ] Continuous schedule works (runs every 1 min)
+
+### Data Generation ✅
+
+- [ ] 5-10 fake users created
+- [ ] Bio format: `FAKE_USER: {interest} enthusiast`
+- [ ] Username format: `{interest}_bot_{id}`
+- [ ] Posts generated (1-3 per run)
+- [ ] Post content ≤ 280 chars
+- [ ] Interactions created (views, likes, comments)
+- [ ] Interaction distribution matches weights (50/30/20)
+
+### LLM Integration ✅
+
+- [ ] Ollama responds to prompts
+- [ ] Post generation works
+- [ ] Interest matching works
+- [ ] Display name generation works
+
+### Schema Integrity ✅
+
+- [ ] No Prisma schema modifications
+- [ ] No new migrations created
+- [ ] Uses existing `user` table
+- [ ] Fake users identifiable by bio field only
+
+### Error Handling ✅
+
+- [ ] Graceful failure when Ollama down
+- [ ] Graceful failure when DB down
+- [ ] No duplicate user creation
+- [ ] Logs show clear error messages
+
+---
+
+## Automated Test Suite
+
+### Run All Tests
+
+```bash
+cd /Users/unknowntpo/repo/unknowntpo/threads-nextjs/ml-service
+
+# Run all tests
+uv run pytest
+
+# Run only integration tests
+uv run pytest -m integration
+
+# Run only E2E tests
+uv run pytest -m e2e
+
+# Run with coverage
+uv run pytest --cov=app --cov-report=html
+```
+
+### Test Files
+
+**Integration Tests** (`tests/integration/`):
+
+- `test_fake_user_factory.py` - User factory validation
+- `test_database_queries.py` - Query helper functions
+- `test_ollama_service.py` - LLM service integration
+
+**E2E Tests** (`tests/e2e/`):
+
+- `test_dagster_simulation.py` - Full simulation workflow
+
+### Quick Smoke Test
+
+```bash
+# Start services
+docker-compose up -d
+
+# Wait for services
+sleep 30
+
+# Run smoke tests (fast subset)
+uv run pytest tests/integration/test_fake_user_factory.py -v
+
+# Check E2E
+uv run pytest tests/e2e/test_dagster_simulation.py::TestDagsterSimulation::test_fake_users_created -v
+```
+
+---
+
+## Expected Final State
+
+After all tests pass:
+
+- **Users**: 5-10 fake users with `FAKE_USER` bio marker
+- **Posts**: Growing number of interest-based posts
+- **Interactions**: Realistic view/like/comment data
+- **Dagster**: Continuous simulation running every 1 min
+- **ML Data**: Sufficient for collaborative filtering training
+
+✅ **System is ready for ML-powered recommendations!**

@@ -1,0 +1,4 @@
+load_from:
+  - python_file:
+      relative_path: threads_ml_dagster/definitions.py
+      working_directory: /app

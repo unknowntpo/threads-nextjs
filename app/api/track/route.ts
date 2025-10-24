@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { logger } from '@/lib/logger'
 import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
+import { Prisma } from '@prisma/client'
 import {
   TrackInteractionRequest,
   BatchTrackInteractionRequest,
@@ -105,8 +106,8 @@ export async function POST(request: NextRequest) {
         postId: interaction.post_id,
         interactionType: interaction.interaction_type,
         metadata: interaction.metadata
-          ? (interaction.metadata as unknown as Prisma.JsonValue)
-          : undefined,
+          ? (interaction.metadata as Prisma.InputJsonValue)
+          : Prisma.JsonNull,
       })),
       skipDuplicates: false, // Allow duplicate interactions (e.g., multiple views)
     })

@@ -1,0 +1,138 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: wqoVQVXamUVOG3TBNEAQ4JieKXnvEhwSK9iArKzTsd0
+      POSTGRES_DB: threads
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    command: |
+      sh -c 'cat <<'\''EOF'\'' | sh
+      #!/bin/sh
+      docker-entrypoint.sh postgres &
+      PID=$!
+      until pg_isready -U ${POSTGRES_USER} -h localhost; do sleep 1; done
+      psql -U ${POSTGRES_USER} -d ${POSTGRES_DB} -c "CREATE DATABASE dagster" 2>/dev/null || true
+      wait $PID
+      EOF
+      '
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  ollama:
+    image: ollama/ollama:latest
+    restart: unless-stopped
+    ports:
+      - '11434:11434'
+    volumes:
+      - ml_ollama_data:/root/.ollama
+    healthcheck:
+      test: ['CMD', 'ollama', 'list']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    entrypoint: >
+      sh -c "
+        ollama serve &
+        OLLAMA_PID=$$!
+        sleep 5
+        ollama pull gemma3:270m
+        wait $$OLLAMA_PID
+      "
+
+  ml-service:
+    image: us-east1-docker.pkg.dev/web-service-design/threads/ml-service:latest
+    restart: unless-stopped
+    ports:
+      - '8001:8000'
+    environment:
+      DATABASE_URL: postgresql://postgres:wqoVQVXamUVOG3TBNEAQ4JieKXnvEhwSK9iArKzTsd0@postgres:5432/threads
+      PYTHONUNBUFFERED: '1'
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'python -c "import socket; socket.create_connection((''localhost'', 8000), timeout=2)" || exit 1',
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  dagster_webserver:
+    image: us-east1-docker.pkg.dev/web-service-design/threads/ml-service:latest
+    restart: unless-stopped
+    ports:
+      - '3001:3001'
+    environment:
+      DATABASE_URL: postgresql://postgres:wqoVQVXamUVOG3TBNEAQ4JieKXnvEhwSK9iArKzTsd0@postgres:5432/threads
+      DAGSTER_DATABASE_URL: postgresql://postgres:BZi3c5SbGqKOofjVHMf61elNJRtFnuG580FXPQZP34c@postgres:5432/dagster
+      OLLAMA_BASE_URL: http://ollama:11434
+      DAGSTER_HOME: /app/dagster_home
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - dagster_data:/app/dagster_home
+    entrypoint:
+      - uv
+      - run
+      - dagster-webserver
+      - -h
+      - 0.0.0.0
+      - -p
+      - '3001'
+      - -w
+      - /app/workspace.yaml
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:3001/server_info']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  dagster_daemon:
+    image: us-east1-docker.pkg.dev/web-service-design/threads/ml-service:latest
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://postgres:wqoVQVXamUVOG3TBNEAQ4JieKXnvEhwSK9iArKzTsd0@postgres:5432/threads
+      DAGSTER_DATABASE_URL: postgresql://postgres:BZi3c5SbGqKOofjVHMf61elNJRtFnuG580FXPQZP34c@postgres:5432/dagster
+      OLLAMA_BASE_URL: http://ollama:11434
+      DAGSTER_HOME: /app/dagster_home
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - dagster_data:/app/dagster_home
+    entrypoint:
+      - uv
+      - run
+      - dagster-daemon
+      - run
+
+  dockge:
+    image: louislam/dockge:1
+    restart: unless-stopped
+    ports:
+      - '5001:5001'
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - dockge_data:/app/data
+      - /opt/stacks:/opt/stacks
+    environment:
+      - DOCKGE_STACKS_DIR=/opt/stacks
+
+volumes:
+  postgres_data:
+  ml_ollama_data:
+  dagster_data:
+  dockge_data:

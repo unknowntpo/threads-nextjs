@@ -21,6 +21,10 @@ terraform {
       source  = "gavinbunney/kubectl"
       version = "~> 1.14"
     }
+    helm = {
+      source  = "hashicorp/helm"
+      version = "~> 2.10"
+    }
   }
 
   # Backend configuration for Terraform state
@@ -55,6 +59,16 @@ provider "kubectl" {
   client_certificate     = base64decode(yamldecode(base64decode(data.external.kubeconfig.result.kubeconfig)).users[0].user.client-certificate-data)
   client_key             = base64decode(yamldecode(base64decode(data.external.kubeconfig.result.kubeconfig)).users[0].user.client-key-data)
   load_config_file       = false
+}
+
+# Configure Helm provider
+provider "helm" {
+  kubernetes {
+    host                   = "https://localhost:16443"
+    cluster_ca_certificate = base64decode(yamldecode(base64decode(data.external.kubeconfig.result.kubeconfig)).clusters[0].cluster.certificate-authority-data)
+    client_certificate     = base64decode(yamldecode(base64decode(data.external.kubeconfig.result.kubeconfig)).users[0].user.client-certificate-data)
+    client_key             = base64decode(yamldecode(base64decode(data.external.kubeconfig.result.kubeconfig)).users[0].user.client-key-data)
+  }
 }
 
 # Data source to fetch kubeconfig
@@ -163,6 +177,16 @@ module "argocd" {
   gcp_access_token = data.google_client_config.default.access_token
 
   depends_on = [module.compute]
+}
+
+# Keel module - Automatic image updates
+module "keel" {
+  source = "./modules/keel"
+
+  # Use same service account key as GitHub Actions
+  gcp_service_account_key = var.gcp_service_account_key
+
+  depends_on = [module.argocd]
 }
 
 # Data source for GCP access token

@@ -91,3 +91,10 @@ variable "github_client_secret" {
   type        = string
   sensitive   = true
 }
+
+# GCP Service Account Key for Keel
+variable "gcp_service_account_key" {
+  description = "GCP service account JSON key for Keel to access Artifact Registry"
+  type        = string
+  sensitive   = true
+}

@@ -3,6 +3,11 @@ kind: Deployment
 metadata:
   name: nextjs
   namespace: threads
+  annotations:
+    keel.sh/policy: force
+    keel.sh/trigger: poll
+    keel.sh/pollSchedule: '@every 1m'
+    keel.sh/match-tag: 'true'
 spec:
   replicas: 1
   selector:
@@ -18,12 +23,11 @@ spec:
       containers:
         - name: nextjs
           image: us-east1-docker.pkg.dev/web-service-design/threads/nextjs:latest
-          imagePullPolicy: Always
           ports:
             - containerPort: 3000
           env:
             - name: DATABASE_URL
-              value: 'postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/threads'
+              value: 'postgresql://postgres:$(POSTGRES_PASSWORD)@postgres:5432/threads'
             - name: ML_SERVICE_URL
               value: 'http://ml-service:8000'
             - name: NODE_ENV

@@ -1,4 +1,4 @@
-name: Deploy to GKE Production
+name: Build and Push to Artifact Registry
 
 on:
   push:
@@ -11,15 +11,11 @@ env:
   ARTIFACT_REGISTRY: us-east1-docker.pkg.dev/web-service-design/threads
 
 jobs:
-  build-and-deploy:
+  build-and-push:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -41,7 +37,9 @@ jobs:
           context: .
           platforms: linux/arm64
           push: true
-          tags: ${{ env.ARTIFACT_REGISTRY }}/nextjs:${{ github.sha }}
+          tags: |
+            ${{ env.ARTIFACT_REGISTRY }}/nextjs:${{ github.sha }}
+            ${{ env.ARTIFACT_REGISTRY }}/nextjs:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -51,37 +49,18 @@ jobs:
           context: ./ml-service
           platforms: linux/arm64
           push: true
-          tags: ${{ env.ARTIFACT_REGISTRY }}/ml-service:${{ github.sha }}
+          tags: |
+            ${{ env.ARTIFACT_REGISTRY }}/ml-service:${{ github.sha }}
+            ${{ env.ARTIFACT_REGISTRY }}/ml-service:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
-
-      - name: Install kustomize
-        run: |
-          curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
-          sudo mv kustomize /usr/local/bin/
-
-      - name: Update kustomization with new image tags
-        run: |
-          cd k8s/overlays/prod
-          kustomize edit set image \
-            ${{ env.ARTIFACT_REGISTRY }}/nextjs=${{ env.ARTIFACT_REGISTRY }}/nextjs:${{ github.sha }} \
-            ${{ env.ARTIFACT_REGISTRY }}/ml-service=${{ env.ARTIFACT_REGISTRY }}/ml-service:${{ github.sha }}
-
-      - name: Commit and push kustomization update
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add k8s/overlays/prod/kustomization.yaml
-          git diff --staged --quiet || git commit -m "deploy: update images to ${{ github.sha }}"
-          git push
 
       - name: Deployment summary
         run: |
           echo "### Deployment Summary 🚀" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "✅ Images built and pushed:" >> $GITHUB_STEP_SUMMARY
-          echo "- \`nextjs:${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "- \`ml-service:${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`nextjs:${{ github.sha }}\` and \`nextjs:latest\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`ml-service:${{ github.sha }}\` and \`ml-service:latest\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Kustomization updated and committed" >> $GITHUB_STEP_SUMMARY
-          echo "⏳ ArgoCD will sync automatically within 3 minutes" >> $GITHUB_STEP_SUMMARY
+          echo "⏳ Keel will detect new images and update deployments automatically" >> $GITHUB_STEP_SUMMARY

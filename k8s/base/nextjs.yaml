@@ -39,6 +39,8 @@ spec:
               value: '5432'
             - name: POSTGRES_DB
               value: 'threads'
+            - name: DATABASE_URL
+              value: 'postgresql://postgres@postgres:5432/threads'
             - name: ML_SERVICE_URL
               value: 'http://ml-service:8000'
             - name: NODE_ENV

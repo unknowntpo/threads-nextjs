@@ -3,11 +3,3 @@ kind: Kustomization
 
 resources:
   - ../../base
-
-images:
-  - name: us-east1-docker.pkg.dev/web-service-design/threads/ml-service
-    newName: us-east1-docker.pkg.dev/web-service-design/threads/ml-service
-    newTag: latest
-  - name: us-east1-docker.pkg.dev/web-service-design/threads/nextjs
-    newName: us-east1-docker.pkg.dev/web-service-design/threads/nextjs
-    newTag: latest

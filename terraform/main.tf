@@ -173,10 +173,19 @@ module "argocd" {
   postgres_password         = var.postgres_password
   dagster_postgres_password = var.dagster_postgres_password
 
-  # Use service account JSON key for Artifact Registry (same as Keel)
+  # Use service account JSON key for Artifact Registry
   gcp_service_account_key = var.gcp_service_account_key
 
   depends_on = [module.compute]
+}
+
+# ArgoCD Image Updater - Automatically updates images when new versions are pushed
+module "argocd_image_updater" {
+  source = "./modules/argocd-image-updater"
+
+  gcp_service_account_key = var.gcp_service_account_key
+
+  depends_on = [module.argocd]
 }
 
 # Data source for GCP access token

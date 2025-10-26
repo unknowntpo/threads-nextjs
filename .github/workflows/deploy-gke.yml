@@ -57,8 +57,11 @@ jobs:
 
       - name: Update kustomization with SHA tags
         run: |
-          sed -i "s/__GITHUB_SHA__/${{ github.sha }}/g" k8s/overlays/prod/kustomization.yaml
-          cat k8s/overlays/prod/kustomization.yaml
+          cd k8s/overlays/prod
+          kustomize edit set image \
+            us-east1-docker.pkg.dev/web-service-design/threads/nextjs:${{ github.sha }} \
+            us-east1-docker.pkg.dev/web-service-design/threads/ml-service:${{ github.sha }}
+          cat kustomization.yaml
 
       - name: Install gke-gcloud-auth-plugin
         run: |

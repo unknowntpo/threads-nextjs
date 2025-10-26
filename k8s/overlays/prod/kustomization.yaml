@@ -3,3 +3,9 @@ kind: Kustomization
 
 resources:
   - ../../base
+
+images:
+  - name: us-east1-docker.pkg.dev/web-service-design/threads/nextjs
+    newTag: __GITHUB_SHA__
+  - name: us-east1-docker.pkg.dev/web-service-design/threads/ml-service
+    newTag: __GITHUB_SHA__

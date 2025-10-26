@@ -39,6 +39,18 @@ resource "helm_release" "argocd_image_updater" {
 
       # Log level
       logLevel = "info"
+
+      # RBAC to allow reading secrets
+      rbac = {
+        enabled = true
+        rules = [
+          {
+            apiGroups = [""]
+            resources = ["secrets"]
+            verbs     = ["get", "list", "watch"]
+          }
+        ]
+      }
     })
   ]
 

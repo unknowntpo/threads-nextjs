@@ -73,6 +73,7 @@ jobs:
           gcloud compute ssh threads-prod-vm \
             --zone=us-east1-b \
             --tunnel-through-iap \
+            --quiet \
             --command='sudo k0s kubeconfig admin' > kubeconfig.yaml
 
           # Update kubeconfig to use IAP tunnel

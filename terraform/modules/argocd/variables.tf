@@ -10,8 +10,8 @@ variable "dagster_postgres_password" {
   sensitive   = true
 }
 
-variable "gcp_access_token" {
-  description = "GCP access token for Artifact Registry"
+variable "gcp_service_account_key" {
+  description = "GCP service account JSON key for Artifact Registry"
   type        = string
   sensitive   = true
 }

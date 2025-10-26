@@ -69,10 +69,15 @@ jobs:
 
       - name: Setup kubectl with IAP tunnel
         run: |
+          # Create SSH directory to avoid interactive prompt
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+
           # Get kubeconfig from k0s cluster via IAP tunnel
           gcloud compute ssh threads-prod-vm \
             --zone=us-east1-b \
             --tunnel-through-iap \
+            --quiet \
             --command='sudo k0s kubeconfig admin' > kubeconfig.yaml
 
           # Update kubeconfig to use IAP tunnel

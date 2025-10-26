@@ -55,12 +55,74 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Update kustomization with SHA tags
+        run: |
+          cd k8s/overlays/prod
+          kustomize edit set image \
+            us-east1-docker.pkg.dev/web-service-design/threads/nextjs:${{ github.sha }} \
+            us-east1-docker.pkg.dev/web-service-design/threads/ml-service:${{ github.sha }}
+          cat kustomization.yaml
+
+      - name: Install gke-gcloud-auth-plugin
+        run: |
+          gcloud components install gke-gcloud-auth-plugin
+
+      - name: Setup kubectl with IAP tunnel
+        run: |
+          # Get kubeconfig from k0s cluster via IAP tunnel
+          gcloud compute ssh threads-prod-vm \
+            --zone=us-east1-b \
+            --tunnel-through-iap \
+            --command='sudo k0s kubeconfig admin' > kubeconfig.yaml
+
+          # Update kubeconfig to use IAP tunnel
+          sed -i 's|server: https://.*:6443|server: https://localhost:6443|g' kubeconfig.yaml
+          export KUBECONFIG=$(pwd)/kubeconfig.yaml
+
+          # Start IAP tunnel in background
+          gcloud compute start-iap-tunnel threads-prod-vm 6443 \
+            --local-host-port=localhost:6443 \
+            --zone=us-east1-b &
+          TUNNEL_PID=$!
+
+          # Wait for tunnel to be ready
+          sleep 10
+
+          # Test connection
+          kubectl get nodes
+
+      - name: Deploy with kubectl apply
+        run: |
+          export KUBECONFIG=$(pwd)/kubeconfig.yaml
+          kubectl apply -k k8s/overlays/prod
+          kubectl rollout status deployment/nextjs -n threads --timeout=5m
+          kubectl rollout status deployment/ml-service -n threads --timeout=5m
+
+      - name: Prune old images
+        run: |
+          export KUBECONFIG=$(pwd)/kubeconfig.yaml
+          # Get list of all images currently in use
+          USED_IMAGES=$(kubectl get pods --all-namespaces -o jsonpath="{.items[*].spec.containers[*].image}" | tr -s '[[:space:]]' '\n' | sort | uniq)
+
+          # SSH to VM and prune unused images
+          gcloud compute ssh threads-prod-vm \
+            --zone=us-east1-b \
+            --tunnel-through-iap \
+            --command="sudo k0s ctr images list -q | grep -v '<none>' | while read img; do
+              if ! echo '$USED_IMAGES' | grep -q \"\$img\"; then
+                echo \"Removing unused image: \$img\"
+                sudo k0s ctr images rm \"\$img\" || true
+              fi
+            done"
+
       - name: Deployment summary
         run: |
           echo "### Deployment Summary 🚀" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "✅ Images built and pushed:" >> $GITHUB_STEP_SUMMARY
-          echo "- \`nextjs:${{ github.sha }}\` and \`nextjs:latest\`" >> $GITHUB_STEP_SUMMARY
-          echo "- \`ml-service:${{ github.sha }}\` and \`ml-service:latest\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`nextjs:${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`ml-service:${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "⏳ Keel will detect new images and update deployments automatically" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Deployed to k8s cluster via kubectl apply" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Old images pruned to reduce disk usage" >> $GITHUB_STEP_SUMMARY

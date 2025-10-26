@@ -179,15 +179,5 @@ module "argocd" {
   depends_on = [module.compute]
 }
 
-# Keel module - Automatic image updates
-module "keel" {
-  source = "./modules/keel"
-
-  # Use same service account key as GitHub Actions
-  gcp_service_account_key = var.gcp_service_account_key
-
-  depends_on = [module.argocd]
-}
-
 # Data source for GCP access token
 data "google_client_config" "default" {}

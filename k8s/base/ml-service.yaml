@@ -4,10 +4,10 @@ metadata:
   name: ml-service
   namespace: threads
   annotations:
-    keel.sh/policy: force
-    keel.sh/trigger: poll
-    keel.sh/pollSchedule: '@every 1m'
-    keel.sh/match-tag: 'true'
+    argocd-image-updater.argoproj.io/image-list: ml-service=us-east1-docker.pkg.dev/web-service-design/threads/ml-service
+    argocd-image-updater.argoproj.io/ml-service.update-strategy: latest
+    argocd-image-updater.argoproj.io/ml-service.allow-tags: regexp:^[0-9a-f]{40}$
+    argocd-image-updater.argoproj.io/write-back-method: argocd
 spec:
   replicas: 1
   selector:

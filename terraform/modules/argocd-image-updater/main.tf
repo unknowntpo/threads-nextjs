@@ -21,7 +21,7 @@ resource "helm_release" "argocd_image_updater" {
             name   = "gcr"
             prefix = "us-east1-docker.pkg.dev"
             api_url = "https://us-east1-docker.pkg.dev"
-            credentials = "pullsecret:argocd/gcr-json-key"
+            credentials = "pullsecret:threads/gcr-json-key"
             default = true
           }
         ]

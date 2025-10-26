@@ -74,9 +74,9 @@ resource "kubernetes_secret" "gcr_json_key" {
     ".dockerconfigjson" = jsonencode({
       auths = {
         "us-east1-docker.pkg.dev" = {
-          username = "oauth2accesstoken"
-          password = var.gcp_access_token
-          auth     = base64encode("oauth2accesstoken:${var.gcp_access_token}")
+          username = "_json_key"
+          password = var.gcp_service_account_key
+          auth     = base64encode("_json_key:${var.gcp_service_account_key}")
         }
       }
     })

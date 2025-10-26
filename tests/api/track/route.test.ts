@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { cleanupDatabase, createTestUser } from '@/tests/helpers/db'
 import { prisma } from '@/lib/prisma'
+import { Prisma } from '@prisma/client'
 
 describe('Track API - Database Integration', () => {
   beforeEach(async () => {
@@ -188,7 +189,7 @@ describe('Track API - Database Integration', () => {
           userId: user.id,
           postId: post.id,
           interactionType: 'view',
-          metadata: metadata ? (metadata as Record<string, unknown>) : undefined,
+          metadata: metadata || Prisma.JsonNull,
         })),
       })
 

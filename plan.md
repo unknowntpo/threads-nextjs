@@ -429,42 +429,51 @@ Terraform-managed GCP Resources (us-east1)
 **Infrastructure as Code (Terraform):**
 
 - [x] Terraform project structure (`terraform/`)
-- [ ] State backend (GCS bucket with versioning)
-- [ ] VPC and networking resources
-- [ ] Compute Engine VM with startup script
-- [ ] Cloud Run services (Next.js + ML)
-- [ ] Secret Manager integration
-- [ ] IAM service accounts and roles
-- [ ] Firewall rules (minimal exposure)
-- [ ] Cloud NAT for VM egress
+- [x] VPC and networking resources
+- [x] Compute Engine VM with startup script (c4a-standard-2 ARM64, preemptible)
+- [x] IAM service accounts and roles
+- [x] Firewall rules (SSH via IAP)
+- [x] k0s Kubernetes cluster on VM
+- [x] ArgoCD for GitOps deployments
+- [x] Keel for automatic image updates from Artifact Registry
+- [x] GitHub Actions CI/CD (build ARM64 images, push to Artifact Registry)
+- [ ] State backend (GCS bucket with versioning) - using local state
+- [ ] Secret Manager integration - using k8s secrets
+- [ ] Cloud NAT for VM egress - using direct internet access
 
-**VM Setup (e2-micro):**
+**VM Setup (c4a-standard-2 ARM64, preemptible):**
 
-- [ ] Install Docker and Docker Compose
-- [ ] PostgreSQL container (threads + dagster DBs)
-- [ ] Dagster daemon container
-- [ ] Dagster webserver container (:3001)
+- [x] k0s Kubernetes v1.34.1 installed via startup script
+- [x] PostgreSQL deployed as k8s StatefulSet
+- [x] ArgoCD deployed for GitOps
+- [x] Keel deployed for image auto-updates (keelhq/keel-aarch64)
+- [x] Local-path storage provisioner for PVCs
+- [x] IAP tunnel for k8s API access
 - [ ] Automated backups (Cloud Storage)
 - [ ] Monitoring and health checks
-- [ ] Auto-restart policies
+- [ ] Dagster daemon container (planned)
+- [ ] Dagster webserver container (:3001) (planned)
 
-**Cloud Run Deployment:**
+**Kubernetes Deployment (k0s on VM):**
 
-- [ ] Build and push Docker images to Artifact Registry
-- [ ] Deploy Next.js app to Cloud Run
-- [ ] Deploy ML service to Cloud Run
-- [ ] Configure environment variables via Secret Manager
-- [ ] Set up Cloud Run service-to-service auth
+- [x] Build and push Docker images to Artifact Registry (ARM64)
+- [x] Next.js app deployed as Deployment
+- [x] ML service deployed as Deployment
+- [x] Environment variables configured with k8s secrets
+- [x] Keel polling Artifact Registry for :latest tag updates
+- [x] ArgoCD syncing from Git repository
+- [x] Services exposed via NodePort (Next.js: 30000)
 - [ ] Configure custom domain (if applicable)
-- [ ] Enable Cloud Run logging and monitoring
+- [ ] Enable logging and monitoring
 
 **CI/CD Integration:**
 
-- [ ] Update GitHub Actions workflow
+- [x] GitHub Actions workflow (deploy-gke.yml)
+- [x] Docker build and push to Artifact Registry (ARM64)
+- [x] Automatic deployment via Keel (polls every 1min)
+- [x] Removed Zeabur workflows
 - [ ] Terraform plan on PR
 - [ ] Terraform apply on merge to main
-- [ ] Docker build and push to Artifact Registry
-- [ ] Cloud Run deployment automation
 - [ ] Prisma migrations in CI/CD
 - [ ] Smoke tests after deployment
 
@@ -509,26 +518,38 @@ Terraform-managed GCP Resources (us-east1)
 **Test:**
 
 1. ✅ Terraform plan succeeds without errors
-2. ✅ All GCP resources created in us-east1
-3. ✅ PostgreSQL accessible from Cloud Run services
-4. ✅ Dagster webserver UI accessible
-5. ✅ Next.js app responds on Cloud Run URL
-6. ✅ ML service returns recommendations
-7. ✅ Fake user simulation runs via Dagster
-8. ✅ CI/CD pipeline deploys successfully
-9. ✅ Monthly cost ≤ $5 (post free-tier credits)
+2. ✅ All GCP resources created in us-east1-b
+3. ✅ PostgreSQL accessible within k8s cluster
+4. ✅ Next.js app deployed and accessible via NodePort
+5. ✅ ML service deployed and accessible
+6. ✅ CI/CD pipeline builds and pushes ARM64 images successfully
+7. ✅ Keel automatically updates pods when new :latest images pushed
+8. ✅ ArgoCD syncs manifests from Git
+9. ⏳ Monthly cost monitoring (preemptible VM reduces costs)
+10. ⏳ Dagster deployment (planned)
 
-**Effort Estimate:** ~40-60 hours
+**Effort Estimate:** ~40-60 hours (Core infrastructure: ~20 hours completed)
+
+**What's Complete:**
+
+- ✅ Terraform infrastructure (VPC, VM, IAM, firewall)
+- ✅ k0s Kubernetes cluster on ARM64 VM
+- ✅ ArgoCD + Keel GitOps pipeline
+- ✅ GitHub Actions CI/CD with ARM64 builds
+- ✅ Next.js and ML service deployments
+- ✅ Script library for IAP tunnel management
 
 **Future Enhancements:**
 
-- [ ] Dagster Cloud Code Location on Cloud Run
+- [ ] Migrate to proper GKE cluster (if budget allows)
 - [ ] Cloud SQL migration (if budget allows)
+- [ ] Dagster deployment for ML pipeline orchestration
 - [ ] Multi-region deployment
 - [ ] CDN integration (Cloud CDN)
 - [ ] Load balancing for high availability
+- [ ] Monitoring and alerting setup
 
-**Status:** 📋 Ready to implement
+**Status:** ✅ Core deployment complete, enhancements pending
 
 ---
 

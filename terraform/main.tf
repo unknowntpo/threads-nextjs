@@ -173,8 +173,8 @@ module "argocd" {
   postgres_password         = var.postgres_password
   dagster_postgres_password = var.dagster_postgres_password
 
-  # Get GCP access token for Artifact Registry
-  gcp_access_token = data.google_client_config.default.access_token
+  # Use service account JSON key for Artifact Registry (same as Keel)
+  gcp_service_account_key = var.gcp_service_account_key
 
   depends_on = [module.compute]
 }

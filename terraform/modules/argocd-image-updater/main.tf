@@ -70,3 +70,37 @@ resource "kubernetes_secret" "gcr_image_updater" {
 
   type = "Opaque"
 }
+
+# Role to read secrets in threads namespace
+resource "kubernetes_role" "image_updater_threads" {
+  metadata {
+    name      = "argocd-image-updater"
+    namespace = "threads"
+  }
+
+  rule {
+    api_groups = [""]
+    resources  = ["secrets"]
+    verbs      = ["get", "list", "watch"]
+  }
+}
+
+# RoleBinding to allow image-updater service account to read secrets in threads namespace
+resource "kubernetes_role_binding" "image_updater_threads" {
+  metadata {
+    name      = "argocd-image-updater"
+    namespace = "threads"
+  }
+
+  role_ref {
+    api_group = "rbac.authorization.k8s.io"
+    kind      = "Role"
+    name      = kubernetes_role.image_updater_threads.metadata[0].name
+  }
+
+  subject {
+    kind      = "ServiceAccount"
+    name      = "argocd-image-updater"
+    namespace = "argocd"
+  }
+}

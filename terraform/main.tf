@@ -135,6 +135,8 @@ module "compute" {
   postgres_password = var.postgres_password
   dagster_postgres_password = var.dagster_postgres_password
 
+  snapshot_name = var.snapshot_name
+
   depends_on = [module.networking]
 }
 

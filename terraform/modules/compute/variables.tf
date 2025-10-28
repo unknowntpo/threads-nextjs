@@ -39,3 +39,9 @@ variable "dagster_postgres_password" {
   type        = string
   sensitive   = true
 }
+
+variable "snapshot_name" {
+  description = "Name of the snapshot to use for boot disk (empty string uses base image)"
+  type        = string
+  default     = ""
+}

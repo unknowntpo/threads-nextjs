@@ -6,11 +6,24 @@
 set -e
 
 ZONE="us-east1-b"
-VM_NAME="threads-prod-vm"
 PROJECT_ID="web-service-design"
 KUBECONFIG_PATH="$HOME/.kube/config-threads-k0s"
 
 echo "Setting up kubectl access to k0s cluster..."
+
+# Auto-detect VM name from instance group
+echo "Detecting VM name from instance group..."
+VM_NAME=$(gcloud compute instances list \
+	--filter="name~threads-prod-vm" \
+	--format="value(name)" \
+	--limit=1)
+
+if [ -z "$VM_NAME" ]; then
+	echo "Error: No VM found matching 'threads-prod-vm'"
+	exit 1
+fi
+
+echo "Found VM: $VM_NAME"
 
 # Create kubeconfig directory if it doesn't exist
 mkdir -p "$HOME/.kube"

@@ -3,10 +3,27 @@
 # Source this file in other scripts: source "$(dirname "$0")/lib/k8s-tunnel.sh"
 
 # Default configuration
-: "${VM_NAME:=threads-prod-vm}"
 : "${ZONE:=us-east1-b}"
 : "${KUBECONFIG_PATH:=$HOME/.kube/config-threads-k0s}"
 : "${IAP_LOCAL_PORT:=16443}"
+
+# Auto-detect VM name if not provided
+get_vm_name() {
+  if [ -z "${VM_NAME}" ]; then
+    VM_NAME=$(gcloud compute instances list \
+      --filter="name~threads-prod-vm" \
+      --format="value(name)" \
+      --limit=1 2>/dev/null)
+
+    if [ -z "$VM_NAME" ]; then
+      echo "Error: No VM found matching 'threads-prod-vm'" >&2
+      return 1
+    fi
+
+    export VM_NAME
+  fi
+  echo "$VM_NAME"
+}
 
 # Setup IAP tunnel to k0s API server and configure kubeconfig
 # Returns: Sets KUBECONFIG environment variable
@@ -14,6 +31,10 @@ setup_k8s_tunnel() {
   local log_file="${1:-/tmp/iap-tunnel.log}"
 
   echo "Setting up IAP tunnel to k0s API server..."
+
+  # Auto-detect VM name
+  VM_NAME=$(get_vm_name) || return 1
+  echo "Using VM: ${VM_NAME}"
 
   # Kill existing tunnel on port
   lsof -ti:${IAP_LOCAL_PORT} | xargs kill -9 2>/dev/null || true

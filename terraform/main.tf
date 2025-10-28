@@ -71,33 +71,19 @@ provider "helm" {
   }
 }
 
-# Data source to fetch kubeconfig
-# NOTE: Disabled during instance group migration
-# After migration, get kubeconfig with:
-# VM_NAME=$(gcloud compute instances list --filter="name~threads-prod-vm" --format="value(name)")
-# gcloud compute ssh $VM_NAME --zone=us-east1-b --tunnel-through-iap --command='sudo k0s kubeconfig admin'
-#
-# data "external" "kubeconfig" {
-#   program = ["bash", "-c", <<-EOT
-#     VM_NAME=$(gcloud compute instances list --filter="name~threads-${var.env}-vm" --format="value(name)" --limit=1)
-#     CONFIG=$(gcloud compute ssh $VM_NAME \
-#       --zone=${var.zone} \
-#       --tunnel-through-iap \
-#       --command='sudo k0s kubeconfig admin' 2>/dev/null | grep -A 999 'apiVersion:')
-#     echo "{\"kubeconfig\":\"$(echo "$CONFIG" | base64 | tr -d '\n')\"}"
-#   EOT
-#   ]
-#
-#   depends_on = [module.compute]
-# }
-
-# Temporary kubeconfig data source during migration
+# Data source to fetch kubeconfig from VM
 data "external" "kubeconfig" {
   program = ["bash", "-c", <<-EOT
-    # Return empty kubeconfig during migration
-    echo '{"kubeconfig":"YXBpVmVyc2lvbjogdjEKY2x1c3RlcnM6CiAgLSBuYW1lOiBkdW1teQogICAgY2x1c3RlcjoKICAgICAgc2VydmVyOiBodHRwczovL2xvY2FsaG9zdDoxNjQ0MwogICAgICBjZXJ0aWZpY2F0ZS1hdXRob3JpdHktZGF0YTogZHVtbXkKY29udGV4dHM6CiAgLSBuYW1lOiBkdW1teQogICAgY29udGV4dDoKICAgICAgY2x1c3RlcjogZHVtbXkKICAgICAgdXNlcjogZHVtbXkKY3VycmVudC1jb250ZXh0OiBkdW1teQp1c2VyczoKICAtIG5hbWU6IGR1bW15CiAgICB1c2VyOgogICAgICBjbGllbnQtY2VydGlmaWNhdGUtZGF0YTogZHVtbXkKICAgICAgY2xpZW50LWtleS1kYXRhOiBkdW1teQo="}'
+    VM_NAME=$(gcloud compute instances list --filter="name~threads-${var.env}-vm" --format="value(name)" --limit=1)
+    CONFIG=$(gcloud compute ssh $VM_NAME \
+      --zone=${var.zone} \
+      --tunnel-through-iap \
+      --command='sudo k0s kubeconfig admin' 2>/dev/null | grep -A 999 'apiVersion:')
+    echo "{\"kubeconfig\":\"$(echo "$CONFIG" | base64 | tr -d '\n')\"}"
   EOT
   ]
+
+  depends_on = [module.compute]
 }
 
 # NOTE: IAP tunnel must be started manually before running terraform apply

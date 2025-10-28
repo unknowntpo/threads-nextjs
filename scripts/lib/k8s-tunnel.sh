@@ -54,13 +54,16 @@ setup_k8s_tunnel() {
   # Fetch kubeconfig
   echo "Fetching kubeconfig from VM..."
   local kubeconfig_output
+  local exit_code
+
   kubeconfig_output=$(gcloud compute ssh ${VM_NAME} \
     --zone=${ZONE} \
     --tunnel-through-iap \
     --command='sudo k0s kubeconfig admin' 2>&1)
+  exit_code=$?
 
-  if [ $? -ne 0 ]; then
-    echo "Error: Failed to fetch kubeconfig from VM" >&2
+  if [ $exit_code -ne 0 ]; then
+    echo "Error: Failed to fetch kubeconfig from VM (exit code: $exit_code)" >&2
     echo "$kubeconfig_output" >&2
     return 1
   fi

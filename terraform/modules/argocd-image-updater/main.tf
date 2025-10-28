@@ -5,56 +5,38 @@
  * when new versions are pushed to Artifact Registry.
  */
 
-resource "helm_release" "argocd_image_updater" {
-  name       = "argocd-image-updater"
-  repository = "https://argoproj.github.io/argo-helm"
-  chart      = "argocd-image-updater"
-  namespace  = "argocd"
-  version    = "0.11.0"
-
-  values = [
-    yamlencode({
-      config = {
-        # Registry configuration for GCP Artifact Registry
-        registries = [
-          {
-            name   = "gcr"
-            prefix = "us-east1-docker.pkg.dev"
-            api_url = "https://us-east1-docker.pkg.dev"
-            credentials = "pullsecret:threads/gcr-json-key"
-            default = true
-          }
-        ]
-      }
-
-      # Update strategy
-      argocd = {
-        grpcWeb     = true
-        serverAddress = "argocd-server.argocd.svc.cluster.local"
-        insecure    = true
-      }
-
-      # Check for new images every 2 minutes
-      interval = "2m"
-
-      # Log level
-      logLevel = "info"
-
-      # RBAC to allow reading secrets
-      rbac = {
-        enabled = true
-        rules = [
-          {
-            apiGroups = [""]
-            resources = ["secrets"]
-            verbs     = ["get", "list", "watch"]
-          }
-        ]
-      }
-    })
-  ]
+# Install ArgoCD Image Updater using official manifest
+resource "kubectl_manifest" "argocd_image_updater_install" {
+  yaml_body = file("${path.module}/argocd-image-updater-install.yaml")
 
   depends_on = [kubernetes_secret.gcr_image_updater]
+}
+
+# ConfigMap for registry configuration
+resource "kubernetes_config_map" "argocd_image_updater_config" {
+  metadata {
+    name      = "argocd-image-updater-config"
+    namespace = "argocd"
+  }
+
+  data = {
+    "registries.conf" = <<-EOT
+      registries:
+      - name: gcr
+        prefix: us-east1-docker.pkg.dev
+        api_url: https://us-east1-docker.pkg.dev
+        credentials: pullsecret:argocd/gcr-image-updater-secret
+        default: true
+    EOT
+
+    "log.level" = "info"
+    "argocd.grpc_web" = "true"
+    "argocd.server_addr" = "argocd-server.argocd.svc.cluster.local"
+    "argocd.insecure" = "true"
+    "kube.events" = "true"
+  }
+
+  depends_on = [kubectl_manifest.argocd_image_updater_install]
 }
 
 # Secret for Artifact Registry authentication
@@ -65,10 +47,18 @@ resource "kubernetes_secret" "gcr_image_updater" {
   }
 
   data = {
-    creds = "gcr:_json_key:${var.gcp_service_account_key}"
+    ".dockerconfigjson" = jsonencode({
+      auths = {
+        "us-east1-docker.pkg.dev" = {
+          username = "_json_key"
+          password = var.gcp_service_account_key
+          auth     = base64encode("_json_key:${var.gcp_service_account_key}")
+        }
+      }
+    })
   }
 
-  type = "Opaque"
+  type = "kubernetes.io/dockerconfigjson"
 }
 
 # Role to read secrets in threads namespace

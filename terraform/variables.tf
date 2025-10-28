@@ -92,11 +92,12 @@ variable "github_client_secret" {
   sensitive   = true
 }
 
-# GCP Service Account Key for Keel
+# GCP Service Account Key for ArgoCD Image Updater
 variable "gcp_service_account_key" {
-  description = "GCP service account JSON key for Keel to access Artifact Registry"
+  description = "GCP service account JSON key for ArgoCD Image Updater to access Artifact Registry. Loads from ~/.gcloud/keys/github-actions-artifact-registry-push.json"
   type        = string
   sensitive   = true
+  default     = ""  # Set in tfvars or will prompt
 }
 
 # VM Snapshot Configuration

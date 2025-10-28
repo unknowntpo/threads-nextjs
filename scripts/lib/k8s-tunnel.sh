@@ -53,11 +53,25 @@ setup_k8s_tunnel() {
 
   # Fetch kubeconfig
   echo "Fetching kubeconfig from VM..."
-  gcloud compute ssh ${VM_NAME} \
+  local kubeconfig_output
+  kubeconfig_output=$(gcloud compute ssh ${VM_NAME} \
     --zone=${ZONE} \
     --tunnel-through-iap \
-    --command='sudo k0s kubeconfig admin' 2>/dev/null | \
-    grep -A 999 'apiVersion:' > "${KUBECONFIG_PATH}"
+    --command='sudo k0s kubeconfig admin' 2>&1)
+
+  if [ $? -ne 0 ]; then
+    echo "Error: Failed to fetch kubeconfig from VM" >&2
+    echo "$kubeconfig_output" >&2
+    return 1
+  fi
+
+  # Extract kubeconfig (skip any warnings/errors before apiVersion)
+  echo "$kubeconfig_output" | grep -A 999 'apiVersion:' > "${KUBECONFIG_PATH}"
+
+  if [ ! -s "${KUBECONFIG_PATH}" ]; then
+    echo "Error: Kubeconfig file is empty" >&2
+    return 1
+  fi
 
   # Get VM internal IP dynamically
   local vm_internal_ip=$(gcloud compute instances describe ${VM_NAME} \

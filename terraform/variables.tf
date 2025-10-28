@@ -98,3 +98,10 @@ variable "gcp_service_account_key" {
   type        = string
   sensitive   = true
 }
+
+# VM Snapshot Configuration
+variable "snapshot_name" {
+  description = "Name of the snapshot to use for VM boot disk. Empty string uses base Debian image. Example: threads-prod-k0s-snapshot-20251028-200718"
+  type        = string
+  default     = ""
+}

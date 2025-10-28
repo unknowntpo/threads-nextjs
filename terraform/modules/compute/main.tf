@@ -29,71 +29,25 @@ data "local_file" "startup_script" {
   filename = "${path.module}/startup-script.sh"
 }
 
-# C4A Spot Preemptible VM instance (ARM architecture, 2 vCPU, 8GB RAM)
-resource "google_compute_instance" "vm" {
-  name         = "threads-${var.env}-vm"
-  machine_type = "c4a-standard-2"  # 2 vCPU, 8 GB RAM - ARM (Axion) processor
-  zone         = var.zone
-
-  tags = ["ssh", "http-server", "database"]
-
-  boot_disk {
-    initialize_params {
-      image = "debian-13-arm64"
-      size  = 50  # GB
-      type  = "hyperdisk-balanced"
-    }
-  }
-
-  # Spot/Preemptible configuration for cost savings (~80% cheaper)
-  scheduling {
-    preemptible                 = true
-    automatic_restart           = false
-    on_host_maintenance         = "TERMINATE"
-    provisioning_model          = "SPOT"
-    instance_termination_action = "STOP"
-  }
-
-  network_interface {
-    network    = var.network_name
-    subnetwork = var.subnet_name
-
-    # Ephemeral external IP (free tier allows 1 external IP)
-    access_config {
-      network_tier = "STANDARD"  # Use standard tier for free tier
-    }
-  }
-
-  metadata = {
-    startup-script = templatefile("${path.module}/startup-script-k0s.sh", {
-      PROJECT_ID                = var.project_id
-      POSTGRES_PASSWORD         = var.postgres_password
-      DAGSTER_POSTGRES_PASSWORD = var.dagster_postgres_password
-      POSTGRES_USER             = "postgres"
-      POSTGRES_DB               = "threads"
-    })
-  }
-
-  service_account {
-    email  = google_service_account.vm_sa.email
-    scopes = ["cloud-platform"]
-  }
-
-  # Allow stopping for maintenance
-  allow_stopping_for_update = true
-
-  # Labels for organization
-  labels = {
-    environment = var.env
-    component   = "database-dagster"
-  }
-
-  lifecycle {
-    ignore_changes = [
-      metadata["ssh-keys"],
-    ]
-  }
-}
+# OLD: Single VM instance - REPLACED BY INSTANCE GROUP BELOW
+# This resource is commented out to migrate to managed instance group
+# with auto-healing capabilities. The instance group provides:
+# - Automatic restart on failure
+# - Health check monitoring
+# - Better resilience against SPOT VM termination
+#
+# To migrate:
+# 1. Destroy old VM: terraform destroy -target=module.compute.google_compute_instance.vm
+# 2. Apply instance group: terraform apply -target=module.compute
+# 3. Update kubeconfig with new VM IP
+#
+# resource "google_compute_instance" "vm" {
+#   name         = "threads-${var.env}-vm"
+#   machine_type = "c4a-standard-2"
+#   zone         = var.zone
+#   tags = ["ssh", "http-server", "database"]
+#   ...
+# }
 
 # Reserve a static internal IP for predictable database connections
 # Note: External IP is ephemeral to stay within free tier

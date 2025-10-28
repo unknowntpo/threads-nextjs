@@ -72,17 +72,32 @@ provider "helm" {
 }
 
 # Data source to fetch kubeconfig
+# NOTE: Disabled during instance group migration
+# After migration, get kubeconfig with:
+# VM_NAME=$(gcloud compute instances list --filter="name~threads-prod-vm" --format="value(name)")
+# gcloud compute ssh $VM_NAME --zone=us-east1-b --tunnel-through-iap --command='sudo k0s kubeconfig admin'
+#
+# data "external" "kubeconfig" {
+#   program = ["bash", "-c", <<-EOT
+#     VM_NAME=$(gcloud compute instances list --filter="name~threads-${var.env}-vm" --format="value(name)" --limit=1)
+#     CONFIG=$(gcloud compute ssh $VM_NAME \
+#       --zone=${var.zone} \
+#       --tunnel-through-iap \
+#       --command='sudo k0s kubeconfig admin' 2>/dev/null | grep -A 999 'apiVersion:')
+#     echo "{\"kubeconfig\":\"$(echo "$CONFIG" | base64 | tr -d '\n')\"}"
+#   EOT
+#   ]
+#
+#   depends_on = [module.compute]
+# }
+
+# Temporary kubeconfig data source during migration
 data "external" "kubeconfig" {
   program = ["bash", "-c", <<-EOT
-    CONFIG=$(gcloud compute ssh ${module.compute.vm_name} \
-      --zone=${var.zone} \
-      --tunnel-through-iap \
-      --command='sudo k0s kubeconfig admin' 2>/dev/null | grep -A 999 'apiVersion:')
-    echo "{\"kubeconfig\":\"$(echo "$CONFIG" | base64 | tr -d '\n')\"}"
+    # Return empty kubeconfig during migration
+    echo '{"kubeconfig":"YXBpVmVyc2lvbjogdjEKY2x1c3RlcnM6CiAgLSBuYW1lOiBkdW1teQogICAgY2x1c3RlcjoKICAgICAgc2VydmVyOiBodHRwczovL2xvY2FsaG9zdDoxNjQ0MwogICAgICBjZXJ0aWZpY2F0ZS1hdXRob3JpdHktZGF0YTogZHVtbXkKY29udGV4dHM6CiAgLSBuYW1lOiBkdW1teQogICAgY29udGV4dDoKICAgICAgY2x1c3RlcjogZHVtbXkKICAgICAgdXNlcjogZHVtbXkKY3VycmVudC1jb250ZXh0OiBkdW1teQp1c2VyczoKICAtIG5hbWU6IGR1bW15CiAgICB1c2VyOgogICAgICBjbGllbnQtY2VydGlmaWNhdGUtZGF0YTogZHVtbXkKICAgICAgY2xpZW50LWtleS1kYXRhOiBkdW1teQo="}'
   EOT
   ]
-
-  depends_on = [module.compute]
 }
 
 # NOTE: IAP tunnel must be started manually before running terraform apply
@@ -138,6 +153,9 @@ module "compute" {
 }
 
 # Secrets module - Secret Manager for sensitive data
+# NOTE: Database URLs temporarily unavailable during instance group migration
+# After instance group is created, get VM IP with:
+# gcloud compute instances list --filter="name~threads-prod-vm" --format="value(networkInterfaces[0].networkIP)"
 module "secrets" {
   source = "./modules/secrets"
 
@@ -147,8 +165,9 @@ module "secrets" {
   # Database credentials
   postgres_password = var.postgres_password
   dagster_postgres_password = var.dagster_postgres_password
-  database_url = "postgresql://postgres:${var.postgres_password}@${module.compute.vm_internal_ip}:5432/threads"
-  dagster_database_url = "postgresql://postgres:${var.dagster_postgres_password}@${module.compute.vm_internal_ip}:5432/dagster"
+  # Temporary placeholder URLs during migration
+  database_url = "postgresql://postgres:${var.postgres_password}@10.0.0.2:5432/threads"
+  dagster_database_url = "postgresql://postgres:${var.dagster_postgres_password}@10.0.0.2:5432/dagster"
 
   # NextAuth secrets
   nextauth_secret = var.nextauth_secret

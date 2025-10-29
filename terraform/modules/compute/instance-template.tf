@@ -1,12 +1,18 @@
+# Disk configuration constants
+locals {
+  boot_disk_size_gb = 50
+  boot_disk_type    = "hyperdisk-balanced"
+}
+
 # Disk created from snapshot (if snapshot is provided)
 resource "google_compute_disk" "boot_disk_from_snapshot" {
   count = var.snapshot_name != "" ? 1 : 0
 
   name     = "threads-${var.env}-boot-disk-from-snapshot"
-  type     = "hyperdisk-balanced"
+  type     = local.boot_disk_type
   zone     = var.zone
   snapshot = var.snapshot_name
-  size     = 50
+  size     = local.boot_disk_size_gb
 
   labels = {
     environment = var.env
@@ -30,8 +36,8 @@ resource "google_compute_instance_template" "vm_template" {
     auto_delete  = true
 
     # These are only used when source_image is set (not with source disk)
-    disk_size_gb = var.snapshot_name == "" ? 50 : null
-    disk_type    = var.snapshot_name == "" ? "hyperdisk-balanced" : null
+    disk_size_gb = var.snapshot_name == "" ? local.boot_disk_size_gb : null
+    disk_type    = var.snapshot_name == "" ? local.boot_disk_type : null
   }
 
   # Spot/Preemptible for cost savings

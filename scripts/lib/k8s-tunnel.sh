@@ -36,37 +36,35 @@ setup_k8s_tunnel() {
   VM_NAME=$(get_vm_name) || return 1
   echo "Using VM: ${VM_NAME}"
 
-  # Kill existing tunnel on port
-  lsof -ti:${IAP_LOCAL_PORT} | xargs kill -9 2>/dev/null || true
-
-  # Start IAP tunnel in background
-  echo "Starting IAP tunnel (localhost:${IAP_LOCAL_PORT} -> VM:6443)..."
-  gcloud compute start-iap-tunnel ${VM_NAME} 6443 \
-    --local-host-port=localhost:${IAP_LOCAL_PORT} \
-    --zone=${ZONE} > "${log_file}" 2>&1 &
-
-  export IAP_TUNNEL_PID=$!
-
-  # Wait for tunnel
-  echo "Waiting for tunnel to be ready..."
-  sleep 5
-
-  # Fetch kubeconfig
-  echo "Fetching kubeconfig from VM..."
-  local kubeconfig_output
-  local exit_code
-
-  kubeconfig_output=$(gcloud compute ssh ${VM_NAME} \
+  # Check instance health
+  echo "Checking instance health..."
+  local vm_status=$(gcloud compute instances describe ${VM_NAME} \
     --zone=${ZONE} \
-    --tunnel-through-iap \
-    --command='sudo k0s kubeconfig admin' 2>&1)
-  exit_code=$?
+    --format="value(status)")
 
-  if [ $exit_code -ne 0 ]; then
-    echo "Error: Failed to fetch kubeconfig from VM (exit code: $exit_code)" >&2
-    echo "$kubeconfig_output" >&2
+  if [ "$vm_status" != "RUNNING" ]; then
+    echo "Error: VM is not running (status: $vm_status)" >&2
     return 1
   fi
+
+  # Fetch kubeconfig using --tunnel-through-iap (creates temporary tunnel)
+  echo "Fetching kubeconfig from VM via IAP..."
+  local kubeconfig_output
+  local temp_file=$(mktemp)
+
+  # SSH with IAP handles tunneling for us
+  if ! gcloud compute ssh ${VM_NAME} \
+    --zone=${ZONE} \
+    --tunnel-through-iap \
+    --command='sudo k0s kubeconfig admin' > "${temp_file}" 2>&1; then
+    echo "Error: Failed to fetch kubeconfig from VM" >&2
+    cat "${temp_file}" >&2
+    rm -f "${temp_file}"
+    return 1
+  fi
+
+  kubeconfig_output=$(cat "${temp_file}")
+  rm -f "${temp_file}"
 
   # Extract kubeconfig (skip any warnings/errors before apiVersion)
   echo "$kubeconfig_output" | grep -A 999 'apiVersion:' > "${KUBECONFIG_PATH}"
@@ -88,6 +86,21 @@ setup_k8s_tunnel() {
 
   # Set kubeconfig permissions
   chmod 600 "${KUBECONFIG_PATH}"
+
+  # Kill existing tunnel on port
+  lsof -ti:${IAP_LOCAL_PORT} | xargs kill -9 2>/dev/null || true
+
+  # Now start persistent IAP tunnel for kubectl access
+  echo "Starting persistent IAP tunnel (localhost:${IAP_LOCAL_PORT} -> VM:6443)..."
+  gcloud compute start-iap-tunnel ${VM_NAME} 6443 \
+    --local-host-port=localhost:${IAP_LOCAL_PORT} \
+    --zone=${ZONE} > /tmp/iap-tunnel.log 2>&1 &
+
+  export IAP_TUNNEL_PID=$!
+
+  # Wait for tunnel to establish
+  echo "Waiting for tunnel to establish..."
+  sleep 3
 
   # Export for use in calling script
   export KUBECONFIG="${KUBECONFIG_PATH}"

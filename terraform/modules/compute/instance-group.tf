@@ -17,16 +17,6 @@ resource "google_compute_instance_group_manager" "vm_group" {
     port = 6443
   }
 
-  named_port {
-    name = "nextjs"
-    port = 3000
-  }
-
-  named_port {
-    name = "dagster"
-    port = 3001
-  }
-
   # Auto-healing configuration
   auto_healing_policies {
     health_check      = google_compute_health_check.k0s_api.id

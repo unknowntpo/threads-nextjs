@@ -28,18 +28,6 @@ variable "subnet_name" {
   type        = string
 }
 
-variable "postgres_password" {
-  description = "PostgreSQL password"
-  type        = string
-  sensitive   = true
-}
-
-variable "dagster_postgres_password" {
-  description = "Dagster PostgreSQL password"
-  type        = string
-  sensitive   = true
-}
-
 variable "snapshot_name" {
   description = "Name of the snapshot to use for boot disk (empty string uses base image)"
   type        = string

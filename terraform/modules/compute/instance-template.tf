@@ -1,3 +1,19 @@
+# Disk created from snapshot (if snapshot is provided)
+resource "google_compute_disk" "boot_disk_from_snapshot" {
+  count = var.snapshot_name != "" ? 1 : 0
+
+  name     = "threads-${var.env}-boot-disk-from-snapshot"
+  type     = "hyperdisk-balanced"
+  zone     = var.zone
+  snapshot = var.snapshot_name
+  size     = 50
+
+  labels = {
+    environment = var.env
+    component   = "k0s-cluster"
+  }
+}
+
 # Instance template for managed instance group
 resource "google_compute_instance_template" "vm_template" {
   name_prefix  = "threads-${var.env}-vm-"
@@ -7,12 +23,15 @@ resource "google_compute_instance_template" "vm_template" {
   tags = ["ssh", "http-server", "database", "k0s"]
 
   disk {
-    # Use snapshot if provided, otherwise fall back to base image
-    source_image    = "debian-13-arm64"
-    disk_size_gb    = 50
-    disk_type       = "hyperdisk-balanced"
-    boot            = true
-    auto_delete     = true
+    # If snapshot provided, use disk created from snapshot; otherwise use base image
+    source       = var.snapshot_name != "" ? google_compute_disk.boot_disk_from_snapshot[0].name : null
+    source_image = var.snapshot_name == "" ? "debian-13-arm64" : null
+    boot         = true
+    auto_delete  = true
+
+    # These are only used when source_image is set (not with source disk)
+    disk_size_gb = var.snapshot_name == "" ? 50 : null
+    disk_type    = var.snapshot_name == "" ? "hyperdisk-balanced" : null
   }
 
   # Spot/Preemptible for cost savings

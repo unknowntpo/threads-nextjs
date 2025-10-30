@@ -94,7 +94,7 @@ variable "github_client_secret" {
 
 # GCP Service Account Key for ArgoCD Image Updater
 variable "gcp_service_account_key" {
-  description = "GCP service account JSON key for ArgoCD Image Updater to access Artifact Registry. Loads from ~/.gcloud/keys/github-actions-artifact-registry-push.json"
+  description = "Path to GCP service account JSON key file for ArgoCD Image Updater to access Artifact Registry. Example: ~/.gcloud/keys/github-actions-artifact-registry-push.json"
   type        = string
   sensitive   = true
   default     = ""  # Set in tfvars or will prompt
@@ -102,7 +102,13 @@ variable "gcp_service_account_key" {
 
 # VM Snapshot Configuration
 variable "snapshot_name" {
-  description = "Name of the snapshot to use for VM boot disk. Empty string uses base Debian image. Example: threads-prod-k0s-snapshot-20251028-200718"
+  description = "Full URL of snapshot to use for VM boot disk. Empty string uses base Debian image or auto-detect latest if use_latest_snapshot=true. Example: projects/web-service-design/global/snapshots/snapshot-k0s"
   type        = string
   default     = ""
+}
+
+variable "use_latest_snapshot" {
+  description = "Automatically use the latest snapshot with k0s-cluster label (only applies when snapshot_name is empty)"
+  type        = bool
+  default     = false
 }

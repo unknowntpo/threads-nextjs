@@ -1,5 +1,5 @@
-# ArgoCD Terraform Module
-# Deploys ArgoCD and the threads application to existing k8s cluster
+# ArgoCD Terraform Module - Helm Deployment
+# Deploys ArgoCD using Helm chart
 
 terraform {
   required_providers {
@@ -7,95 +7,37 @@ terraform {
       source  = "hashicorp/kubernetes"
       version = "~> 2.20"
     }
-    kubectl = {
-      source  = "gavinbunney/kubectl"
-      version = "~> 1.14"
+    helm = {
+      source  = "hashicorp/helm"
+      version = "~> 2.10"
     }
   }
 }
 
-# ArgoCD namespace
-resource "kubernetes_namespace" "argocd" {
-  metadata {
-    name = "argocd"
-  }
-}
+# # ArgoCD namespace
+# resource "kubernetes_namespace" "argocd" {
+#   metadata {
+#     name = var.namespace
+#   }
+# }
 
-# Install ArgoCD using kubectl provider
-resource "kubectl_manifest" "argocd_install" {
-  yaml_body = file("${path.module}/argocd-install.yaml")
+# Install ArgoCD using Helm
+resource "helm_release" "argocd" {
+  name       = "argocd"
+  repository = "https://argoproj.github.io/argo-helm"
+  chart      = "argo-cd"
+  version    = var.chart_version
+  namespace = "argocd"
+  create_namespace = true
 
-  depends_on = [kubernetes_namespace.argocd]
-}
-
-# Create threads namespace
-resource "kubernetes_namespace" "threads" {
-  metadata {
-    name = "threads"
-  }
-}
-
-# Postgres password secret
-resource "kubernetes_secret" "postgres_password" {
-  metadata {
-    name      = "postgres-password"
-    namespace = kubernetes_namespace.threads.metadata[0].name
-  }
-
-  data = {
-    password = var.postgres_password
-  }
-
-  type = "Opaque"
-}
-
-# Dagster postgres password secret
-resource "kubernetes_secret" "dagster_postgres_password" {
-  metadata {
-    name      = "dagster-postgres-password"
-    namespace = kubernetes_namespace.threads.metadata[0].name
-  }
-
-  data = {
-    password = var.dagster_postgres_password
-  }
-
-  type = "Opaque"
-}
-
-# Docker registry secret for Artifact Registry
-resource "kubernetes_secret" "gcr_json_key" {
-  metadata {
-    name      = "gcr-json-key"
-    namespace = kubernetes_namespace.threads.metadata[0].name
-  }
-
-  data = {
-    ".dockerconfigjson" = jsonencode({
-      auths = {
-        "us-east1-docker.pkg.dev" = {
-          username = "_json_key"
-          password = var.gcp_service_account_key
-          auth     = base64encode("_json_key:${var.gcp_service_account_key}")
+  values = [
+    yamlencode({
+      server = {
+        service = {
+          type = "ClusterIP"
         }
       }
     })
-  }
-
-  type = "kubernetes.io/dockerconfigjson"
-}
-
-# ArgoCD Application for threads
-resource "kubectl_manifest" "argocd_application" {
-  yaml_body = templatefile("${path.module}/argocd-application.yaml", {
-    repo_url = var.repo_url
-  })
-
-  depends_on = [
-    kubectl_manifest.argocd_install,
-    kubernetes_namespace.threads,
-    kubernetes_secret.postgres_password,
-    kubernetes_secret.dagster_postgres_password,
-    kubernetes_secret.gcr_json_key
   ]
 }
+

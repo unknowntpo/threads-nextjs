@@ -3,6 +3,10 @@ kind: Deployment
 metadata:
   name: ml-service
   namespace: threads
+  annotations:
+    keel.sh/policy: force
+    keel.sh/trigger: poll
+    keel.sh/pollSchedule: '@every 5m'
 spec:
   replicas: 1
   selector:

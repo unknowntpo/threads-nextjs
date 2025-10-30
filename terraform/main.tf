@@ -13,18 +13,14 @@ terraform {
       source  = "hashicorp/google"
       version = "~> 5.0"
     }
-    # kubernetes = {
-    #   source  = "hashicorp/kubernetes"
-    #   version = "~> 2.20"
-    # }
-    # kubectl = {
-    #   source  = "gavinbunney/kubectl"
-    #   version = "~> 1.14"
-    # }
-    # helm = {
-    #   source  = "hashicorp/helm"
-    #   version = "~> 2.10"
-    # }
+    kubernetes = {
+      source  = "hashicorp/kubernetes"
+      version = "~> 2.20"
+    }
+    helm = {
+      source  = "hashicorp/helm"
+      version = "~> 2.10"
+    }
   }
 
   # Backend configuration for Terraform state
@@ -43,33 +39,23 @@ provider "google" {
 }
 
 # Configure Kubernetes provider to connect to k0s cluster on VM
-# Uses gcloud SSH which automatically handles IAP tunnel
+# PREREQUISITE: Run scripts/kubectl-setup.sh to set up IAP tunnel and kubeconfig
 # Port 16443 to avoid conflict with local OrbStack on 6443
-# provider "kubernetes" {
-#   host                   = "https://localhost:16443"
-#   cluster_ca_certificate = base64decode(yamldecode(base64decode(data.external.kubeconfig.result.kubeconfig)).clusters[0].cluster.certificate-authority-data)
-#   client_certificate     = base64decode(yamldecode(base64decode(data.external.kubeconfig.result.kubeconfig)).users[0].user.client-certificate-data)
-#   client_key             = base64decode(yamldecode(base64decode(data.external.kubeconfig.result.kubeconfig)).users[0].user.client-key-data)
-# }
-#
-# # Configure kubectl provider
-# provider "kubectl" {
-#   host                   = "https://localhost:16443"
-#   cluster_ca_certificate = base64decode(yamldecode(base64decode(data.external.kubeconfig.result.kubeconfig)).clusters[0].cluster.certificate-authority-data)
-#   client_certificate     = base64decode(yamldecode(base64decode(data.external.kubeconfig.result.kubeconfig)).users[0].user.client-certificate-data)
-#   client_key             = base64decode(yamldecode(base64decode(data.external.kubeconfig.result.kubeconfig)).users[0].user.client-key-data)
-#   load_config_file       = false
-# }
-#
-# # Configure Helm provider
-# provider "helm" {
-#   kubernetes {
-#     host                   = "https://localhost:16443"
-#     cluster_ca_certificate = base64decode(yamldecode(base64decode(data.external.kubeconfig.result.kubeconfig)).clusters[0].cluster.certificate-authority-data)
-#     client_certificate     = base64decode(yamldecode(base64decode(data.external.kubeconfig.result.kubeconfig)).users[0].user.client-certificate-data)
-#     client_key             = base64decode(yamldecode(base64decode(data.external.kubeconfig.result.kubeconfig)).users[0].user.client-key-data)
-#   }
-# }
+provider "kubernetes" {
+  config_path = "~/.kube/config-threads-k0s"
+}
+
+# Configure Helm provider
+provider "helm" {
+  kubernetes {
+    config_path = "~/.kube/config-threads-k0s"
+  }
+}
+
+# Load GCP service account key from file if path is provided
+locals {
+  gcp_service_account_key = var.gcp_service_account_key != "" ? file(var.gcp_service_account_key) : ""
+}
 
 # Enable required GCP APIs
 resource "google_project_service" "required_apis" {
@@ -82,6 +68,8 @@ resource "google_project_service" "required_apis" {
     "logging.googleapis.com",
     "monitoring.googleapis.com",
     "vpcaccess.googleapis.com",
+    "cloudscheduler.googleapis.com",
+    "iamcredentials.googleapis.com",
   ])
 
   service            = each.value
@@ -111,10 +99,57 @@ module "compute" {
   network_name    = module.networking.network_name
   subnet_name     = module.networking.subnet_name
 
-  snapshot_name = var.snapshot_name
+  snapshot_name        = var.snapshot_name
+  use_latest_snapshot  = var.use_latest_snapshot
 
   depends_on = [module.networking]
 }
 
-# Data source for GCP access token
-data "google_client_config" "default" {}
+# kubectl-setup module: Establish IAP tunnel and kubeconfig access
+module "kubectl_setup" {
+  source = "./modules/kubectl-setup"
+
+  vm_name = module.compute.vm_name
+  vm_id   = module.compute.vm_id
+  zone    = var.zone
+
+  depends_on = [module.compute]
+}
+
+# ArgoCD module: Deploy ArgoCD via Helm
+module "argocd" {
+  source = "./modules/argocd"
+
+  namespace     = "argocd"
+  chart_version = "5.51.6"
+
+  depends_on = [module.kubectl_setup]
+}
+
+# Namespaces module: Create application namespaces
+module "namespaces" {
+  source = "./modules/namespaces"
+
+  depends_on = [module.kubectl_setup]
+}
+
+# Keel module: Auto-update container images
+module "keel" {
+  source = "./modules/keel"
+
+  gcp_service_account_key = local.gcp_service_account_key
+
+  depends_on = [module.kubectl_setup]
+}
+
+# External Secrets Operator module: Sync secrets from GCP Secret Manager
+module "external_secrets" {
+  source = "./modules/external-secrets"
+
+  project_id                 = var.project_id
+  region                     = var.region
+  namespace                  = module.namespaces.threads_namespace
+  gcp_service_account_email  = module.compute.service_account_email
+
+  depends_on = [module.kubectl_setup]
+}

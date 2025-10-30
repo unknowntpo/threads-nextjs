@@ -1,25 +1,16 @@
-# NOTE: Outputs are temporarily unavailable during migration to instance group
-# After instance group is created, you can get VM info with:
-# gcloud compute instances list --filter="name~threads-prod-vm"
-
-# output "vm_external_ip" {
-#   description = "External IP of the VM (from instance group)"
-#   value       = "Run: gcloud compute instances list --filter='name~threads-prod-vm' --format='get(networkInterfaces[0].accessConfigs[0].natIP)'"
-# }
-
-# output "vm_internal_ip" {
-#   description = "Internal IP of the VM (from instance group)"
-#   value       = "Run: gcloud compute instances list --filter='name~threads-prod-vm' --format='get(networkInterfaces[0].networkIP)'"
-# }
-
-output "instance_group_name" {
-  description = "Name of the managed instance group"
-  value       = google_compute_instance_group_manager.vm_group.name
+output "vm_name" {
+  description = "Name of the VM instance"
+  value       = google_compute_instance.vm.name
 }
 
-output "instance_group_status" {
-  description = "Status URL for the instance group"
-  value       = google_compute_instance_group_manager.vm_group.status[0].is_stable ? "Stable" : "Updating"
+output "vm_id" {
+  description = "ID of the VM instance"
+  value       = google_compute_instance.vm.id
+}
+
+output "vm_internal_ip" {
+  description = "Internal IP of the VM"
+  value       = google_compute_instance.vm.network_interface[0].network_ip
 }
 
 output "service_account_email" {

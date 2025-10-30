@@ -29,7 +29,13 @@ variable "subnet_name" {
 }
 
 variable "snapshot_name" {
-  description = "Name of the snapshot to use for boot disk (empty string uses base image)"
+  description = "Full URL or name of snapshot to use for boot disk (empty string uses base image or auto-detect latest)"
   type        = string
   default     = ""
+}
+
+variable "use_latest_snapshot" {
+  description = "Automatically use the latest snapshot with k0s-cluster label (only if snapshot_name is empty)"
+  type        = bool
+  default     = false
 }

@@ -1,23 +1,11 @@
-variable "postgres_password" {
-  description = "PostgreSQL password"
+variable "namespace" {
+  description = "Kubernetes namespace for ArgoCD"
   type        = string
-  sensitive   = true
+  default     = "argocd"
 }
 
-variable "dagster_postgres_password" {
-  description = "Dagster PostgreSQL password"
+variable "chart_version" {
+  description = "ArgoCD Helm chart version"
   type        = string
-  sensitive   = true
-}
-
-variable "gcp_service_account_key" {
-  description = "GCP service account JSON key for Artifact Registry"
-  type        = string
-  sensitive   = true
-}
-
-variable "repo_url" {
-  description = "GitHub repository URL"
-  type        = string
-  default     = "https://github.com/unknowntpo/threads-nextjs.git"
+  default     = "5.51.6"  # Latest stable as of Oct 2024
 }

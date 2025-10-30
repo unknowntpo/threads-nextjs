@@ -1,106 +1,116 @@
-# ArgoCD Deployment Guide
+# ArgoCD Deployment with Terraform + Helm
 
-This guide explains how to deploy ArgoCD and applications to the k0s cluster using Terraform.
+This guide explains how to deploy ArgoCD and ArgoCD Image Updater using Helm charts via Terraform.
 
 ## Prerequisites
 
-1. VM is already running with k0s installed
-2. IAP tunnel is configured
-3. kubectl access is set up
-
-## Step 1: Setup kubectl Access
-
-Before running Terraform, you need to fetch the kubeconfig from the VM:
+**IMPORTANT:** Before running `terraform apply`, you **must** set up kubectl connection to your k0s cluster:
 
 ```bash
-# From project root
 ./scripts/kubectl-setup.sh
 ```
 
-This will:
+This script:
 
-- Fetch kubeconfig from VM via IAP tunnel
-- Save to `~/.kube/config-threads-k0s`
-- Configure server URL for `https://localhost:6443`
+1. Sets up IAP tunnel to your GCP VM
+2. Fetches kubeconfig from k0s cluster
+3. Saves it to `~/.kube/k0s-gcp-config`
+4. Keeps the tunnel running in the background
 
-## Step 2: Start IAP Tunnel
+**Keep the IAP tunnel running during terraform apply!**
 
-In a **separate terminal**, start the IAP tunnel to the k8s API:
+## Configuration
 
-```bash
-gcloud compute start-iap-tunnel threads-prod-vm 6443 \
-  --local-host-port=localhost:6443 \
-  --zone=us-east1-b \
-  --project=web-service-design
-```
+### Service Account Key
 
-**Keep this terminal open during terraform apply!**
-
-## Step 3: Update Terraform Provider Config
-
-Edit `terraform/main.tf` and update the kubernetes providers to use the local kubeconfig:
+In `terraform.tfvars`, set the **file path** to your GCP service account key:
 
 ```hcl
-# Configure Kubernetes provider
-provider "kubernetes" {
-  config_path = "~/.kube/config-threads-k0s"
-}
-
-# Configure kubectl provider
-provider "kubectl" {
-  config_path = "~/.kube/config-threads-k0s"
-}
+gcp_service_account_key = "~/.gcloud/keys/github-actions-artifact-registry-push.json"
 ```
 
-## Step 4: Deploy ArgoCD
+**Note:** This should be a **file path**, not the JSON content itself.
+
+### Snapshot Configuration
+
+To boot VMs from a snapshot (optional):
+
+```hcl
+snapshot_name = "projects/web-service-design/global/snapshots/snapshot-k0s"
+```
+
+Leave empty to use base Debian image:
+
+```hcl
+snapshot_name = ""
+```
+
+## Deployment Steps
 
 ```bash
+# 1. Run kubectl setup first (creates tunnel and kubeconfig)
+./scripts/kubectl-setup.sh
+
+# 2. Navigate to terraform directory
 cd terraform
 
-# Initialize providers
-terraform init -upgrade
+# 3. Initialize Terraform (if not done already)
+terraform init
 
-# Plan deployment (review what will be created)
+# 4. Review planned changes
 terraform plan
 
-# Apply (deploy ArgoCD + apps)
+# 5. Apply configuration
 terraform apply
 ```
 
 ## What Gets Deployed
 
-1. **ArgoCD Installation**
-   - Namespace: `argocd`
-   - All ArgoCD components (server, repo-server, application-controller, etc.)
+### ArgoCD (Helm Chart)
 
-2. **Secrets** (in `threads` namespace)
-   - `postgres-password`
-   - `dagster-postgres-password`
-   - `gcr-json-key` (Docker registry credentials)
+- **Chart:** `argo-cd` from https://argoproj.github.io/argo-helm
+- **Namespace:** `argocd`
+- **Version:** 5.51.6
+- **Components:** ArgoCD server, repo-server, application-controller, etc.
 
-3. **ArgoCD Application**
-   - Monitors: `https://github.com/unknowntpo/threads-nextjs.git`
-   - Path: `k8s/`
-   - Auto-syncs to cluster
+### ArgoCD Image Updater (Helm Chart)
 
-4. **Applications** (deployed by ArgoCD)
-   - PostgreSQL
-   - ML Service
-   - Next.js
+- **Chart:** `argocd-image-updater` from https://argoproj.github.io/argo-helm
+- **Namespace:** `argocd`
+- **Version:** 0.9.6
+- **Configuration:** Monitors Artifact Registry for new images
+
+### Kubernetes Resources
+
+- **Namespaces:** `argocd`, `threads`
+- **Secrets:**
+  - `postgres-password` (threads namespace)
+  - `dagster-postgres-password` (threads namespace)
+  - `gcr-json-key` (threads namespace) - Artifact Registry auth
+  - `gcr-image-updater-secret` (argocd namespace) - Image Updater auth
+- **RBAC:** Role and RoleBinding for image updater to access threads namespace
+
+## Terraform Modules
+
+- `modules/argocd/` - ArgoCD Helm deployment
+- `modules/argocd-image-updater/` - ArgoCD Image Updater Helm deployment
 
 ## Verify Deployment
 
 ```bash
 # Set kubeconfig
-export KUBECONFIG=~/.kube/config-threads-k0s
+export KUBECONFIG=~/.kube/k0s-gcp-config
 
 # Check ArgoCD pods
 kubectl get pods -n argocd
 
-# Check ArgoCD application
+# Check ArgoCD Image Updater
+kubectl get pods -n argocd -l app.kubernetes.io/name=argocd-image-updater
+
+# Check ArgoCD applications
 kubectl get application -n argocd
 
-# Check threads apps
+# Check threads namespace resources
 kubectl get all -n threads
 ```
 
@@ -111,7 +121,7 @@ kubectl get all -n threads
 kubectl -n argocd get secret argocd-initial-admin-secret \
   -o jsonpath="{.data.password}" | base64 -d && echo
 
-# Port-forward ArgoCD UI (in another terminal)
+# Port-forward ArgoCD UI
 kubectl port-forward svc/argocd-server -n argocd 8080:443
 
 # Access at: https://localhost:8080
@@ -119,40 +129,37 @@ kubectl port-forward svc/argocd-server -n argocd 8080:443
 # Password: (from command above)
 ```
 
-## Update Applications
+## How Image Updates Work
 
-To update applications, simply push changes to GitHub:
-
-```bash
-# Make changes to k8s/*.yaml
-git add k8s/
-git commit -m "update: deployment config"
-git push
-
-# ArgoCD will automatically detect and sync changes within 3 minutes
-# Or force sync via UI or CLI:
-argocd app sync threads
-```
+1. GitHub Actions builds and pushes new image to Artifact Registry
+2. ArgoCD Image Updater detects new image tag
+3. Image Updater updates the Application manifest in Git
+4. ArgoCD syncs the updated manifest to cluster
+5. New pods are deployed with latest image
 
 ## Important Notes
 
-- **No VM restart needed**: Terraform only updates k8s resources
-- **IAP tunnel required**: Must be running during terraform apply
-- **Kubeconfig**: Must be fetched before each terraform session
-- **GitOps**: ArgoCD monitors GitHub for changes automatically
+- **IAP Tunnel Required:** Must be running during `terraform apply`
+- **Kubeconfig Path:** Providers use `~/.kube/k0s-gcp-config`
+- **Service Account Key:** Loaded from file path specified in tfvars
+- **Helm Deployment:** Both ArgoCD and Image Updater use official Helm charts
+- **No kubectl Provider:** Switched from kubectl provider to pure Helm
 
 ## Troubleshooting
 
-### "connection refused" errors
+### Connection Refused Errors
 
 Ensure IAP tunnel is running:
 
 ```bash
 # Check if tunnel is active
 ps aux | grep "gcloud compute start-iap-tunnel"
+
+# If not running, restart kubectl-setup
+./scripts/kubectl-setup.sh
 ```
 
-### "unauthorized" errors
+### Unauthorized Errors
 
 Refresh kubeconfig:
 
@@ -160,11 +167,50 @@ Refresh kubeconfig:
 ./scripts/kubectl-setup.sh
 ```
 
-### ArgoCD not syncing
+### Helm Release Already Exists
+
+If Helm release is stuck:
+
+```bash
+# List releases
+helm list -n argocd
+
+# Delete stuck release
+helm delete argocd -n argocd
+helm delete argocd-image-updater -n argocd
+
+# Reapply
+terraform apply
+```
+
+### Image Updater Not Working
+
+Check logs:
+
+```bash
+kubectl logs -n argocd -l app.kubernetes.io/name=argocd-image-updater --tail=50
+```
+
+Verify secret exists:
+
+```bash
+kubectl get secret gcr-image-updater-secret -n argocd
+```
+
+### ArgoCD Not Syncing
 
 Check application status:
 
 ```bash
 kubectl describe application threads -n argocd
-kubectl logs -n argocd -l app.kubernetes.io/name=argocd-application-controller
+kubectl logs -n argocd -l app.kubernetes.io/name=argocd-application-controller --tail=50
+```
+
+## Cleanup
+
+To remove ArgoCD and Image Updater:
+
+```bash
+terraform destroy -target=module.argocd_image_updater
+terraform destroy -target=module.argocd
 ```

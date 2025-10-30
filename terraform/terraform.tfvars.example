@@ -27,3 +27,20 @@ google_client_secret = "CHANGE_ME_GOOGLE_SECRET"
 # GitHub OAuth (get from GitHub Settings > Developer settings)
 github_client_id     = "your-github-client-id"
 github_client_secret = "CHANGE_ME_GITHUB_SECRET"
+
+# GCP Service Account Key for ArgoCD Image Updater
+# Path to JSON key file for Artifact Registry access
+gcp_service_account_key = "~/.gcloud/keys/github-actions-artifact-registry-push.json"
+
+# VM Snapshot Configuration
+# Option 1: Use specific snapshot
+# snapshot_name = "projects/your-project-id/global/snapshots/snapshot-k0s"
+# use_latest_snapshot = false
+
+# Option 2: Auto-detect latest snapshot (requires snapshots to have labels: component=k0s-cluster, environment=prod)
+# snapshot_name = ""
+# use_latest_snapshot = true
+
+# Option 3: Use base Debian image (no snapshot)
+snapshot_name = ""
+use_latest_snapshot = false

@@ -4,17 +4,14 @@
  * Export important resource information for reference and CI/CD.
  */
 
-# VM IPs temporarily unavailable - use gcloud commands
-# gcloud compute instances list --filter="name~threads-prod-vm"
-
-output "instance_group_name" {
-  description = "Managed instance group name"
-  value       = module.compute.instance_group_name
+output "vm_name" {
+  description = "VM instance name"
+  value       = module.compute.vm_name
 }
 
-output "instance_group_status" {
-  description = "Instance group status"
-  value       = module.compute.instance_group_status
+output "vm_internal_ip" {
+  description = "VM internal IP (access via IAP tunnel)"
+  value       = module.compute.vm_internal_ip
 }
 
 output "service_account_email" {

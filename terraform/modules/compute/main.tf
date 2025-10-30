@@ -29,25 +29,79 @@ data "local_file" "startup_script" {
   filename = "${path.module}/startup-script.sh"
 }
 
-# OLD: Single VM instance - REPLACED BY INSTANCE GROUP BELOW
-# This resource is commented out to migrate to managed instance group
-# with auto-healing capabilities. The instance group provides:
-# - Automatic restart on failure
-# - Health check monitoring
-# - Better resilience against SPOT VM termination
-#
-# To migrate:
-# 1. Destroy old VM: terraform destroy -target=module.compute.google_compute_instance.vm
-# 2. Apply instance group: terraform apply -target=module.compute
-# 3. Update kubeconfig with new VM IP
-#
-# resource "google_compute_instance" "vm" {
-#   name         = "threads-${var.env}-vm"
-#   machine_type = "c4a-standard-2"
-#   zone         = var.zone
-#   tags = ["ssh", "http-server", "database"]
-#   ...
-# }
+# Boot disk from snapshot (conditionally created)
+resource "google_compute_disk" "boot_from_snapshot" {
+  count = var.use_latest_snapshot || var.snapshot_name != "" ? 1 : 0
+
+  name     = "threads-${var.env}-vm-boot"
+  zone     = var.zone
+  type     = "hyperdisk-balanced"
+  snapshot = var.snapshot_name != "" ? var.snapshot_name : data.google_compute_snapshot.latest_k0s[0].self_link
+
+  labels = {
+    environment = var.env
+    component   = "k0s-cluster"
+  }
+}
+
+# Single VM instance with k0s cluster
+# Note: Using single instance instead of MIG due to GCP limitation with snapshot-based boot disks
+resource "google_compute_instance" "vm" {
+  name         = "threads-${var.env}-vm"
+  machine_type = "c4a-standard-2" # 2 vCPU, 8 GB RAM - ARM
+  zone         = var.zone
+
+  tags = ["ssh", "http-server", "database", "k0s"]
+
+  # Boot disk - use pre-created disk from snapshot or create from image
+  boot_disk {
+    auto_delete = true  # Delete disk when VM destroyed (data preserved in snapshot)
+    source      = var.use_latest_snapshot || var.snapshot_name != "" ? google_compute_disk.boot_from_snapshot[0].self_link : null
+
+    # Only use initialize_params when creating from image (no snapshot)
+    dynamic "initialize_params" {
+      for_each = var.snapshot_name == "" && !var.use_latest_snapshot ? [1] : []
+      content {
+        size  = 50
+        type  = "hyperdisk-balanced"
+        image = "debian-13-arm64"
+      }
+    }
+  }
+
+  # Non-preemptible VM with scheduled start/stop (9am-9pm) for cost savings
+  scheduling {
+    preemptible         = false
+    automatic_restart   = true
+    on_host_maintenance = "MIGRATE"
+  }
+
+  network_interface {
+    network    = var.network_name
+    subnetwork = var.subnet_name
+    # No external IP - use IAP tunnel for SSH and Cloud NAT for outbound
+  }
+
+  metadata = {
+    startup-script = templatefile("${path.module}/startup-script-k0s.sh", {
+      PROJECT_ID = var.project_id
+    })
+  }
+
+  service_account {
+    email  = google_service_account.vm_sa.email
+    scopes = ["cloud-platform"]
+  }
+
+  labels = {
+    environment = var.env
+    component   = "k0s-cluster"
+  }
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
 
 # Reserve a static internal IP for predictable database connections
 # Note: External IP is ephemeral to stay within free tier

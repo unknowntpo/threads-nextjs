@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Startup script for c4a-standard-2 VM with k0s
+# Startup script for e2-standard-2 VM with k0s
 # Installs k0s, kubectl, and deploys PostgreSQL + applications on Kubernetes
 #
 # View logs: sudo cat /var/log/startup-script.log

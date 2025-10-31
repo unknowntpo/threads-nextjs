@@ -83,5 +83,5 @@ module "external_secrets" {
   project_id                 = local.project_id
   region                     = local.region
   namespace                  = module.namespaces.threads_namespace
-  gcp_service_account_email  = data.terraform_remote_state.infra.outputs.service_account_email
+  gcp_service_account_email  = local.service_account_email
 }

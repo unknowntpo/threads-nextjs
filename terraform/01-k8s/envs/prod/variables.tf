@@ -4,6 +4,12 @@
  * Kubernetes and application-specific variables.
  */
 
+# Backend bucket for reading 00-vpc state
+variable "backend_bucket" {
+  description = "GCS bucket name for terraform state (should match backend-config.hcl)"
+  type        = string
+}
+
 # GCP Service Account Key for ArgoCD Image Updater
 variable "gcp_service_account_key" {
   description = "Path to GCP service account key JSON file for ArgoCD Image Updater"

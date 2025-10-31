@@ -1,14 +1,14 @@
 /**
  * Compute Module
  *
- * Creates c4a-standard-2 VM with PostgreSQL + Dagster services via Docker Compose.
+ * Creates c4a-standard-2 spot VM with PostgreSQL + Dagster services via Docker Compose.
  */
 
 # Service account for the VM
 resource "google_service_account" "vm_sa" {
   account_id   = "threads-${var.env}-vm-sa"
   display_name = "Threads VM Service Account"
-  description  = "Service account for c4a-standard-2 VM running PostgreSQL and Dagster"
+  description  = "Service account for c4a-standard-2 spot VM running PostgreSQL and Dagster"
 }
 
 # IAM role bindings for service account
@@ -51,6 +51,8 @@ resource "google_compute_instance" "vm" {
   machine_type = "c4a-standard-2" # 2 vCPU, 8 GB RAM - ARM
   zone         = var.zone
 
+  allow_stopping_for_update = true
+
   tags = ["ssh", "http-server", "database", "k0s"]
 
   # Boot disk - use pre-created disk from snapshot or create from image
@@ -69,11 +71,11 @@ resource "google_compute_instance" "vm" {
     }
   }
 
-  # Non-preemptible VM with scheduled start/stop (9am-9pm) for cost savings
+  # Spot VM (preemptible) for ~70% cost savings during development
   scheduling {
-    preemptible         = false
-    automatic_restart   = true
-    on_host_maintenance = "MIGRATE"
+    preemptible         = true
+    automatic_restart   = false
+    on_host_maintenance = "TERMINATE"
   }
 
   network_interface {

@@ -23,8 +23,8 @@ resource "null_resource" "kubectl_setup" {
         sleep 5
       done
 
-      # Run kubectl setup script from repo root
-      cd "${path.root}/.."
+      # Run kubectl setup script from repo root (passed as variable)
+      cd "${var.repo_root}"
       bash scripts/kubectl-setup.sh
     EOT
 

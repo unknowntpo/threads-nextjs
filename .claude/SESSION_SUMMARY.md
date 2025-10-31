@@ -1,304 +1,332 @@
-# Session Summary - Infrastructure Rollback & External Secrets Setup
+# Session Summary - ArgoCD Image Updater Revert & Terraform Restructure
 
-**Date**: 2025-10-30
-**Status**: In Progress - Rollback to clean snapshot
+**Date**: 2025-10-31
+**Status**: In Progress - Restructuring Terraform (00-infra / 01-k8s)
 
 ## Current State
 
 ### VM Status
 
-- VM from snapshot with k0s, ArgoCD, ArgoCD Image Updater
-- ArgoCD pods **CrashLoopBackOff** (failed ESO deployment)
-- Helm releases inconsistent state
-
-### Action Plan
-
-**Rollback to clean snapshot** containing only:
-
-- k0s cluster (working)
-- ArgoCD (working)
-- ArgoCD Image Updater (working)
-
-## Work Completed This Session
-
-### 1. VM Configuration Improvements ✅
-
-**Changes**:
-
-- Switched SPOT/preemptible → non-preemptible VM
-- Added Cloud Scheduler: auto start 9am, stop 9pm Asia/Taipei
-- Removed external IP (IAP tunnel only)
-- Set boot disk `auto_delete = true`
-
-**Files Modified**:
-
-- `terraform/modules/compute/main.tf` - VM config
-- `terraform/modules/compute/scheduler.tf` - **NEW** Cloud Scheduler
-- `terraform/main.tf` - Added cloudscheduler API
-
-### 2. Snapshot Refresh Workflow ✅
-
-**Completed**:
-
-- Deleted old snapshot
-- Created fresh VM from Debian base
-- K0s installed automatically
-- Created new snapshot `snapshot-k0s` with labels:
-  - `component=k0s-cluster`
-  - `environment=prod`
-- Destroyed VM, recreated from snapshot
-- Verified k0s working
-
-### 3. Secret Management Architecture ✅
-
-**Decision**: GCP Secret Manager + External Secrets Operator
-
-**Pipeline**: GitHub CI → ArgoCD → k0s
-
-- Secrets stored centrally in GCP Secret Manager
-- ESO syncs to k8s automatically
-- No secrets in Git
-
-### 4. External Secrets Operator Module ✅
-
-**Created**:
-
-- `terraform/modules/external-secrets/main.tf` - **NEW**
-- `terraform/modules/external-secrets/variables.tf` - **NEW**
-- Added to `terraform/main.tf`
-- Added iamcredentials API
-
-**Implementation**:
-
-- Helm chart: `external-secrets` v0.9.11
-- Namespace: `external-secrets-system`
-- ClusterSecretStore: `null_resource` + `kubectl` (CRD workaround)
-
-**Why null_resource?**
-
-- `kubernetes_manifest` validates CRDs at **plan time** (before Helm installs)
-- `null_resource` + `kubectl` runs at **apply time** (after CRDs exist)
-
-### 5. ArgoCD Application Manifest ✅
-
-**Created**:
-
-- `k8s/argocd-apps/threads-app.yaml` - ArgoCD Application
-- Added Image Updater annotations to `k8s/base/nextjs.yaml`, `k8s/base/ml-service.yaml`
-
-## Errors & Fixes
-
-### Error 1: CRD Validation
-
-**Problem**: `kubernetes_manifest` validates at plan time, CRDs don't exist yet
-
-**Fix**: Use `null_resource` + `kubectl apply` (executes at apply time)
-
-```hcl
-resource "null_resource" "gcp_secret_store" {
-  provisioner "local-exec" {
-    command = "kubectl apply -f - <<EOF ... EOF"
-    environment = { KUBECONFIG = "~/.kube/config-threads-k0s" }
-  }
-  depends_on = [helm_release.external_secrets]
-}
-```
-
-### Error 2: Nested terraform/ Directory
-
-**Problem**: Accidentally created `/terraform/terraform/`
-
-**Fix**: Removed nested directory
-
-### Error 3: Namespace/Helm Conflicts
-
-**Problem**: Namespaces/Helm releases existed from manual setup
-
-**Attempted Fix**: Import to Terraform state
-
-**Outcome**: More conflicts, ArgoCD CrashLoopBackOff
-
-**Decision**: **Rollback to clean snapshot**
-
-## Next Steps (After Rollback)
-
-### Immediate Tasks
-
-1. **Destroy current VM**:
-
-   ```bash
-   terraform destroy -target=module.compute.google_compute_instance.vm \
-     -target=module.compute.google_compute_disk.boot_from_snapshot \
-     -auto-approve
-   ```
-
-2. **Recreate VM from clean snapshot**:
-
-   ```bash
-   terraform apply -auto-approve
-   ```
-
-3. **Reconnect kubectl**:
-
-   ```bash
-   ./scripts/kubectl-setup.sh
-   ```
-
-4. **Verify ArgoCD healthy**:
-
-   ```bash
-   KUBECONFIG=~/.kube/config-threads-k0s kubectl get pods -n argocd
-   ```
-
-5. **Apply External Secrets cleanly**:
-   - Already in `terraform/main.tf`
-   - Next `terraform apply` installs without conflicts
-
-6. **Verify External Secrets**:
-   ```bash
-   KUBECONFIG=~/.kube/config-threads-k0s kubectl get pods -n external-secrets-system
-   KUBECONFIG=~/.kube/config-threads-k0s kubectl get clustersecretstore
-   ```
-
-### Future Tasks
-
-7. **Create secrets in GCP Secret Manager**:
-   - `postgres-password`
-   - `gcr-json-key`
-
-8. **Create ExternalSecret resources**:
-
-   ```yaml
-   apiVersion: external-secrets.io/v1beta1
-   kind: ExternalSecret
-   metadata:
-     name: postgres-secret
-     namespace: threads
-   spec:
-     secretStoreRef:
-       name: gcpsm-secret-store
-       kind: ClusterSecretStore
-     target:
-       name: postgres-secret
-     data:
-       - secretKey: password
-         remoteRef:
-           key: postgres-password
-   ```
-
-9. **Take new snapshot with ESO**:
-   ```bash
-   gcloud compute disks snapshot boot-disk \
-     --snapshot-name=snapshot-k0s-eso \
-     --zone=us-east1-b \
-     --labels=component=k0s-cluster,environment=prod,includes=eso
-   ```
-
-## Key Files Modified
-
-### Terraform
-
-- `terraform/modules/compute/main.tf` - VM config
-- `terraform/modules/compute/scheduler.tf` - **NEW** Cloud Scheduler
-- `terraform/modules/external-secrets/main.tf` - **NEW** ESO module
-- `terraform/modules/external-secrets/variables.tf` - **NEW**
-- `terraform/main.tf` - Added APIs, external_secrets module
-
-### Kubernetes
-
-- `k8s/base/nextjs.yaml` - Image Updater annotations
-- `k8s/base/ml-service.yaml` - Image Updater annotations
-- `k8s/argocd-apps/threads-app.yaml` - **NEW** ArgoCD Application
-
-## Important Notes
-
-### Snapshot
-
-- Current: `snapshot-k0s` (k0s + ArgoCD + Image Updater)
-- Labels: `component=k0s-cluster`, `environment=prod`
-
-### Cost Optimization
-
-- VM: start 9am, stop 9pm Asia/Taipei
-- Non-preemptible (auto-restart on maintenance)
-- No external IP (saves egress, better security)
-
-### Access
-
-- SSH: IAP tunnel via `scripts/kubectl-setup.sh`
-- kubectl: Port-forward via IAP on localhost:16443
-- ArgoCD: Port-forward via `scripts/tunnel-argocd.sh`
-
-### External Secrets Architecture
-
-```
-GCP Secret Manager → ESO → k8s Secrets → Pods
-                     (sync every 1h)
-```
-
-## Lessons Learned
-
-1. **Rollback beats debugging**: Snapshot rollback faster than fixing complex Helm/Terraform state
-2. **CRD chicken-egg**: Use `null_resource` + `kubectl` for CRD-dependent resources
-3. **Snapshot labels critical**: Proper labels help filter/identify snapshots
-4. **Don't import manual resources**: Recreate from scratch cleaner than import
-5. **Dependencies matter**: Explicit `depends_on` ensures proper ordering
-
-## Commands Reference
-
-### VM
-
-```bash
-# Start/stop
-gcloud compute instances start threads-prod-vm --zone=us-east1-b
-gcloud compute instances stop threads-prod-vm --zone=us-east1-b
-
-# SSH via IAP
-gcloud compute ssh threads-prod-vm --zone=us-east1-b --tunnel-through-iap
-```
-
-### Terraform
-
-```bash
-# Apply
-terraform apply -auto-approve
-
-# Destroy specific resources
-terraform destroy -target=module.compute.google_compute_instance.vm -auto-approve
-
-# Force unlock
-terraform force-unlock -force <LOCK_ID>
-```
-
-### Kubernetes
-
-```bash
-# Set kubeconfig
-export KUBECONFIG=~/.kube/config-threads-k0s
-
-# Check cluster
-kubectl get nodes
-kubectl get pods -A
-
-# Check External Secrets
-kubectl get pods -n external-secrets-system
-kubectl get clustersecretstore
-kubectl get externalsecrets -A
-```
+- ✅ VM: Running on ARM64 (c4a-standard-2, Google Axion), fresh from debian-13-arm64
+- ✅ k0s cluster: Healthy (fresh install, ~4min old)
+- ✅ Infrastructure pods: ArgoCD, External Secrets running
+- ⏳ ArgoCD Image Updater: Not yet deployed (terraform timing issue)
+- ✅ kubectl tunnel: Working (localhost:16443, PID 95930)
 
 ### Snapshots
 
-```bash
-# List
-gcloud compute snapshots list --filter="labels.component=k0s-cluster"
+- ✅ Backup: `snapshot-k0s-backup-20251030-212108` (unlabeled, pre-restructure state)
+- ❌ Clean labeled snapshot: Not yet created (waiting for restructure completion)
 
-# Create
-gcloud compute disks snapshot <DISK> \
-  --snapshot-name=snapshot-k0s \
+## Work Completed This Session (2025-10-31)
+
+### 1. ArgoCD Image Updater Revert ✅
+
+**Completed from previous session**
+
+**Changes**:
+
+- ✅ `terraform/main.tf` - Replaced Keel with argocd_image_updater module
+- ✅ `k8s/base/nextjs.yaml` - Removed Keel annotations
+- ✅ `k8s/base/ml-service.yaml` - Removed Keel annotations
+- ✅ `k8s/argocd-apps/threads-app.yaml` - Added Image Updater annotations
+- ✅ `terraform/modules/keel/` - Deleted
+- ✅ Terraform state - Removed 3 Keel resources
+- ✅ Terraform apply - Created 4 Image Updater resources
+
+**Verification**:
+
+```
+argocd-image-updater-7cfc8f8bf8-8dvfd   1/1     Running   0   113s
+Version: v0.14.0+af844fe
+```
+
+### 2. Snapshot Recreation Plan ✅
+
+**Goal**: Create clean snapshot for reproducible infrastructure
+
+**Process**:
+
+1. ✅ Backup current state (snapshot-k0s-backup-20251030-212108) - no labels
+2. ✅ Destroy VM (disk auto-deleted)
+3. ✅ Fresh k0s install from debian-13-arm64 base image (~10 min)
+4. ✅ Verify infrastructure deployed (ArgoCD, External Secrets, namespaces)
+5. ⏳ Create labeled snapshot with full infrastructure
+6. ⏳ Test recovery from snapshot
+
+**What's in snapshot**:
+
+- ✅ k0s cluster (single controller)
+- ✅ ArgoCD (Helm)
+- ✅ External Secrets Operator (Helm)
+- ✅ Namespaces (threads)
+- ⏳ ArgoCD Image Updater (Helm) - pending
+- ❌ Applications (k8s/argocd-apps/) - not included
+
+### 3. Timing Issue Discovery ❌
+
+**Problem**: Terraform provider initialization vs kubectl_setup race condition
+
+**Root Cause**:
+
+```
+terraform apply
+  ↓
+1. Providers initialize (reads old kubeconfig)
+  ↓
+2. kubectl_setup runs (writes new kubeconfig with new certs)
+  ↓
+3. k8s resources apply (provider still has old certs cached)
+  ↓
+ERROR: x509: certificate signed by unknown authority
+```
+
+**Error Details**:
+
+```
+Error: Post "https://localhost:16443/api/v1/namespaces": tls: failed to verify
+certificate: x509: certificate signed by unknown authority
+```
+
+**Why it happens**:
+
+- Fresh k0s = NEW certificates
+- kubectl_setup fetches new kubeconfig DURING apply
+- But kubernetes/helm providers already initialized with old config
+- Cert mismatch → TLS error
+
+**Workaround**: Second `terraform apply` succeeds (provider picks up new config)
+
+### 4. Terraform Restructure Decision ✅
+
+**Solution**: Adopt Anton Putra pattern (layered infrastructure)
+
+**Reference**: https://github.com/antonputra/tutorials/blob/main/lessons/198/v2/envs/dev/
+
+**New Structure**:
+
+```
+terraform/
+├── 00-infra/envs/prod/       # Base infrastructure layer
+│   ├── main.tf               # VM, networking, kubectl_setup
+│   ├── backend.tf            # GCS: threads-tf-state-*/00-infra/state
+│   ├── variables.tf
+│   ├── outputs.tf            # Export for 01-k8s
+│   └── terraform.tfvars
+│
+└── 01-k8s/envs/prod/         # Kubernetes layer
+    ├── data.tf               # Read from 00-infra remote state
+    ├── main.tf               # ArgoCD, Image Updater, External Secrets
+    ├── backend.tf            # GCS: threads-tf-state-*/01-k8s/state
+    └── variables.tf
+```
+
+**Workflow**:
+
+```bash
+# Step 1: Base infra (VM + kubectl)
+cd terraform/00-infra/envs/prod
+terraform init
+terraform apply  # Creates VM, fresh kubeconfig written
+
+# Step 2: K8s resources (provider now has fresh config)
+cd ../../../01-k8s/envs/prod
+terraform init
+terraform apply  # No timing issue!
+```
+
+**Benefits**:
+
+- ✅ No timing issues (providers initialize AFTER kubectl_setup)
+- ✅ Clear for new users ("run 00-infra then 01-k8s")
+- ✅ Can destroy k8s without touching VM
+- ✅ Industry standard pattern
+- ✅ Supports multi-env (dev/staging/prod)
+
+**Variables**:
+
+- GCS bucket name NOT hardcoded (in variables)
+- Used via `terraform_remote_state` data block
+
+### 5. Directory Structure Creation 🔄 IN PROGRESS
+
+**Status**: Creating environment-based layout
+
+**Created**:
+
+- ✅ `terraform/00-infra/envs/prod/` directory
+- ✅ `terraform/01-k8s/envs/prod/` directory
+- ⏳ `terraform/00-infra/envs/prod/main.tf` - partial
+- ⏳ `terraform/00-infra/envs/prod/backend.tf` - partial
+- ⏳ `terraform/00-infra/envs/prod/variables.tf` - partial
+
+**Next**:
+
+- Complete 00-infra files
+- Create 01-k8s files with data.tf
+- Create apply.sh/destroy.sh convenience scripts
+- Test full workflow
+- Take clean snapshot
+
+## Key Files Modified
+
+### terraform/main.tf
+
+```diff
+- module "keel" {
+-   source = "./modules/keel"
++ module "argocd_image_updater" {
++   source = "./modules/argocd-image-updater"
++   depends_on = [module.kubectl_setup, module.argocd, module.namespaces]
+```
+
+### k8s/base/\*.yaml
+
+```diff
+- annotations:
+-   keel.sh/policy: force
+-   keel.sh/trigger: poll
+(Removed from nextjs.yaml, ml-service.yaml)
+```
+
+### k8s/argocd-apps/threads-app.yaml
+
+```diff
++ annotations:
++   argocd-image-updater.argoproj.io/image-list: nextjs=...,ml-service=...
++   argocd-image-updater.argoproj.io/nextjs.update-strategy: latest
++   argocd-image-updater.argoproj.io/ml-service.update-strategy: latest
++   argocd-image-updater.argoproj.io/write-back-method: argocd
+```
+
+## Errors & Fixes
+
+### Error 1: Terraform Provider Timing
+
+**Problem**: k8s provider initialized before kubectl_setup writes new kubeconfig
+**Fix**: Restructure into 00-infra (VM) → 01-k8s (apps) layers
+
+### Error 2: VM Already Exists
+
+**Problem**: `terraform apply` tried to recreate existing VM
+**Cause**: State drift after manual operations
+**Fix**: In progress - restructure will clarify state boundaries
+
+## Snapshots Created
+
+| Name                                  | Labels                                  | Purpose                       | Status     |
+| ------------------------------------- | --------------------------------------- | ----------------------------- | ---------- |
+| `snapshot-k0s-backup-20251030-212108` | None                                    | Safety backup pre-restructure | ✅ READY   |
+| `snapshot-k0s-YYYYMMDD-HHMMSS`        | component=k0s-cluster, environment=prod | Clean golden image            | ⏳ Pending |
+
+**Snapshot Description** (for labeled snapshot):
+
+```
+k0s cluster + ArgoCD + ArgoCD Image Updater + External Secrets Operator - ARM64 ready
+```
+
+## Key Architectural Decisions
+
+### 1. Layered Terraform (Anton Putra Pattern)
+
+**Why**: Eliminates provider timing issues, clear workflow
+**Trade-off**: Two terraform directories vs. one-command apply
+
+### 2. Environment-based Structure
+
+**Why**: Supports dev/staging/prod, industry standard
+**Trade-off**: Deeper directory nesting vs. simpler flat structure
+
+### 3. Remote State with Data Blocks
+
+**Why**: Forces sequential apply (infra → k8s), explicit dependencies
+**Trade-off**: Extra data.tf file vs. direct module dependencies
+
+## Next Steps
+
+### Immediate (Current Session)
+
+1. ⏳ Complete 00-infra/envs/prod files
+2. ⏳ Create 01-k8s/envs/prod files with data.tf
+3. ⏳ Create apply.sh script (auto run both layers)
+4. ⏳ Create destroy.sh script (cleanup)
+5. ⏳ Test: destroy current VM, apply via new structure
+6. ⏳ Verify all infrastructure pods Running
+7. ⏳ Create clean labeled snapshot
+8. ⏳ Test snapshot recovery
+9. ⏳ Update terraform.tfvars with comments
+10. ⏳ Update plan.md
+
+### Future
+
+- Multi-env support (dev/staging)
+- CI/CD integration with layered structure
+- Snapshot automation scripts
+
+## Lessons Learned
+
+1. **Terraform provider timing**: Providers initialize once at start, can't pick up mid-apply config changes
+2. **Layered > monolithic**: Separation prevents timing issues, clearer workflow
+3. **Anton Putra pattern works**: Industry-proven approach for multi-layer infra
+4. **Remote state > module deps**: Forces correct apply order, no race conditions
+5. **Fresh installs > snapshots**: Snapshots useful for recovery, but fresh install validates reproducibility
+6. **GCS bucket naming**: Use variables, never hardcode (terraform/modules can reference)
+
+## Commands Reference
+
+### Snapshot Operations
+
+```bash
+# Backup (no labels)
+gcloud compute disks snapshot threads-prod-vm-boot \
+  --snapshot-names=snapshot-k0s-backup-$(date +%Y%m%d-%H%M%S) \
+  --zone=us-east1-b
+
+# Clean labeled snapshot
+gcloud compute disks snapshot threads-prod-vm-boot \
+  --snapshot-names=snapshot-k0s-$(date +%Y%m%d-%H%M%S) \
   --zone=us-east1-b \
-  --labels=component=k0s-cluster,environment=prod
+  --labels=component=k0s-cluster,environment=prod \
+  --description="k0s cluster + ArgoCD + ArgoCD Image Updater + External Secrets Operator - ARM64 ready"
+
+# List snapshots
+gcloud compute snapshots list \
+  --filter="labels.component=k0s-cluster AND labels.environment=prod" \
+  --sort-by="-creationTimestamp"
+```
+
+### New Terraform Workflow (Post-restructure)
+
+```bash
+# Apply infrastructure
+cd terraform/00-infra/envs/prod
+terraform init
+terraform apply
+
+# Apply k8s resources
+cd ../../../01-k8s/envs/prod
+terraform init
+terraform apply
+
+# Or use convenience script
+bash terraform/apply.sh prod
+```
+
+### Fresh Install
+
+```bash
+# Destroy VM
+terraform destroy -target=module.compute.google_compute_instance.vm
+
+# Fresh install (no snapshot)
+terraform apply -var="use_latest_snapshot=false"
+
+# From labeled snapshot
+terraform apply -var="use_latest_snapshot=true"
 ```
 
 ---
 
-**Status**: VM destruction in progress, ready for clean snapshot recreation
+**Status**: Creating 00-infra and 01-k8s directory structures, then will test full workflow and take clean snapshot
+
+**Bucket**: `threads-tf-state-0bcb17db57fe8e84`

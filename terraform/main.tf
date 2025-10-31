@@ -133,13 +133,14 @@ module "namespaces" {
   depends_on = [module.kubectl_setup]
 }
 
-# Keel module: Auto-update container images
-module "keel" {
-  source = "./modules/keel"
+# ArgoCD Image Updater module: Auto-update container images
+module "argocd_image_updater" {
+  source = "./modules/argocd-image-updater"
 
   gcp_service_account_key = local.gcp_service_account_key
+  threads_namespace       = module.namespaces.threads_namespace
 
-  depends_on = [module.kubectl_setup]
+  depends_on = [module.kubectl_setup, module.argocd, module.namespaces]
 }
 
 # External Secrets Operator module: Sync secrets from GCP Secret Manager

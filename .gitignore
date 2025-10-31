@@ -63,5 +63,6 @@ terraform/terraform.tfstate.backup
 terraform/terraform.tfvars
 terraform/**/*.tfvars
 !terraform/**/*.tfvars.example
+terraform/**/backend-config.hcl
 .env.terraform
 **/tfplan

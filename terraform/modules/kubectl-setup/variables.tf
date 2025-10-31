@@ -12,3 +12,8 @@ variable "zone" {
   description = "GCP zone where the VM is located"
   type        = string
 }
+
+variable "repo_root" {
+  description = "Absolute path to repository root (where scripts/ directory is located)"
+  type        = string
+}

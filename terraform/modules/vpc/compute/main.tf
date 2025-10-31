@@ -1,14 +1,14 @@
 /**
  * Compute Module
  *
- * Creates c4a-standard-2 spot VM with PostgreSQL + Dagster services via Docker Compose.
+ * Creates e2-standard-2 spot VM with PostgreSQL + Dagster services via Docker Compose.
  */
 
 # Service account for the VM
 resource "google_service_account" "vm_sa" {
   account_id   = "threads-${var.env}-vm-sa"
   display_name = "Threads VM Service Account"
-  description  = "Service account for c4a-standard-2 spot VM running PostgreSQL and Dagster"
+  description  = "Service account for e2-standard-2 spot VM running PostgreSQL and Dagster"
 }
 
 # IAM role bindings for service account
@@ -35,7 +35,7 @@ resource "google_compute_disk" "boot_from_snapshot" {
 
   name     = "threads-${var.env}-vm-boot"
   zone     = var.zone
-  type     = "hyperdisk-balanced"
+  type     = "pd-balanced"
   snapshot = var.snapshot_name != "" ? var.snapshot_name : data.google_compute_snapshot.latest_k0s[0].self_link
 
   labels = {
@@ -48,7 +48,7 @@ resource "google_compute_disk" "boot_from_snapshot" {
 # Note: Using single instance instead of MIG due to GCP limitation with snapshot-based boot disks
 resource "google_compute_instance" "vm" {
   name         = "threads-${var.env}-vm"
-  machine_type = "c4a-standard-2" # 2 vCPU, 8 GB RAM - ARM
+  machine_type = "e2-standard-2" # 2 vCPU, 8 GB RAM - x86
   zone         = var.zone
 
   allow_stopping_for_update = true
@@ -65,8 +65,8 @@ resource "google_compute_instance" "vm" {
       for_each = var.snapshot_name == "" && !var.use_latest_snapshot ? [1] : []
       content {
         size  = 50
-        type  = "hyperdisk-balanced"
-        image = "debian-13-arm64"
+        type  = "pd-balanced"
+        image = "debian-cloud/debian-13"
       }
     }
   }

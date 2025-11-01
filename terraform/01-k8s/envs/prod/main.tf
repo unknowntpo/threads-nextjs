@@ -53,12 +53,19 @@ locals {
   gcp_service_account_key = var.gcp_service_account_key != "" ? file(var.gcp_service_account_key) : ""
 }
 
+# Local Path Provisioner: Dynamic local storage for PVCs
+module "local_path_provisioner" {
+  source = "../../../modules/local-path-provisioner"
+}
+
 # ArgoCD module: Deploy ArgoCD via Helm
 module "argocd" {
   source = "../../../modules/argocd"
 
   namespace     = "argocd"
   chart_version = var.argocd_chart_version
+
+  depends_on = [module.local_path_provisioner]
 }
 
 # Namespaces module: Create application namespaces

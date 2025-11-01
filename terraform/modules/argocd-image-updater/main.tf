@@ -20,11 +20,33 @@ terraform {
   }
 }
 
-# Secret for Artifact Registry authentication
+# Secret for Artifact Registry authentication (used by Image Updater)
 resource "kubernetes_secret" "gcr_image_updater" {
   metadata {
     name      = "gcr-image-updater-secret"
     namespace = "argocd"
+  }
+
+  data = {
+    ".dockerconfigjson" = jsonencode({
+      auths = {
+        "us-east1-docker.pkg.dev" = {
+          username = "_json_key"
+          password = var.gcp_service_account_key
+          auth     = base64encode("_json_key:${var.gcp_service_account_key}")
+        }
+      }
+    })
+  }
+
+  type = "kubernetes.io/dockerconfigjson"
+}
+
+# Secret for Artifact Registry authentication (used by pods for image pulling)
+resource "kubernetes_secret" "gcr_json_key" {
+  metadata {
+    name      = "gcr-json-key"
+    namespace = var.threads_namespace
   }
 
   data = {

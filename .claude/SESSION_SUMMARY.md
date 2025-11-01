@@ -1,332 +1,339 @@
-# Session Summary - ArgoCD Image Updater Revert & Terraform Restructure
+# Session Summary - Terraform Restructure & x86 Migration
 
 **Date**: 2025-10-31
-**Status**: In Progress - Restructuring Terraform (00-infra / 01-k8s)
+**Status**: ✅ COMPLETED - Layered Terraform + Snapshots Ready
 
 ## Current State
 
 ### VM Status
 
-- ✅ VM: Running on ARM64 (c4a-standard-2, Google Axion), fresh from debian-13-arm64
-- ✅ k0s cluster: Healthy (fresh install, ~4min old)
-- ✅ Infrastructure pods: ArgoCD, External Secrets running
-- ⏳ ArgoCD Image Updater: Not yet deployed (terraform timing issue)
-- ✅ kubectl tunnel: Working (localhost:16443, PID 95930)
+- ✅ VM: Running on x86 (e2-standard-2), spot instance
+- ✅ k0s cluster: Healthy (fresh install from debian-13)
+- ✅ All pods: 15/15 Running (kube-system, argocd, external-secrets)
+- ✅ kubectl tunnel: Working (localhost:16443)
 
 ### Snapshots
 
-- ✅ Backup: `snapshot-k0s-backup-20251030-212108` (unlabeled, pre-restructure state)
-- ❌ Clean labeled snapshot: Not yet created (waiting for restructure completion)
+- ✅ `snapshot-00-vpc-20251031-151137` (layer=00-vpc, after base infra)
+- ✅ `snapshot-01-k8s-20251031-151618` (layer=01-k8s, after k8s resources)
 
 ## Work Completed This Session (2025-10-31)
 
-### 1. ArgoCD Image Updater Revert ✅
+### 1. Migration from ARM to x86 ✅
 
-**Completed from previous session**
+**Problem**: ARM (c4a-standard-2) had etcd networking issues
+
+- kube-router, coredns, metrics-server couldn't connect to API server (10.96.0.1:443)
+- Root cause: etcd not fully supported on ARM architecture
+
+**Solution**: Migrated to x86 e2-standard-2
 
 **Changes**:
 
-- ✅ `terraform/main.tf` - Replaced Keel with argocd_image_updater module
-- ✅ `k8s/base/nextjs.yaml` - Removed Keel annotations
-- ✅ `k8s/base/ml-service.yaml` - Removed Keel annotations
-- ✅ `k8s/argocd-apps/threads-app.yaml` - Added Image Updater annotations
-- ✅ `terraform/modules/keel/` - Deleted
-- ✅ Terraform state - Removed 3 Keel resources
-- ✅ Terraform apply - Created 4 Image Updater resources
+- ✅ `machine_type`: c4a-standard-2 → e2-standard-2
+- ✅ `disk type`: hyperdisk-balanced → pd-balanced (e2 requirement)
+- ✅ `boot image`: debian-13-arm64 → debian-cloud/debian-13
+- ✅ Kept spot VM configuration (~70% cost savings)
 
-**Verification**:
+**Commit**: `6caa12c` - fix(terraform): migrate to e2-standard-2 x86 VM for etcd compatibility
 
-```
-argocd-image-updater-7cfc8f8bf8-8dvfd   1/1     Running   0   113s
-Version: v0.14.0+af844fe
-```
+### 2. Terraform Restructure (00-vpc / 01-k8s) ✅
 
-### 2. Snapshot Recreation Plan ✅
+**Completed**: Full layered architecture implementation
 
-**Goal**: Create clean snapshot for reproducible infrastructure
-
-**Process**:
-
-1. ✅ Backup current state (snapshot-k0s-backup-20251030-212108) - no labels
-2. ✅ Destroy VM (disk auto-deleted)
-3. ✅ Fresh k0s install from debian-13-arm64 base image (~10 min)
-4. ✅ Verify infrastructure deployed (ArgoCD, External Secrets, namespaces)
-5. ⏳ Create labeled snapshot with full infrastructure
-6. ⏳ Test recovery from snapshot
-
-**What's in snapshot**:
-
-- ✅ k0s cluster (single controller)
-- ✅ ArgoCD (Helm)
-- ✅ External Secrets Operator (Helm)
-- ✅ Namespaces (threads)
-- ⏳ ArgoCD Image Updater (Helm) - pending
-- ❌ Applications (k8s/argocd-apps/) - not included
-
-### 3. Timing Issue Discovery ❌
-
-**Problem**: Terraform provider initialization vs kubectl_setup race condition
-
-**Root Cause**:
-
-```
-terraform apply
-  ↓
-1. Providers initialize (reads old kubeconfig)
-  ↓
-2. kubectl_setup runs (writes new kubeconfig with new certs)
-  ↓
-3. k8s resources apply (provider still has old certs cached)
-  ↓
-ERROR: x509: certificate signed by unknown authority
-```
-
-**Error Details**:
-
-```
-Error: Post "https://localhost:16443/api/v1/namespaces": tls: failed to verify
-certificate: x509: certificate signed by unknown authority
-```
-
-**Why it happens**:
-
-- Fresh k0s = NEW certificates
-- kubectl_setup fetches new kubeconfig DURING apply
-- But kubernetes/helm providers already initialized with old config
-- Cert mismatch → TLS error
-
-**Workaround**: Second `terraform apply` succeeds (provider picks up new config)
-
-### 4. Terraform Restructure Decision ✅
-
-**Solution**: Adopt Anton Putra pattern (layered infrastructure)
-
-**Reference**: https://github.com/antonputra/tutorials/blob/main/lessons/198/v2/envs/dev/
-
-**New Structure**:
+**Structure**:
 
 ```
 terraform/
-├── 00-infra/envs/prod/       # Base infrastructure layer
-│   ├── main.tf               # VM, networking, kubectl_setup
-│   ├── backend.tf            # GCS: threads-tf-state-*/00-infra/state
-│   ├── variables.tf
-│   ├── outputs.tf            # Export for 01-k8s
-│   └── terraform.tfvars
+├── backend-config.hcl           # Shared: GCS bucket config
+├── 00-vpc/envs/prod/            # Layer 1: Base infrastructure
+│   ├── main.tf                  # VPC module + kubectl-setup
+│   ├── variables.tf             # project_id, region, zone, env
+│   ├── outputs.tf               # Exports for 01-k8s
+│   ├── terraform.tfvars         # use_latest_snapshot=false
+│   └── .terraform.lock.hcl      # Provider version locks
 │
-└── 01-k8s/envs/prod/         # Kubernetes layer
-    ├── data.tf               # Read from 00-infra remote state
-    ├── main.tf               # ArgoCD, Image Updater, External Secrets
-    ├── backend.tf            # GCS: threads-tf-state-*/01-k8s/state
-    └── variables.tf
+├── 01-k8s/envs/prod/            # Layer 2: Kubernetes resources
+│   ├── main.tf                  # ArgoCD, Image Updater, External Secrets
+│   ├── data.tf                  # Read 00-vpc remote state
+│   ├── variables.tf             # backend_bucket, gcp_service_account_key
+│   ├── terraform.tfvars         # backend_bucket (from backend-config.hcl)
+│   └── .terraform.lock.hcl      # Provider version locks
+│
+└── modules/
+    ├── vpc/                     # Self-contained VPC module
+    │   ├── main.tf              # GCP APIs, networking, compute
+    │   ├── networking/          # Submodule: VPC, subnets, firewall
+    │   └── compute/             # Submodule: VM, disks, scheduler
+    ├── kubectl-setup/           # IAP tunnel + kubeconfig
+    ├── argocd/                  # ArgoCD Helm release
+    ├── argocd-image-updater/    # Image Updater Helm + RBAC
+    ├── external-secrets/        # External Secrets Operator
+    └── namespaces/              # threads namespace
 ```
+
+**Backend Configuration**:
+
+```hcl
+# terraform/backend-config.hcl
+bucket = "threads-tf-state-0bcb17db57fe8e84"
+
+# 00-vpc uses: prefix = "00-vpc/state"
+# 01-k8s uses: prefix = "01-k8s/state"
+```
+
+**Key Fix**: `repo_root` variable
+
+- Problem: kubectl-setup couldn't find `scripts/kubectl-setup.sh` from nested terraform directory
+- Solution: Pass `repo_root = "${path.root}/../../../.."` to kubectl-setup module
+- Module uses: `cd "${var.repo_root}" && bash scripts/kubectl-setup.sh`
+
+**Commits**:
+
+- `378b639` - refactor(terraform): restructure to layered architecture with spot VM
+- `bd39534` - fix(terraform): configure 01-k8s to use backend_bucket variable
+
+### 3. Clean Infrastructure Deployment ✅
 
 **Workflow**:
 
 ```bash
-# Step 1: Base infra (VM + kubectl)
-cd terraform/00-infra/envs/prod
-terraform init
-terraform apply  # Creates VM, fresh kubeconfig written
+# Destroy everything
+cd terraform/01-k8s/envs/prod && terraform destroy -auto-approve
+cd ../../00-vpc/envs/prod && terraform destroy -auto-approve
 
-# Step 2: K8s resources (provider now has fresh config)
+# Deploy Layer 1: Base infrastructure
+cd terraform/00-vpc/envs/prod
+terraform init -backend-config=../../../backend-config.hcl
+terraform apply -auto-approve
+# → 28 resources created (VM, VPC, kubectl-setup, etc.)
+
+# Take snapshot after 00-vpc
+gcloud compute disks snapshot threads-prod-vm \
+  --snapshot-names=snapshot-00-vpc-$(date +%Y%m%d-%H%M%S) \
+  --zone=us-east1-b \
+  --labels=environment=prod,component=k0s-cluster,layer=00-vpc
+
+# Deploy Layer 2: Kubernetes resources
 cd ../../../01-k8s/envs/prod
-terraform init
-terraform apply  # No timing issue!
+terraform init -backend-config=../../../backend-config.hcl
+terraform apply -auto-approve
+# → 8 resources created (ArgoCD, Image Updater, External Secrets)
+
+# Take snapshot after 01-k8s
+gcloud compute disks snapshot threads-prod-vm \
+  --snapshot-names=snapshot-01-k8s-$(date +%Y%m%d-%H%M%S) \
+  --zone=us-east1-b \
+  --labels=environment=prod,component=k0s-cluster,layer=01-k8s
 ```
 
-**Benefits**:
+**Result**: All pods healthy (no networking issues)
 
-- ✅ No timing issues (providers initialize AFTER kubectl_setup)
-- ✅ Clear for new users ("run 00-infra then 01-k8s")
-- ✅ Can destroy k8s without touching VM
-- ✅ Industry standard pattern
-- ✅ Supports multi-env (dev/staging/prod)
-
-**Variables**:
-
-- GCS bucket name NOT hardcoded (in variables)
-- Used via `terraform_remote_state` data block
-
-### 5. Directory Structure Creation 🔄 IN PROGRESS
-
-**Status**: Creating environment-based layout
-
-**Created**:
-
-- ✅ `terraform/00-infra/envs/prod/` directory
-- ✅ `terraform/01-k8s/envs/prod/` directory
-- ⏳ `terraform/00-infra/envs/prod/main.tf` - partial
-- ⏳ `terraform/00-infra/envs/prod/backend.tf` - partial
-- ⏳ `terraform/00-infra/envs/prod/variables.tf` - partial
-
-**Next**:
-
-- Complete 00-infra files
-- Create 01-k8s files with data.tf
-- Create apply.sh/destroy.sh convenience scripts
-- Test full workflow
-- Take clean snapshot
-
-## Key Files Modified
-
-### terraform/main.tf
-
-```diff
-- module "keel" {
--   source = "./modules/keel"
-+ module "argocd_image_updater" {
-+   source = "./modules/argocd-image-updater"
-+   depends_on = [module.kubectl_setup, module.argocd, module.namespaces]
 ```
-
-### k8s/base/\*.yaml
-
-```diff
-- annotations:
--   keel.sh/policy: force
--   keel.sh/trigger: poll
-(Removed from nextjs.yaml, ml-service.yaml)
+NAMESPACE                 NAME                                    READY   STATUS    RESTARTS   AGE
+argocd                    argocd-application-controller-0         1/1     Running   0          88s
+argocd                    argocd-applicationset-controller-...   1/1     Running   0          88s
+argocd                    argocd-dex-server-...                   1/1     Running   0          88s
+argocd                    argocd-image-updater-...                1/1     Running   0          27s
+argocd                    argocd-notifications-controller-...     1/1     Running   0          88s
+argocd                    argocd-redis-...                        1/1     Running   0          88s
+argocd                    argocd-repo-server-...                  1/1     Running   0          88s
+argocd                    argocd-server-...                       1/1     Running   0          88s
+external-secrets-system   external-secrets-...                    1/1     Running   0          108s
+external-secrets-system   external-secrets-cert-controller-...    1/1     Running   0          108s
+external-secrets-system   external-secrets-webhook-...            1/1     Running   0          108s
+kube-system               coredns-...                             1/1     Running   0          6m14s
+kube-system               kube-proxy-...                          1/1     Running   0          6m12s
+kube-system               kube-router-...                         1/1     Running   0          6m12s
+kube-system               metrics-server-...                      1/1     Running   0          6m11s
 ```
-
-### k8s/argocd-apps/threads-app.yaml
-
-```diff
-+ annotations:
-+   argocd-image-updater.argoproj.io/image-list: nextjs=...,ml-service=...
-+   argocd-image-updater.argoproj.io/nextjs.update-strategy: latest
-+   argocd-image-updater.argoproj.io/ml-service.update-strategy: latest
-+   argocd-image-updater.argoproj.io/write-back-method: argocd
-```
-
-## Errors & Fixes
-
-### Error 1: Terraform Provider Timing
-
-**Problem**: k8s provider initialized before kubectl_setup writes new kubeconfig
-**Fix**: Restructure into 00-infra (VM) → 01-k8s (apps) layers
-
-### Error 2: VM Already Exists
-
-**Problem**: `terraform apply` tried to recreate existing VM
-**Cause**: State drift after manual operations
-**Fix**: In progress - restructure will clarify state boundaries
 
 ## Snapshots Created
 
-| Name                                  | Labels                                  | Purpose                       | Status     |
-| ------------------------------------- | --------------------------------------- | ----------------------------- | ---------- |
-| `snapshot-k0s-backup-20251030-212108` | None                                    | Safety backup pre-restructure | ✅ READY   |
-| `snapshot-k0s-YYYYMMDD-HHMMSS`        | component=k0s-cluster, environment=prod | Clean golden image            | ⏳ Pending |
+| Name                                  | Labels                                                        | Purpose                      | Size  | Status   |
+| ------------------------------------- | ------------------------------------------------------------- | ---------------------------- | ----- | -------- |
+| `snapshot-00-vpc-20251031-151137`     | environment=prod, component=k0s-cluster, layer=00-vpc         | After base infra deployment  | 50 GB | ✅ READY |
+| `snapshot-01-k8s-20251031-151618`     | environment=prod, component=k0s-cluster, layer=01-k8s         | After k8s resources deployed | 50 GB | ✅ READY |
+| `snapshot-k0s-spot-20251031-123541`   | environment=prod, component=k0s-cluster, snapshot-type=manual | Pre-migration ARM backup     | 50 GB | ✅ READY |
+| `snapshot-k0s-backup-20251030-212108` | (none)                                                        | Pre-restructure backup       | 50 GB | ✅ READY |
 
-**Snapshot Description** (for labeled snapshot):
+**What's in Each Snapshot**:
 
-```
-k0s cluster + ArgoCD + ArgoCD Image Updater + External Secrets Operator - ARM64 ready
-```
+**snapshot-00-vpc**:
+
+- Fresh k0s cluster (x86, e2-standard-2)
+- kube-system pods only (coredns, kube-proxy, kube-router, metrics-server)
+
+**snapshot-01-k8s**:
+
+- Everything from 00-vpc PLUS:
+- ArgoCD (8 pods)
+- ArgoCD Image Updater (1 pod)
+- External Secrets Operator (3 pods)
+- ClusterSecretStore configured for GCP Secret Manager
 
 ## Key Architectural Decisions
 
-### 1. Layered Terraform (Anton Putra Pattern)
+### 1. Layered Terraform (00-vpc → 01-k8s)
 
-**Why**: Eliminates provider timing issues, clear workflow
-**Trade-off**: Two terraform directories vs. one-command apply
+**Why**:
 
-### 2. Environment-based Structure
+- Eliminates provider timing issues (providers initialize AFTER kubectl_setup)
+- Clear workflow for new users
+- Can destroy k8s resources without touching VM
 
-**Why**: Supports dev/staging/prod, industry standard
-**Trade-off**: Deeper directory nesting vs. simpler flat structure
+**Trade-off**: Two terraform commands vs. one-command apply
 
-### 3. Remote State with Data Blocks
+### 2. x86 over ARM
 
-**Why**: Forces sequential apply (infra → k8s), explicit dependencies
-**Trade-off**: Extra data.tf file vs. direct module dependencies
+**Why**:
+
+- etcd fully supported on x86
+- No networking issues with kube-router/coredns
+- Industry standard for Kubernetes
+
+**Trade-off**: Slightly higher cost vs. ARM (but mitigated by spot VM)
+
+### 3. Spot VM for Development
+
+**Why**: ~70% cost savings during development
+**Trade-off**: Can be preempted (but good for dev/testing)
+
+### 4. Backend Configuration
+
+**Pattern**: Shared backend-config.hcl at terraform root
+
+- 00-vpc: `prefix = "00-vpc/state"`
+- 01-k8s: `prefix = "01-k8s/state"` + reads 00-vpc via `terraform_remote_state`
+
+**Why**: Forces sequential apply, no hardcoded bucket names
+
+### 5. Boot Disk Naming
+
+**Observation**: Boot disk name depends on creation method
+
+- From snapshot: `threads-prod-vm-boot` (explicitly created resource)
+- From image: `threads-prod-vm` (auto-named after VM)
+
+**Impact**: Snapshot commands must use correct disk name
+
+## Errors & Fixes
+
+### Error 1: ARM etcd Networking Issues
+
+**Problem**: All networking pods couldn't connect to API server (10.96.0.1:443)
+
+```
+kube-router: dial tcp 10.96.0.1:443: i/o timeout
+coredns: plugin/kubernetes: Failed to watch
+metrics-server: connection refused
+```
+
+**Root Cause**: etcd not fully supported on ARM architecture
+**Fix**: Migrated to e2-standard-2 (x86)
+
+### Error 2: hyperdisk-balanced on e2
+
+**Problem**: `Error 400: hyperdisk-balanced disk type cannot be used by e2-standard-2`
+**Fix**: Changed to `pd-balanced` disk type
+
+### Error 3: kubectl-setup Script Not Found
+
+**Problem**: `bash: scripts/kubectl-setup.sh: No such file or directory`
+**Root Cause**: Relative path from nested terraform directory
+**Fix**: Added `repo_root` variable passed as `"${path.root}/../../../.."`
+
+### Error 4: Terraform State Locks
+
+**Problem**: Multiple `Error acquiring the state lock` after interrupted operations
+**Fix**: `terraform force-unlock -force <lock-id>`
 
 ## Next Steps
 
-### Immediate (Current Session)
+### Immediate
 
-1. ⏳ Complete 00-infra/envs/prod files
-2. ⏳ Create 01-k8s/envs/prod files with data.tf
-3. ⏳ Create apply.sh script (auto run both layers)
-4. ⏳ Create destroy.sh script (cleanup)
-5. ⏳ Test: destroy current VM, apply via new structure
-6. ⏳ Verify all infrastructure pods Running
-7. ⏳ Create clean labeled snapshot
-8. ⏳ Test snapshot recovery
-9. ⏳ Update terraform.tfvars with comments
-10. ⏳ Update plan.md
+1. ✅ Complete terraform restructure
+2. ✅ Migrate to x86
+3. ✅ Create clean snapshots (00-vpc + 01-k8s)
+4. ⏳ Add ArgoCD Application manifests for nextjs + ml-service
+5. ⏳ Deploy applications to threads namespace
+6. ⏳ Test ArgoCD Image Updater auto-deployment
 
 ### Future
 
-- Multi-env support (dev/staging)
-- CI/CD integration with layered structure
-- Snapshot automation scripts
+- Multi-env support (dev/staging) using same structure
+- CI/CD pipeline integration with layered terraform
+- Snapshot-based disaster recovery testing
+- Cost optimization analysis (spot VM vs. scheduled on-demand)
 
 ## Lessons Learned
 
-1. **Terraform provider timing**: Providers initialize once at start, can't pick up mid-apply config changes
-2. **Layered > monolithic**: Separation prevents timing issues, clearer workflow
-3. **Anton Putra pattern works**: Industry-proven approach for multi-layer infra
-4. **Remote state > module deps**: Forces correct apply order, no race conditions
-5. **Fresh installs > snapshots**: Snapshots useful for recovery, but fresh install validates reproducibility
-6. **GCS bucket naming**: Use variables, never hardcode (terraform/modules can reference)
+1. **ARM etcd issues are real**: Stick with x86 for production Kubernetes
+2. **Layered terraform works**: No more provider timing issues
+3. **Disk naming is inconsistent**: Boot disk name changes based on creation method
+4. **Spot VMs are viable for dev**: 70% savings, acceptable for non-prod
+5. **Backend config pattern**: Shared backend-config.hcl works well for multi-layer
+6. **Snapshot labels are critical**: Makes recovery and organization much easier
+7. **pd-balanced for e2**: e2 instances don't support hyperdisk-balanced
 
 ## Commands Reference
+
+### Terraform Workflow
+
+```bash
+# Initialize and apply 00-vpc
+cd terraform/00-vpc/envs/prod
+terraform init -backend-config=../../../backend-config.hcl
+terraform apply -auto-approve
+
+# Initialize and apply 01-k8s
+cd ../../../01-k8s/envs/prod
+terraform init -backend-config=../../../backend-config.hcl
+terraform apply -auto-approve
+
+# Destroy (reverse order)
+cd terraform/01-k8s/envs/prod && terraform destroy -auto-approve
+cd ../../00-vpc/envs/prod && terraform destroy -auto-approve
+```
 
 ### Snapshot Operations
 
 ```bash
-# Backup (no labels)
-gcloud compute disks snapshot threads-prod-vm-boot \
-  --snapshot-names=snapshot-k0s-backup-$(date +%Y%m%d-%H%M%S) \
-  --zone=us-east1-b
+# Check current disk name
+gcloud compute disks list --filter="name:threads-prod"
 
-# Clean labeled snapshot
-gcloud compute disks snapshot threads-prod-vm-boot \
-  --snapshot-names=snapshot-k0s-$(date +%Y%m%d-%H%M%S) \
+# Create snapshot (use correct disk name: threads-prod-vm or threads-prod-vm-boot)
+gcloud compute disks snapshot threads-prod-vm \
+  --snapshot-names=snapshot-01-k8s-$(date +%Y%m%d-%H%M%S) \
   --zone=us-east1-b \
-  --labels=component=k0s-cluster,environment=prod \
-  --description="k0s cluster + ArgoCD + ArgoCD Image Updater + External Secrets Operator - ARM64 ready"
+  --labels=environment=prod,component=k0s-cluster,layer=01-k8s
 
 # List snapshots
 gcloud compute snapshots list \
-  --filter="labels.component=k0s-cluster AND labels.environment=prod" \
-  --sort-by="-creationTimestamp"
+  --filter="labels.component=k0s-cluster" \
+  --format="table(name,creationTimestamp,diskSizeGb,labels)" \
+  --sort-by=creationTimestamp
 ```
 
-### New Terraform Workflow (Post-restructure)
+### kubectl Access
 
 ```bash
-# Apply infrastructure
-cd terraform/00-infra/envs/prod
-terraform init
-terraform apply
+# Use threads k0s kubeconfig
+export KUBECONFIG=~/.kube/config-threads-k0s
 
-# Apply k8s resources
-cd ../../../01-k8s/envs/prod
-terraform init
-terraform apply
+# Check pods
+kubectl get pods -A
+kubectl get nodes
 
-# Or use convenience script
-bash terraform/apply.sh prod
-```
-
-### Fresh Install
-
-```bash
-# Destroy VM
-terraform destroy -target=module.compute.google_compute_instance.vm
-
-# Fresh install (no snapshot)
-terraform apply -var="use_latest_snapshot=false"
-
-# From labeled snapshot
-terraform apply -var="use_latest_snapshot=true"
+# Check IAP tunnel process
+ps aux | grep "gcloud.*compute.*start-iap-tunnel"
 ```
 
 ---
 
-**Status**: Creating 00-infra and 01-k8s directory structures, then will test full workflow and take clean snapshot
+**Status**: ✅ Infrastructure complete, snapshots ready, ready to deploy applications
 
+**VM**: e2-standard-2 (x86, spot), 50GB pd-balanced
+**Cost**: ~$0.02/hour (spot pricing)
+**Snapshots**: 2 (00-vpc + 01-k8s)
 **Bucket**: `threads-tf-state-0bcb17db57fe8e84`

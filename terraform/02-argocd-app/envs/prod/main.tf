@@ -37,9 +37,9 @@ provider "kubernetes" {
   config_path = local.kubeconfig_path
 }
 
-# Deploy ArgoCD Application CRD
-resource "kubernetes_manifest" "threads_app" {
-  manifest = yamldecode(file("${path.module}/../../../../k8s/argocd-apps/threads-app.yaml"))
+# Deploy ArgoCD Application using shared module
+module "argocd_app" {
+  source = "../../../modules/argocd-app"
 
   depends_on = [data.terraform_remote_state.k8s]
 }

@@ -13,7 +13,5 @@ secretGenerator:
   - name: postgres-password
     literals:
       - password=CHANGE_ME_IN_OVERLAY
-  - name: gcr-json-key
-    type: kubernetes.io/dockerconfigjson
-    files:
-      - .dockerconfigjson=gcr-credentials.json
+  # gcr-json-key is managed via External Secrets Operator
+  # See terraform/modules/argocd-image-updater for GCR credentials

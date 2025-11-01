@@ -1,4 +1,4 @@
 output "argocd_namespace" {
   description = "ArgoCD namespace name"
-  value       = helm_release.argocd.name
+  value       = helm_release.argocd.namespace
 }

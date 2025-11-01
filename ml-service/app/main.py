@@ -8,7 +8,7 @@ from app.presentation.api.routers import recommendations
 app = FastAPI(
     title="Threads ML Service",
     description="ML-powered feed recommendation service",
-    version="0.1.0",
+    version="0.1.1",
 )
 
 # Include routers
@@ -21,4 +21,5 @@ async def health_check():
     return {
         "status": "healthy",
         "service": "threads-ml-service",
+        "version": "0.1.1",  # Testing ArgoCD Image Updater
     }

@@ -21,5 +21,5 @@ async def health_check():
     return {
         "status": "healthy",
         "service": "threads-ml-service",
-        "version": "0.1.1",  # Testing ArgoCD Image Updater
+        "version": "0.1.2",  # Testing ArgoCD Image Updater
     }

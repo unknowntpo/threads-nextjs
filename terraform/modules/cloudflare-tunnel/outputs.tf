@@ -31,8 +31,3 @@ output "k8s_secret_name" {
   description = "Kubernetes secret name containing tunnel credentials"
   value       = kubernetes_secret.cloudflared_credentials.metadata[0].name
 }
-
-output "waf_ruleset_id" {
-  description = "WAF ruleset ID (if enabled)"
-  value       = var.enable_waf ? cloudflare_ruleset.waf[0].id : null
-}

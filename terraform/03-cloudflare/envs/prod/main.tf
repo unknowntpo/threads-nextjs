@@ -47,14 +47,13 @@ provider "kubernetes" {
 module "cloudflare_tunnel" {
   source = "../../../modules/cloudflare-tunnel"
 
-  tunnel_name      = "threads-prod-k0s-tunnel"
-  account_id       = var.cloudflare_account_id
-  zone_id          = var.cloudflare_zone_id
-  subdomain        = var.subdomain
-  domain           = var.domain
-  service_url      = "http://nextjs.threads.svc.cluster.local:3000"
-  k8s_namespace    = "threads"
-  k8s_secret_name  = "cloudflared-credentials"
-  enable_waf       = false  # Disabled - can enable later when tunnel working
-  kubeconfig_path  = local.kubeconfig_path
+  tunnel_name     = "threads-prod-k0s-tunnel"
+  account_id      = var.cloudflare_account_id
+  zone_id         = var.cloudflare_zone_id
+  subdomain       = var.subdomain
+  domain          = var.domain
+  service_url     = "http://nextjs.threads.svc.cluster.local:3000"
+  k8s_namespace   = "threads"
+  k8s_secret_name = "cloudflared-credentials"
+  kubeconfig_path = local.kubeconfig_path
 }

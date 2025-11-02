@@ -67,37 +67,6 @@ resource "cloudflare_record" "tunnel_cname" {
   comment = "Managed by Terraform - Cloudflare Tunnel for ${var.tunnel_name}"
 }
 
-# WAF Managed Ruleset (OWASP Core, Bot Fight Mode)
-resource "cloudflare_ruleset" "waf" {
-  count = var.enable_waf ? 1 : 0
-
-  zone_id     = var.zone_id
-  name        = "${var.tunnel_name}-waf"
-  description = "WAF rules for ${var.subdomain}.${var.domain}"
-  kind        = "zone"
-  phase       = "http_request_firewall_managed"
-
-  rules {
-    action = "execute"
-    action_parameters {
-      id = "efb7b8c949ac4650a09736fc376e9aee" # Cloudflare Managed Ruleset
-    }
-    expression  = "(http.host eq \"${var.subdomain}.${var.domain}\")"
-    description = "Execute Cloudflare Managed Ruleset"
-    enabled     = true
-  }
-
-  rules {
-    action = "execute"
-    action_parameters {
-      id = "4814384a9e5d4991b9815dcfc25d2f1f" # Cloudflare OWASP Core Ruleset
-    }
-    expression  = "(http.host eq \"${var.subdomain}.${var.domain}\")"
-    description = "Execute OWASP Core Ruleset"
-    enabled     = true
-  }
-}
-
 # Create K8s secret with tunnel credentials
 resource "kubernetes_secret" "cloudflared_credentials" {
   metadata {

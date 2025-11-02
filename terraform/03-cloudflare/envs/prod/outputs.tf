@@ -22,11 +22,6 @@ output "tunnel_cname" {
   value       = module.cloudflare_tunnel.tunnel_cname
 }
 
-output "waf_ruleset_id" {
-  description = "WAF ruleset ID"
-  value       = module.cloudflare_tunnel.waf_ruleset_id
-}
-
 output "k8s_secret_name" {
   description = "Kubernetes secret name for cloudflared"
   value       = module.cloudflare_tunnel.k8s_secret_name

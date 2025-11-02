@@ -1,0 +1,86 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cloudflared
+  namespace: threads
+  labels:
+    app: cloudflared
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cloudflared
+  namespace: threads
+  labels:
+    app: cloudflared
+spec:
+  replicas: 2 # HA setup with 2 replicas
+  selector:
+    matchLabels:
+      app: cloudflared
+  template:
+    metadata:
+      labels:
+        app: cloudflared
+    spec:
+      serviceAccountName: cloudflared
+      containers:
+        - name: cloudflared
+          image: cloudflare/cloudflared:2024.10.0
+          args:
+            - tunnel
+            - --no-autoupdate
+            - --metrics
+            - 0.0.0.0:2000
+            - run
+            - --credentials-file
+            - /etc/cloudflared/credentials.json
+          resources:
+            requests:
+              memory: '128Mi'
+              cpu: '100m'
+            limits:
+              memory: '256Mi'
+              # No CPU limit - avoid throttling on bursty tunnel traffic
+          volumeMounts:
+            - name: credentials
+              mountPath: /etc/cloudflared
+              readOnly: true
+          livenessProbe:
+            httpGet:
+              path: /ready
+              port: 2000
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 2000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+      volumes:
+        - name: credentials
+          secret:
+            secretName: cloudflared-credentials
+---
+# Service for metrics (optional, for monitoring)
+apiVersion: v1
+kind: Service
+metadata:
+  name: cloudflared-metrics
+  namespace: threads
+  labels:
+    app: cloudflared
+spec:
+  selector:
+    app: cloudflared
+  ports:
+    - name: metrics
+      port: 2000
+      targetPort: 2000
+      protocol: TCP
+  type: ClusterIP

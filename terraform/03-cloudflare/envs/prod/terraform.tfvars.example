@@ -1,0 +1,32 @@
+# 03-cloudflare Layer Variables
+# Cloudflare Tunnel and DNS configuration
+#
+# IMPORTANT:
+# 1. Copy this file to terraform.tfvars
+# 2. Fill in your Cloudflare credentials
+# 3. Never commit terraform.tfvars to git (it's in .gitignore)
+#
+# To get Cloudflare credentials:
+# 1. Account ID: Dashboard > Overview > Account ID (right sidebar)
+# 2. Zone ID: Dashboard > Select unknowntpo.com > Overview > Zone ID (right sidebar)
+# 3. API Token: Dashboard > Profile > API Tokens > Create Token
+#    - Permissions needed:
+#      * Zone:Read
+#      * DNS:Edit
+#      * Account:Read
+#      * Cloudflare Tunnel:Edit
+
+# GCP Configuration
+project_id = "web-service-design"
+
+# Terraform Backend
+backend_bucket = "threads-tf-state-0bcb17db57fe8e84"
+
+# Cloudflare Configuration
+cloudflare_api_token  = "YOUR_CLOUDFLARE_API_TOKEN_HERE"
+cloudflare_account_id = "YOUR_CLOUDFLARE_ACCOUNT_ID_HERE"
+cloudflare_zone_id    = "YOUR_CLOUDFLARE_ZONE_ID_HERE"
+
+# DNS Configuration
+domain    = "unknowntpo.com"
+subdomain = "threads"

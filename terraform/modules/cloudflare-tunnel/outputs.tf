@@ -4,17 +4,17 @@
 
 output "tunnel_id" {
   description = "Cloudflare Tunnel ID"
-  value       = cloudflare_tunnel.this.id
+  value       = cloudflare_zero_trust_tunnel_cloudflared.this.id
 }
 
 output "tunnel_name" {
   description = "Cloudflare Tunnel name"
-  value       = cloudflare_tunnel.this.name
+  value       = cloudflare_zero_trust_tunnel_cloudflared.this.name
 }
 
 output "tunnel_cname" {
   description = "Tunnel CNAME target"
-  value       = "${cloudflare_tunnel.this.id}.cfargotunnel.com"
+  value       = "${cloudflare_zero_trust_tunnel_cloudflared.this.id}.cfargotunnel.com"
 }
 
 output "public_hostname" {

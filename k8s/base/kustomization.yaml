@@ -8,6 +8,7 @@ resources:
   - postgres.yaml
   - ml-service.yaml
   - nextjs.yaml
+  - cloudflared.yaml
 
 secretGenerator:
   - name: postgres-password

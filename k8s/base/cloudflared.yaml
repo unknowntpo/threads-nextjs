@@ -34,8 +34,14 @@ spec:
             - 0.0.0.0:2000
             - --no-autoupdate
             - run
-            - --credentials-file
-            - /etc/cloudflared/credentials.json
+            - --token
+            - $(TUNNEL_TOKEN)
+          env:
+            - name: TUNNEL_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: cloudflared-credentials
+                  key: token
           resources:
             requests:
               memory: '128Mi'
@@ -43,10 +49,6 @@ spec:
             limits:
               memory: '256Mi'
               # No CPU limit - avoid throttling on bursty tunnel traffic
-          volumeMounts:
-            - name: credentials
-              mountPath: /etc/cloudflared
-              readOnly: true
           livenessProbe:
             httpGet:
               path: /ready
@@ -63,10 +65,6 @@ spec:
             periodSeconds: 10
             timeoutSeconds: 5
             failureThreshold: 3
-      volumes:
-        - name: credentials
-          secret:
-            secretName: cloudflared-credentials
 ---
 # Service for metrics (optional, for monitoring)
 apiVersion: v1

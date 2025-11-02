@@ -1,7 +1,7 @@
 /**
  * Cloudflare Tunnel Module Variables
  *
- * Creates Cloudflare Tunnel with DNS, WAF, and K8s secret integration
+ * Creates Cloudflare Tunnel with DNS and K8s secret integration
  */
 
 variable "tunnel_name" {
@@ -44,12 +44,6 @@ variable "k8s_secret_name" {
   description = "Name of the K8s secret to create"
   type        = string
   default     = "cloudflared-credentials"
-}
-
-variable "enable_waf" {
-  description = "Enable WAF managed ruleset"
-  type        = bool
-  default     = true
 }
 
 variable "kubeconfig_path" {

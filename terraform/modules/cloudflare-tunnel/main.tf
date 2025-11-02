@@ -112,6 +112,7 @@ resource "kubernetes_secret" "cloudflared_credentials" {
       TunnelName   = cloudflare_tunnel.this.name
       TunnelSecret = random_id.tunnel_secret.b64_std
     })
+    "token" = cloudflare_tunnel.this.tunnel_token
   }
 
   type = "Opaque"

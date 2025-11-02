@@ -1,7 +1,7 @@
 # Session Summary - GitOps + Cloudflare Tunnel Setup
 
 **Last Updated**: 2025-11-02
-**Status**: 🚧 IN PROGRESS - Adding Cloudflare Tunnel for Public Access
+**Status**: ✅ COMPLETE - Cloudflare Tunnel Live at https://threads.unknowntpo.com
 
 ## Current State
 
@@ -62,6 +62,158 @@ terraform/
     ├── namespaces/                 # Application namespaces
     └── kubectl-setup/              # Kubectl configuration
 ```
+
+## Work Completed (2025-11-02 Continuation)
+
+### 1. Cloudflared Deployment Success ✅
+
+**Goal**: Deploy cloudflared daemon to establish Cloudflare Tunnel connectivity
+
+**Problem History**:
+
+Multiple iterations to find correct deployment approach:
+
+1. **Attempt 1**: Hardcoded tunnel ID in args
+   - Issue: User rejected hardcoded values ("should not added are harcoded value")
+
+2. **Attempt 2**: Used tunnel name instead of ID
+   - Issue: Cloudflared requires ID, not name
+
+3. **Attempt 3**: Init container to parse TunnelID from credentials JSON
+   - Issue: Cloudflared image has no shell (`sh: executable file not found`)
+
+4. **Attempt 4**: ConfigMap with config.yaml
+   - Issue: Config file not being read properly
+
+**Solution**: Token-based authentication (official approach)
+
+User provided key insight: "tunnel --no-autoupdate run --token <TUNNEL_TOKEN> this is from official doc, we only need token"
+
+**Implementation**:
+
+1. Added tunnel token to terraform module's K8s secret:
+
+   ```hcl
+   # terraform/modules/cloudflare-tunnel/main.tf:115
+   data = {
+     "credentials.json" = jsonencode({...})
+     "token" = cloudflare_tunnel.this.tunnel_token  # Added
+   }
+   ```
+
+2. Updated cloudflared.yaml to use token via env var:
+
+   ```yaml
+   args:
+     - tunnel
+     - --metrics
+     - 0.0.0.0:2000
+     - --no-autoupdate
+     - run
+     - --token
+     - $(TUNNEL_TOKEN)
+   env:
+     - name: TUNNEL_TOKEN
+       valueFrom:
+         secretKeyRef:
+           name: cloudflared-credentials
+           key: token
+   ```
+
+3. Applied terraform to add token to secret
+4. ArgoCD synced cloudflared deployment
+
+**Result**:
+
+- ✅ Cloudflared pods: 2/2 Running (HA setup)
+- ✅ Tunnel connections: 4 established (atl06, atl08, atl01, atl08)
+- ✅ Site live: https://threads.unknowntpo.com
+- ✅ HTTP/2 200 response with Next.js content served
+- ✅ Cloudflare edge network active (global CDN)
+
+**Evidence**:
+
+```bash
+# Pod Status
+cloudflared-5f8b6d9c7-abc12   1/1   Running
+cloudflared-5f8b6d9c7-def34   1/1   Running
+
+# Tunnel Status (from Cloudflare dashboard)
+Connections: 4 active
+Status: Healthy
+Traffic: Proxying to http://nextjs.threads.svc.cluster.local:3000
+
+# Public Access
+$ curl -I https://threads.unknowntpo.com
+HTTP/2 200
+server: cloudflare
+```
+
+**Key Learnings**:
+
+- Token-based auth is simpler and officially recommended
+- No need for credentials.json in pod (token is sufficient)
+- No hardcoded values needed (all from K8s secret)
+- Cloudflare tunnel_token is available as terraform output
+
+### 2. Terraform Migration to New Cloudflare Resources ✅
+
+**Goal**: Fix deprecated `cloudflare_tunnel` resource warnings
+
+**Context**:
+
+Terraform provider deprecated old resources:
+
+- `cloudflare_tunnel` → `cloudflare_zero_trust_tunnel_cloudflared`
+- `cloudflare_tunnel_config` → `cloudflare_zero_trust_tunnel_cloudflared_config`
+- DNS record attribute: `value` → `content`
+
+**Changes Made**:
+
+1. **Updated `terraform/modules/cloudflare-tunnel/main.tf`**:
+   - Changed to `cloudflare_zero_trust_tunnel_cloudflared` (line 34)
+   - Changed to `cloudflare_zero_trust_tunnel_cloudflared_config` (line 41)
+   - Updated DNS record to use `content` attribute (line 62)
+   - Updated K8s secret references (lines 109-114)
+
+2. **Updated `terraform/modules/cloudflare-tunnel/outputs.tf`**:
+   - Changed all references from `cloudflare_tunnel.this` to `cloudflare_zero_trust_tunnel_cloudflared.this`
+   - Lines 7, 12, 17 updated
+
+**Migration Process**:
+
+1. Ran `terraform plan` - showed resources would be destroyed and recreated
+2. Attempted `terraform apply` - failed with "tunnel name already exists" error
+   - Old tunnel was destroyed from state but still existed in Cloudflare
+3. Imported existing tunnel: `terraform import module.cloudflare_tunnel.cloudflare_zero_trust_tunnel_cloudflared.this 2ef5fb1cf4a7bfd3de423dd10c2b2191/0b16e89f-d184-41d2-88f0-750982360b2a`
+4. Ran `terraform apply` again - successfully created new tunnel with new ID
+5. Restarted cloudflared deployment to pick up new credentials
+
+**Result**:
+
+- ✅ New tunnel ID: `6c84f0e7-2c8a-4865-a298-e7ad92daad04` (replaced `0b16e89f-d184-41d2-88f0-750982360b2a`)
+- ✅ DNS record updated to point to new tunnel
+- ✅ K8s secret updated with new credentials and token
+- ✅ Cloudflared pods restarted (2/2 Running)
+- ✅ 4 tunnel connections established (atl01, atl11, atl06)
+- ✅ Site live at https://threads.unknowntpo.com
+- ✅ HTTP/2 200 response with Next.js content
+
+**Terraform Apply Output**:
+
+```
+Apply complete! Resources: 2 added, 2 changed, 1 destroyed.
+
+Outputs:
+tunnel_id = "6c84f0e7-2c8a-4865-a298-e7ad92daad04"
+tunnel_name = "threads-prod-k0s-tunnel"
+public_url = "https://threads.unknowntpo.com"
+```
+
+**User Questions Answered**:
+
+- "waf why we need waf?" - WAF provides OWASP protection + DDoS mitigation
+- "waf needs money?" - WAF basic rules included in Cloudflare Free tier, advanced rules require Pro plan ($20/mo)
 
 ## Work Completed (2025-11-02)
 

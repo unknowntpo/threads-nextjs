@@ -31,16 +31,16 @@ resource "random_id" "tunnel_secret" {
 }
 
 # Create Cloudflare Tunnel
-resource "cloudflare_tunnel" "this" {
+resource "cloudflare_zero_trust_tunnel_cloudflared" "this" {
   account_id = var.account_id
   name       = var.tunnel_name
   secret     = random_id.tunnel_secret.b64_std
 }
 
 # Configure tunnel ingress rules
-resource "cloudflare_tunnel_config" "this" {
+resource "cloudflare_zero_trust_tunnel_cloudflared_config" "this" {
   account_id = var.account_id
-  tunnel_id  = cloudflare_tunnel.this.id
+  tunnel_id  = cloudflare_zero_trust_tunnel_cloudflared.this.id
 
   config {
     ingress_rule {
@@ -59,7 +59,7 @@ resource "cloudflare_tunnel_config" "this" {
 resource "cloudflare_record" "tunnel_cname" {
   zone_id = var.zone_id
   name    = var.subdomain
-  value   = "${cloudflare_tunnel.this.id}.cfargotunnel.com"
+  content = "${cloudflare_zero_trust_tunnel_cloudflared.this.id}.cfargotunnel.com"
   type    = "CNAME"
   proxied = true # Enable Cloudflare proxy (required for WAF)
   ttl     = 1    # Auto TTL when proxied
@@ -108,11 +108,11 @@ resource "kubernetes_secret" "cloudflared_credentials" {
   data = {
     "credentials.json" = jsonencode({
       AccountTag   = var.account_id
-      TunnelID     = cloudflare_tunnel.this.id
-      TunnelName   = cloudflare_tunnel.this.name
+      TunnelID     = cloudflare_zero_trust_tunnel_cloudflared.this.id
+      TunnelName   = cloudflare_zero_trust_tunnel_cloudflared.this.name
       TunnelSecret = random_id.tunnel_secret.b64_std
     })
-    "token" = cloudflare_tunnel.this.tunnel_token
+    "token" = cloudflare_zero_trust_tunnel_cloudflared.this.tunnel_token
   }
 
   type = "Opaque"

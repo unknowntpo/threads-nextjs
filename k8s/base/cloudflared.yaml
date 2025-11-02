@@ -1,4 +1,15 @@
 apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cloudflared-config
+  namespace: threads
+data:
+  config.yaml: |
+    credentials-file: /etc/cloudflared/credentials.json
+    metrics: 0.0.0.0:2000
+    no-autoupdate: true
+---
+apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: cloudflared
@@ -27,12 +38,11 @@ spec:
       containers:
         - name: cloudflared
           image: cloudflare/cloudflared:2024.10.0
-          command:
-            - sh
-            - -c
-            - |
-              TUNNEL_ID=$(cat /etc/cloudflared/credentials.json | grep -o '"TunnelID":"[^"]*"' | cut -d'"' -f4)
-              exec cloudflared tunnel --no-autoupdate --metrics 0.0.0.0:2000 run --credentials-file /etc/cloudflared/credentials.json "$TUNNEL_ID"
+          args:
+            - tunnel
+            - run
+            - --config
+            - /etc/cloudflared/config/config.yaml
           resources:
             requests:
               memory: '128Mi'
@@ -43,6 +53,9 @@ spec:
           volumeMounts:
             - name: credentials
               mountPath: /etc/cloudflared
+              readOnly: true
+            - name: config
+              mountPath: /etc/cloudflared/config
               readOnly: true
           livenessProbe:
             httpGet:
@@ -64,6 +77,9 @@ spec:
         - name: credentials
           secret:
             secretName: cloudflared-credentials
+        - name: config
+          configMap:
+            name: cloudflared-config
 ---
 # Service for metrics (optional, for monitoring)
 apiVersion: v1

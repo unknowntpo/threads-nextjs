@@ -1,23 +1,15 @@
-import NextAuth, { AuthError } from 'next-auth'
-import { PrismaAdapter } from '@auth/prisma-adapter'
+import type { NextAuthOptions } from 'next-auth'
+import { getServerSession } from 'next-auth'
+import { PrismaAdapter } from '@next-auth/prisma-adapter'
 import GoogleProvider from 'next-auth/providers/google'
 import GitHubProvider from 'next-auth/providers/github'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 
-// Custom error class for meaningful error messages
-class CustomAuthError extends AuthError {
-  constructor(message: string) {
-    super()
-    this.message = message
-  }
-}
-
-export const { handlers, signIn, signOut, auth } = NextAuth({
+export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   session: { strategy: 'jwt' },
-  trustHost: true,
   pages: {
     signIn: '/auth/login',
   },
@@ -46,7 +38,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
-          throw new CustomAuthError('Email and password are required')
+          throw new Error('Email and password are required')
         }
 
         const user = await prisma.user.findUnique({
@@ -97,7 +89,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         if (!credentialsAccount || !credentialsAccount.refresh_token) {
           // User exists but doesn't have credentials provider
-          throw new CustomAuthError('Invalid email or password')
+          throw new Error('Invalid email or password')
         }
 
         // Verify password
@@ -107,7 +99,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         )
 
         if (!isPasswordValid) {
-          throw new CustomAuthError('Invalid email or password')
+          throw new Error('Invalid email or password')
         }
 
         return {
@@ -147,4 +139,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       return token
     },
   },
-})
+}
+
+// Helper function to get session (v5 compatibility wrapper)
+export const auth = () => getServerSession(authOptions)

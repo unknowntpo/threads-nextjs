@@ -24,6 +24,12 @@ resource "google_project_iam_member" "vm_sa_monitoring" {
   member  = "serviceAccount:${google_service_account.vm_sa.email}"
 }
 
+resource "google_project_iam_member" "vm_sa_secret_accessor" {
+  project = var.project_id
+  role    = "roles/secretmanager.secretAccessor"
+  member  = "serviceAccount:${google_service_account.vm_sa.email}"
+}
+
 # Read startup script
 data "local_file" "startup_script" {
   filename = "${path.module}/startup-script.sh"

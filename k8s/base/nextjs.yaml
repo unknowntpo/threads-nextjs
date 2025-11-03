@@ -40,8 +40,22 @@ spec:
               value: 'http://ml-service:8000'
             - name: NODE_ENV
               value: 'production'
-          # Add NextAuth secrets from GCP Secret Manager
-          # These should be injected via GCP Workload Identity or external secrets operator
+            # NextAuth secrets from GCP Secret Manager via External Secrets Operator
+            - name: AUTH_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: nextauth-secret
+                  key: secret
+            - name: ALICE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: nextauth-secret
+                  key: alice_password
+            - name: BOB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: nextauth-secret
+                  key: bob_password
           resources:
             requests:
               memory: '512M'

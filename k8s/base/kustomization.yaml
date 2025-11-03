@@ -7,14 +7,12 @@ resources:
   - namespace.yaml
   - cluster-secret-store.yaml
   - external-secret-nextauth.yaml
+  - external-secret-postgres.yaml
   - postgres.yaml
   - ml-service.yaml
   - nextjs.yaml
   - cloudflared.yaml
-
-secretGenerator:
-  - name: postgres-password
-    literals:
-      - password=CHANGE_ME_IN_OVERLAY
-  # gcr-json-key is managed via External Secrets Operator
-  # See terraform/modules/argocd-image-updater for GCR credentials
+# All secrets now managed via External Secrets Operator
+# - nextauth-secret: synced from GCP Secret Manager (alice/bob passwords, auth secret)
+# - postgres-password: synced from GCP Secret Manager
+# - gcr-json-key: managed via terraform/modules/argocd-image-updater

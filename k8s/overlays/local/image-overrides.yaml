@@ -1,0 +1,28 @@
+# Image overrides for local development
+# Tilt builds images locally with tags: nextjs-local, ml-service-local
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nextjs
+spec:
+  template:
+    spec:
+      # Remove imagePullSecrets for local (not needed)
+      imagePullSecrets: []
+      containers:
+        - name: nextjs
+          image: nextjs-local:latest
+          imagePullPolicy: IfNotPresent # Use local image if available
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ml-service
+spec:
+  template:
+    spec:
+      containers:
+        - name: ml-service
+          image: ml-service-local:latest
+          imagePullPolicy: IfNotPresent # Use local image if available

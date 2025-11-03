@@ -1,0 +1,42 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Reference base k8s configs
+resources:
+  - ../../base
+
+# Local-specific patches
+patchesStrategicMerge:
+  - image-overrides.yaml
+  - postgres-storage-override.yaml
+
+# Local secrets (not committed to git, created manually)
+# kubectl create secret generic nextauth-secret ...
+# OR: uncomment secretGenerator below for quick setup
+
+# secretGenerator:
+#   - name: nextauth-secret
+#     literals:
+#       - secret=dev-secret-for-local
+#       - alice_password=0534fcde3061dd177f45a9092712cbb83beeda8d
+#       - bob_password=0534fcde3061dd177f45a9092712cbb83beeda8d
+#   - name: postgres-password
+#     literals:
+#       - password=local-dev-password
+
+# Image replacements for local builds
+images:
+  - name: us-east1-docker.pkg.dev/web-service-design/threads/nextjs
+    newName: nextjs-local
+    newTag: latest
+  - name: us-east1-docker.pkg.dev/web-service-design/threads/ml-service
+    newName: ml-service-local
+    newTag: latest
+
+# Common labels for local environment
+commonLabels:
+  environment: local
+  managed-by: tilt
+
+# Namespace
+namespace: threads

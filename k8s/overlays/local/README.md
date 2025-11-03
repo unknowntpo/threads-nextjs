@@ -13,8 +13,8 @@ kubectl create namespace threads
 # Create secrets
 kubectl create secret generic nextauth-secret \
   --from-literal=secret="dev-secret-$(openssl rand -hex 16)" \
-  --from-literal=alice_password="0534fcde3061dd177f45a9092712cbb83beeda8d" \
-  --from-literal=bob_password="0534fcde3061dd177f45a9092712cbb83beeda8d" \
+  --from-literal=alice_password="<GENERATED_HASH>" \
+  --from-literal=bob_password="<GENERATED_HASH>" \
   -n threads
 
 kubectl create secret generic postgres-password \

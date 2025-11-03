@@ -18,8 +18,8 @@ patchesStrategicMerge:
 #   - name: nextauth-secret
 #     literals:
 #       - secret=dev-secret-for-local
-#       - alice_password=0534fcde3061dd177f45a9092712cbb83beeda8d
-#       - bob_password=0534fcde3061dd177f45a9092712cbb83beeda8d
+#       - alice_password=<GENERATED_HASH>
+#       - bob_password=<GENERATED_HASH>
 #   - name: postgres-password
 #     literals:
 #       - password=local-dev-password

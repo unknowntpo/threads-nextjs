@@ -91,24 +91,24 @@ test.describe('Google OAuth Integration', () => {
   test('should display Google OAuth button on login page', async ({ page }) => {
     await page.goto('/auth/login')
 
-    // Check that the Google OAuth link exists
-    const googleLink = page.getByRole('link', { name: /Continue with Google/i })
-    await expect(googleLink).toBeVisible()
+    // Check that the Google OAuth button exists
+    const googleButton = page.getByRole('button', { name: /Continue with Google/i })
+    await expect(googleButton).toBeVisible()
 
     // Verify Google logo SVG is present
-    const googleLogo = googleLink.locator('svg')
+    const googleLogo = googleButton.locator('svg')
     await expect(googleLogo).toBeVisible()
   })
 
   test('should display Google OAuth button on sign-up page', async ({ page }) => {
     await page.goto('/auth/sign-up')
 
-    // Check that the Google OAuth link exists
-    const googleLink = page.getByRole('link', { name: /Continue with Google/i })
-    await expect(googleLink).toBeVisible()
+    // Check that the Google OAuth button exists
+    const googleButton = page.getByRole('button', { name: /Continue with Google/i })
+    await expect(googleButton).toBeVisible()
 
     // Verify Google logo SVG is present
-    const googleLogo = googleLink.locator('svg')
+    const googleLogo = googleButton.locator('svg')
     await expect(googleLogo).toBeVisible()
   })
 
@@ -130,19 +130,19 @@ test.describe('Google OAuth Integration', () => {
     await expect(dividerText).toBeVisible()
   })
 
-  test('Google OAuth link should be clickable on login page', async ({ page }) => {
+  test('Google OAuth button should be clickable on login page', async ({ page }) => {
     await page.goto('/auth/login')
 
-    const googleLink = page.getByRole('link', { name: /Continue with Google/i })
-    await expect(googleLink).toBeVisible()
-    await expect(googleLink).toHaveAttribute('href', '/api/auth/signIn/google')
+    const googleButton = page.getByRole('button', { name: /Continue with Google/i })
+    await expect(googleButton).toBeVisible()
+    await expect(googleButton).toBeEnabled()
   })
 
-  test('Google OAuth link should be clickable on sign-up page', async ({ page }) => {
+  test('Google OAuth button should be clickable on sign-up page', async ({ page }) => {
     await page.goto('/auth/sign-up')
 
-    const googleLink = page.getByRole('link', { name: /Continue with Google/i })
-    await expect(googleLink).toBeVisible()
-    await expect(googleLink).toHaveAttribute('href', '/api/auth/signIn/google')
+    const googleButton = page.getByRole('button', { name: /Continue with Google/i })
+    await expect(googleButton).toBeVisible()
+    await expect(googleButton).toBeEnabled()
   })
 })

@@ -67,6 +67,9 @@ spec:
                 secretKeyRef:
                   name: nextauth-secret
                   key: google_client_secret
+            # Auth URL for NextAuth v5 (required for OAuth behind tunnel/proxy)
+            - name: AUTH_URL
+              value: 'https://threads.unknowntpo.com'
           resources:
             requests:
               memory: '512M'

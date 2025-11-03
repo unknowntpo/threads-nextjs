@@ -1,0 +1,21 @@
+# PostgreSQL storage override for local development
+# Uses emptyDir instead of PVC (data is ephemeral, lost on pod restart)
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+spec:
+  template:
+    spec:
+      volumes:
+        - name: postgres-data
+          emptyDir: {} # Ephemeral storage for local dev
+
+# Note: For persistent local storage, use hostPath instead:
+#
+# volumes:
+#   - name: postgres-data
+#     hostPath:
+#       path: /tmp/postgres-data
+#       type: DirectoryOrCreate

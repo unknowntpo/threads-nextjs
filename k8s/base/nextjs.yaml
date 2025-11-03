@@ -40,9 +40,6 @@ spec:
               value: 'http://ml-service:8000'
             - name: NODE_ENV
               value: 'production'
-            # NextAuth configuration
-            - name: NEXTAUTH_URL
-              value: 'https://threads.unknowntpo.com'
             # NextAuth secrets from GCP Secret Manager via External Secrets Operator
             - name: AUTH_SECRET
               valueFrom:

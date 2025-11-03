@@ -56,6 +56,17 @@ spec:
                 secretKeyRef:
                   name: nextauth-secret
                   key: bob_password
+            # Google OAuth credentials from GCP Secret Manager
+            - name: GOOGLE_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: nextauth-secret
+                  key: google_client_id
+            - name: GOOGLE_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: nextauth-secret
+                  key: google_client_secret
           resources:
             requests:
               memory: '512M'

@@ -1,8 +1,7 @@
 import type { Metadata } from 'next'
 import { Geist } from 'next/font/google'
-import { ThemeProvider } from 'next-themes'
 import { Toaster } from '@/components/ui/sonner'
-import { SessionProvider } from 'next-auth/react'
+import { Providers } from './providers'
 import './globals.css'
 
 const defaultUrl = process.env.VERCEL_URL
@@ -29,17 +28,10 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${geistSans.className} antialiased`}>
-        <SessionProvider>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-            {children}
-            <Toaster />
-          </ThemeProvider>
-        </SessionProvider>
+        <Providers>
+          {children}
+          <Toaster />
+        </Providers>
       </body>
     </html>
   )

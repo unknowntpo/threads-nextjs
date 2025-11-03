@@ -41,7 +41,7 @@ spec:
             - name: NODE_ENV
               value: 'production'
             # NextAuth secrets from GCP Secret Manager via External Secrets Operator
-            - name: AUTH_SECRET
+            - name: NEXTAUTH_SECRET
               valueFrom:
                 secretKeyRef:
                   name: nextauth-secret
@@ -67,8 +67,8 @@ spec:
                 secretKeyRef:
                   name: nextauth-secret
                   key: google_client_secret
-            # Auth URL for NextAuth v5 (required for OAuth behind tunnel/proxy)
-            - name: AUTH_URL
+            # Auth URL for NextAuth (required for OAuth behind tunnel/proxy)
+            - name: NEXTAUTH_URL
               value: 'https://threads.unknowntpo.com'
           resources:
             requests:

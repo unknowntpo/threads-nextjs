@@ -1,10 +1,18 @@
-import NextAuth from 'next-auth'
+import NextAuth, { AuthError } from 'next-auth'
 import { PrismaAdapter } from '@auth/prisma-adapter'
 import GoogleProvider from 'next-auth/providers/google'
 import GitHubProvider from 'next-auth/providers/github'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
+
+// Custom error class for meaningful error messages
+class CustomAuthError extends AuthError {
+  constructor(message: string) {
+    super()
+    this.message = message
+  }
+}
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: PrismaAdapter(prisma),
@@ -38,7 +46,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
-          return null
+          throw new CustomAuthError('Email and password are required')
         }
 
         const user = await prisma.user.findUnique({
@@ -89,7 +97,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         if (!credentialsAccount || !credentialsAccount.refresh_token) {
           // User exists but doesn't have credentials provider
-          return null
+          throw new CustomAuthError('Invalid email or password')
         }
 
         // Verify password
@@ -99,7 +107,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         )
 
         if (!isPasswordValid) {
-          return null
+          throw new CustomAuthError('Invalid email or password')
         }
 
         return {

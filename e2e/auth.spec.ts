@@ -135,7 +135,7 @@ test.describe('Google OAuth Integration', () => {
 
     const googleLink = page.getByRole('link', { name: /Continue with Google/i })
     await expect(googleLink).toBeVisible()
-    await expect(googleLink).toHaveAttribute('href', '/api/auth/signin/google')
+    await expect(googleLink).toHaveAttribute('href', '/api/auth/signIn/google')
   })
 
   test('Google OAuth link should be clickable on sign-up page', async ({ page }) => {
@@ -143,6 +143,6 @@ test.describe('Google OAuth Integration', () => {
 
     const googleLink = page.getByRole('link', { name: /Continue with Google/i })
     await expect(googleLink).toBeVisible()
-    await expect(googleLink).toHaveAttribute('href', '/api/auth/signin/google')
+    await expect(googleLink).toHaveAttribute('href', '/api/auth/signIn/google')
   })
 })

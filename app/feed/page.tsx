@@ -12,13 +12,22 @@ export const dynamic = 'force-dynamic'
 export default async function ProtectedPage() {
   try {
     const session = await auth()
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[DEBUG] Feed page - session:', session)
+    }
 
     if (!session?.user?.id) {
       redirect('/auth/login')
     }
 
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[DEBUG] Feed page - About to query profile for user ID:', session.user.id)
+    }
     const profileRepo = new ProfileRepository()
     const profile = await profileRepo.findById(session.user.id)
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[DEBUG] Feed page - Profile fetched:', profile)
+    }
 
     if (!profile) {
       // Profile not found, show setup form

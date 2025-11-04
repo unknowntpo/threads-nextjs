@@ -1,15 +1,38 @@
 import type { NextAuthOptions } from 'next-auth'
 import { getServerSession } from 'next-auth'
 import { PrismaAdapter } from '@next-auth/prisma-adapter'
+import type { Adapter, AdapterUser } from 'next-auth/adapters'
 import GoogleProvider from 'next-auth/providers/google'
 import GitHubProvider from 'next-auth/providers/github'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 
+// Custom adapter to handle username for OAuth signups
+const customAdapter: Adapter = {
+  ...PrismaAdapter(prisma),
+  async createUser(user: Omit<AdapterUser, 'id'>) {
+    // Generate username from email if not provided (OAuth signup)
+    const username = user.username || user.email?.split('@')[0] || `user_${Date.now()}`
+
+    return prisma.user.create({
+      data: {
+        ...user,
+        username,
+        displayName: user.name || username,
+      },
+    })
+  },
+}
+
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma),
-  session: { strategy: 'jwt' },
+  adapter: customAdapter,
+  session: {
+    strategy: 'jwt',
+    maxAge: 24 * 60 * 60, // 1 day (in seconds)
+  },
+  secret: process.env.NEXTAUTH_SECRET,
+  debug: true,
   pages: {
     signIn: '/auth/login',
   },
@@ -113,6 +136,16 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async session({ session, token }) {
+      if (process.env.NODE_ENV === 'development') {
+        console.log(
+          '[DEBUG] Session callback - token.sub:',
+          token.sub,
+          'token.username:',
+          token.username,
+          'token.displayName:',
+          token.displayName
+        )
+      }
       if (token && session.user) {
         session.user.id = token.sub!
         // Store user data in JWT to avoid DB queries in edge runtime (middleware)
@@ -121,20 +154,40 @@ export const authOptions: NextAuthOptions = {
           session.user.displayName = token.displayName as string
         }
       }
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[DEBUG] Session callback - session.user:', session.user)
+      }
       return session
     },
     async jwt({ token, user }) {
       if (user) {
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[DEBUG] JWT callback - user.id:', user.id, 'user.email:', user.email)
+        }
         token.sub = user.id
         // Fetch user data and store in JWT
         const dbUser = await prisma.user.findUnique({
           where: { id: user.id },
           select: { username: true, displayName: true },
         })
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[DEBUG] JWT callback - dbUser from DB:', dbUser)
+        }
         if (dbUser) {
           token.username = dbUser.username
           token.displayName = dbUser.displayName
         }
+      }
+      if (process.env.NODE_ENV === 'development') {
+        console.log(
+          '[DEBUG] JWT callback - final token.sub:',
+          token.sub,
+          'token.username:',
+          token.username,
+          'token.displayName:',
+          token.displayName
+        )
+        console.log('[DEBUG] JWT callback - FULL TOKEN:', JSON.stringify(token, null, 2))
       }
       return token
     },

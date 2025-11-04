@@ -1,7 +1,7 @@
 # Session Summary - GitOps + Cloudflare Tunnel Setup
 
-**Last Updated**: 2025-11-03
-**Status**: ✅ COMPLETE - Cloudflare Tunnel Live + Google OAuth Fixed
+**Last Updated**: 2025-11-04
+**Status**: ✅ COMPLETE - NextAuth v4 Migration + OAuth Fixes
 
 ## Current State
 
@@ -62,6 +62,303 @@ terraform/
     ├── namespaces/                 # Application namespaces
     └── kubectl-setup/              # Kubectl configuration
 ```
+
+## Work Completed (2025-11-04)
+
+### 1. NextAuth v5 → v4 Stable Migration ✅
+
+**Goal**: Downgrade from NextAuth v5 beta to v4.24.7 stable for production reliability
+
+**Rationale**:
+
+- User decision: "can we downgrade to v4? its stable"
+- NextAuth v5 still in beta with breaking changes
+- OAuth redirect_uri issues resolved, good time to stabilize
+
+**Migration Steps**:
+
+#### 1.1 OAuth Credential Fixes (Prerequisite)
+
+**Problems Found**:
+
+1. OAuth redirect using `https://0.0.0.0:3000` instead of public domain
+2. Google client_id had trailing newline (`%0A` in URL)
+
+**Fixes Applied**:
+
+```bash
+# Remove newlines from GCP secrets
+gcloud secrets versions access latest --secret=google-client-id | tr -d '\n' > /tmp/fixed.txt
+cat /tmp/fixed.txt | gcloud secrets versions add google-client-id --data-file=-
+
+gcloud secrets versions access latest --secret=google-client-secret | tr -d '\n' > /tmp/fixed.txt
+cat /tmp/fixed.txt | gcloud secrets versions add google-client-secret --data-file=-
+
+# Force sync K8s ExternalSecret
+kubectl annotate externalsecret nextauth-credentials -n threads force-sync=$(date +%s) --overwrite
+```
+
+**Environment Variable Update**:
+
+```yaml
+# k8s/base/nextjs.yaml
+- name: AUTH_URL
+  value: 'https://threads.unknowntpo.com'
+```
+
+**Result**: OAuth working, user confirmed "fix works, lets use v4"
+
+**Commit**: `4318255 - fix(auth): add AUTH_URL and fix Google credential newlines`
+
+#### 1.2 Package Downgrade
+
+**Changes**:
+
+```json
+// package.json
+{
+  "next-auth": "^4.24.7", // was: "5.0.0-beta.29"
+  "@next-auth/prisma-adapter": "^1.0.7" // was: "@auth/prisma-adapter": "^2.10.0"
+}
+```
+
+#### 1.3 Core Auth Configuration (auth.ts)
+
+**Before (v5)**:
+
+```typescript
+import NextAuth from 'next-auth'
+import { PrismaAdapter } from '@auth/prisma-adapter'
+
+export const { handlers, signIn, signOut, auth } = NextAuth({
+  adapter: PrismaAdapter(prisma),
+  // ... config
+})
+```
+
+**After (v4)**:
+
+```typescript
+import type { NextAuthOptions } from 'next-auth'
+import { getServerSession } from 'next-auth'
+import { PrismaAdapter } from '@next-auth/prisma-adapter'
+
+export const authOptions: NextAuthOptions = {
+  adapter: PrismaAdapter(prisma),
+  session: { strategy: 'jwt' },
+  pages: { signIn: '/auth/login' },
+  providers: [
+    /* unchanged */
+  ],
+  callbacks: {
+    async session({ session, token }) {
+      if (token && session.user) {
+        session.user.id = token.sub!
+        if (token.username && token.displayName) {
+          session.user.username = token.username as string
+          session.user.displayName = token.displayName as string
+        }
+      }
+      return session
+    },
+    async jwt({ token, user }) {
+      if (user) {
+        token.sub = user.id
+        const dbUser = await prisma.user.findUnique({
+          where: { id: user.id },
+          select: { username: true, displayName: true },
+        })
+        if (dbUser) {
+          token.username = dbUser.username
+          token.displayName = dbUser.displayName
+        }
+      }
+      return token
+    },
+  },
+}
+
+// v5 compatibility wrapper
+export const auth = () => getServerSession(authOptions)
+```
+
+#### 1.4 API Route (app/api/auth/[...nextauth]/route.ts)
+
+**Before (v5)**:
+
+```typescript
+import { handlers } from '@/auth'
+export const { GET, POST } = handlers
+```
+
+**After (v4)**:
+
+```typescript
+import NextAuth from 'next-auth'
+import { authOptions } from '@/auth'
+
+const handler = NextAuth(authOptions)
+export { handler as GET, handler as POST }
+```
+
+#### 1.5 Environment Variables (k8s/base/nextjs.yaml)
+
+**Changes**:
+
+```yaml
+# v5 variables → v4 variables
+- name: NEXTAUTH_SECRET # was: AUTH_SECRET
+  valueFrom:
+    secretKeyRef:
+      name: nextauth-secret
+      key: secret
+- name: NEXTAUTH_URL # was: AUTH_URL
+  value: 'https://threads.unknowntpo.com'
+```
+
+**Commit**: `98a24e0 - feat(auth): migrate to NextAuth v4 stable`
+
+#### 1.6 Build Error #1: Edge Runtime Dynamic Code Evaluation
+
+**Error**:
+
+```
+Failed to compile.
+./auth.ts
+Dynamic Code Evaluation (e.g. 'eval', 'new Function') not allowed in Edge Runtime
+Import trace: ./auth.ts -> ./middleware.ts
+```
+
+**Root Cause**: middleware.ts exported v5's `auth` function (doesn't work in Edge Runtime)
+
+**Fix**: Use v4's Edge-compatible `withAuth` middleware
+
+**Before (middleware.ts)**:
+
+```typescript
+export { auth as middleware } from '@/auth'
+```
+
+**After (middleware.ts)**:
+
+```typescript
+import { withAuth } from 'next-auth/middleware'
+
+export default withAuth({
+  callbacks: {
+    authorized: ({ token }) => !!token,
+  },
+  pages: {
+    signIn: '/auth/login',
+  },
+})
+
+export const config = {
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|auth).*)'],
+}
+```
+
+**Commit**: `d353fae - fix(middleware): use withAuth for Edge Runtime compatibility`
+
+#### 1.7 Build Error #2: React Context in Server Components
+
+**Error**:
+
+```
+Error occurred prerendering page "/_not-found"
+Error: React Context is unavailable in Server Components
+at SessionProvider (.next/server/chunks/984.js:9:58000)
+```
+
+**Root Cause**: SessionProvider (client component) used directly in Server Component layout
+
+**Fix**: Create client component wrapper
+
+**Created app/providers.tsx**:
+
+```typescript
+'use client'
+
+import { SessionProvider } from 'next-auth/react'
+import { ThemeProvider } from 'next-themes'
+
+export function Providers({ children }: { children: React.ReactNode }) {
+  return (
+    <SessionProvider>
+      <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+        {children}
+      </ThemeProvider>
+    </SessionProvider>
+  )
+}
+```
+
+**Updated app/layout.tsx**:
+
+```typescript
+import { Providers } from './providers'
+
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en" suppressHydrationWarning>
+      <body>
+        <Providers>
+          {children}
+          <Toaster />
+        </Providers>
+      </body>
+    </html>
+  )
+}
+```
+
+**Build Success**:
+
+```
+✓ Compiled successfully in 4.7s
+✓ Linting and checking validity of types
+✓ Collecting page data
+✓ Generating static pages (18/18)
+
+Route (app)                Size  First Load JS
+┌ ƒ /                     163 B         105 kB
+├ ○ /auth/login          2.8 kB         126 kB
+└ ƒ /feed               35.3 kB         165 kB
+ƒ Middleware            60.6 kB
+```
+
+**Commit**: `8a18049 - fix(layout): move SessionProvider to client component`
+
+**Summary of Commits**:
+
+- `4318255` - OAuth credential fixes (newlines + AUTH_URL)
+- `98a24e0` - NextAuth v4 migration (packages, auth.ts, API route, env vars)
+- `d353fae` - Middleware Edge Runtime fix
+- `8a18049` - SessionProvider Server Component fix
+
+**Migration Status**: ✅ COMPLETE
+
+- All builds passing locally
+- GitHub Actions building Docker image
+- ArgoCD deploying to production
+- NextAuth v4 stable in use
+
+**Key Differences v4 vs v5**:
+| Feature | v5 | v4 |
+|---------|----|----|
+| Export Pattern | `export const { handlers, auth }` | `export const authOptions` |
+| API Route | `export const { GET, POST } = handlers` | `NextAuth(authOptions)` |
+| Middleware | `export { auth as middleware }` | `withAuth({ ... })` |
+| Env Vars | `AUTH_SECRET`, `AUTH_URL` | `NEXTAUTH_SECRET`, `NEXTAUTH_URL` |
+| Adapter | `@auth/prisma-adapter` | `@next-auth/prisma-adapter` |
+| Edge Runtime | ❌ Not supported | ✅ Supported via `withAuth` |
+
+**Next Testing**:
+
+- ⏳ GitHub Actions build completion
+- ⏳ ArgoCD auto-deployment
+- ⏳ Test Google OAuth at https://threads.unknowntpo.com
+- ⏳ Verify credentials login still works
 
 ## Work Completed (2025-11-03)
 

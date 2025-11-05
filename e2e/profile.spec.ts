@@ -71,10 +71,10 @@ test.describe('Profile Management', () => {
     await loginUser(page, user.email, password)
     await page.goto('/feed')
 
-    // Click profile button (UserIcon) to open profile sidebar
+    // Click profile button in sidebar
     // Wait for page to load first
-    await page.waitForSelector('button[aria-label="Open profile"]', { timeout: 10000 })
-    await page.click('button[aria-label="Open profile"]')
+    await page.waitForSelector('button[aria-label="Profile"]', { timeout: 10000 })
+    await page.click('button[aria-label="Profile"]')
 
     // Wait for profile sidebar to open
     await expect(page.getByText('Your Profile')).toBeVisible()

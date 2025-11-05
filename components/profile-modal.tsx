@@ -14,7 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { ProfileEditForm } from '@/components/profile-edit-form'
-import { UserIcon, EditIcon, X } from 'lucide-react'
+import { UserIcon, EditIcon } from 'lucide-react'
 
 interface ProfileModalProps {
   trigger?: React.ReactNode | null
@@ -80,7 +80,7 @@ export function ProfileModal({ trigger, open, onOpenChange }: ProfileModalProps)
           )}
         </DialogTrigger>
       )}
-      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto p-0">
+      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto p-0" showCloseButton={false}>
         <DialogHeader className="sr-only">
           <DialogTitle>{isEditing ? 'Edit Profile' : 'Your Profile'}</DialogTitle>
           <DialogDescription>
@@ -94,17 +94,7 @@ export function ProfileModal({ trigger, open, onOpenChange }: ProfileModalProps)
         ) : isEditing && profile ? (
           <Card className="border-0 shadow-none">
             <CardHeader className="pb-4">
-              <div className="flex items-center justify-between">
-                <CardTitle>Edit Profile</CardTitle>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setIsEditing(false)}
-                  className="h-8 w-8"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
+              <CardTitle>Edit Profile</CardTitle>
             </CardHeader>
             <CardContent>
               <ProfileEditForm

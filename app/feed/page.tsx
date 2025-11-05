@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { ProfileSetupForm } from '@/components/profile-setup-form'
-import { SignOutButton } from '@/components/sign-out-button'
+import { NavSidebar } from '@/components/nav-sidebar'
 import { Feed } from '@/components/feed'
 import { CreatePostForm } from '@/components/create-post-form'
 import { Separator } from '@/components/ui/separator'
@@ -43,29 +43,23 @@ export default async function ProtectedPage() {
     const user = session.user
 
     return (
-      <div className="flex w-full flex-1 flex-col items-center">
-        <div className="w-full max-w-4xl p-6">
-          {/* Header */}
-          <div className="mb-8 flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold">Welcome back, {profile.displayName}!</h1>
-              <p className="text-muted-foreground">@{profile.username}</p>
+      <>
+        <NavSidebar />
+        <div className="flex w-full flex-1 flex-col items-center pl-20">
+          <div className="w-full max-w-2xl p-6">
+            {/* Content */}
+            <div className="space-y-8" id="create">
+              {/* Create Post Form */}
+              <CreatePostForm />
+
+              <Separator />
+
+              {/* Feed */}
+              <Feed currentUserId={user.id} />
             </div>
-            <SignOutButton />
-          </div>
-
-          {/* Content */}
-          <div className="space-y-8">
-            {/* Create Post Form */}
-            <CreatePostForm />
-
-            <Separator />
-
-            {/* Feed */}
-            <Feed currentUserId={user.id} />
           </div>
         </div>
-      </div>
+      </>
     )
   } catch (error) {
     console.error('Error loading protected page:', error)

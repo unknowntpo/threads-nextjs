@@ -61,8 +61,7 @@ test.describe('Profile Management', () => {
     }
   })
 
-  test.skip('should edit profile information', async ({ page }) => {
-    // TODO: Implement /profile route first
+  test('should edit profile information', async ({ page }) => {
     // Create test user
     const { user, password } = await helpers.createUser({
       displayName: 'Alice Cooper',
@@ -70,36 +69,51 @@ test.describe('Profile Management', () => {
 
     // Login
     await loginUser(page, user.email, password)
-    await page.goto('/profile')
+    await page.goto('/feed')
 
-    // Look for edit button
-    const editButton = page.locator('button:has-text("Edit"), a:has-text("Edit Profile")')
+    // Click profile button (UserIcon) to open profile sidebar
+    // Wait for page to load first
+    await page.waitForSelector('button[aria-label="Open profile"]', { timeout: 10000 })
+    await page.click('button[aria-label="Open profile"]')
 
-    if ((await editButton.count()) > 0) {
-      await editButton.first().click()
+    // Wait for profile sidebar to open
+    await expect(page.getByText('Your Profile')).toBeVisible()
 
-      // Update display name
-      const displayNameInput = page.locator('input[name="display_name"]')
-      if ((await displayNameInput.count()) > 0) {
-        await displayNameInput.clear()
-        await displayNameInput.fill('Alice Updated')
-      }
+    // Click "Edit Profile" button
+    await page.getByTestId('edit-profile-button').click()
 
-      // Update bio
-      const bioInput = page.locator('textarea[name="bio"], input[name="bio"]')
-      if ((await bioInput.count()) > 0) {
-        await bioInput.clear()
-        await bioInput.fill('Updated bio from E2E test')
-      }
+    // Wait for edit form to appear
+    await expect(page.getByText('Edit Profile')).toBeVisible()
 
-      // Save changes
-      await page.click('button:has-text("Save"), button:has-text("Update")')
+    // Verify username is read-only (locked)
+    const usernameInput = page.getByTestId('username')
+    await expect(usernameInput).toBeDisabled()
 
-      // Should see success message or updated info
-      await expect(page.locator('text=/Alice Updated|Updated|Success/i')).toBeVisible({
-        timeout: 5000,
-      })
-    }
+    // Update display name
+    const displayNameInput = page.getByTestId('display_name')
+    await displayNameInput.clear()
+    await displayNameInput.fill('Alice Updated')
+
+    // Update bio
+    const bioInput = page.getByTestId('bio')
+    await bioInput.clear()
+    await bioInput.fill('Updated bio from E2E test')
+
+    // Update avatar URL
+    const avatarUrlInput = page.getByTestId('avatar_url')
+    await avatarUrlInput.clear()
+    await avatarUrlInput.fill('https://example.com/avatar.jpg')
+
+    // Save changes
+    await page.getByTestId('save-button').click()
+
+    // Should see success toast
+    await expect(page.getByText(/Profile updated successfully|Success/i)).toBeVisible({
+      timeout: 5000,
+    })
+
+    // Profile view should now show updated info
+    await expect(page.getByText('Alice Updated')).toBeVisible()
   })
 
   test.skip('should display user posts on profile', async ({ page }) => {

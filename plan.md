@@ -538,6 +538,10 @@ Terraform-managed GCP Resources (us-east1)
 - ✅ GitHub Actions CI/CD with ARM64 builds
 - ✅ Next.js and ML service deployments
 - ✅ Script library for IAP tunnel management
+- ✅ NextAuth v4 OAuth integration fixes (Google, GitHub)
+- ✅ Custom PrismaAdapter for auto-generating usernames from email
+- ✅ Session security improvements (1-day token expiry, NEXTAUTH_SECRET)
+- ✅ Production database reset with proper seed data from GSM secrets
 
 **Future Enhancements:**
 

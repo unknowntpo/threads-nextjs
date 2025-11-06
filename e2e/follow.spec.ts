@@ -8,7 +8,7 @@ test.describe('Follow Functionality', () => {
     await page.getByRole('textbox', { name: 'Email' }).fill(email)
     await page.getByRole('textbox', { name: 'Password' }).fill(password)
     await page.getByRole('button', { name: 'Login' }).click()
-    await page.waitForURL(/\/(dashboard|feed)?/)
+    await page.waitForURL('/feed')
   }
 
   test('should open user action menu when clicking on username in post', async ({ page }) => {
@@ -41,8 +41,8 @@ test.describe('Follow Functionality', () => {
     await bobUsername.click()
 
     // Should see user action menu with Follow and Visit Profile buttons
-    await expect(page.getByText('Follow')).toBeVisible({ timeout: 5000 })
-    await expect(page.getByText('Visit Profile')).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Follow' })).toBeVisible({ timeout: 5000 })
+    await expect(page.getByRole('button', { name: 'Visit Profile' })).toBeVisible()
   })
 
   test('should follow a user from user action menu', async ({ page }) => {
@@ -169,8 +169,10 @@ test.describe('Follow Functionality', () => {
     await visitProfileButton.click()
 
     // Should see profile modal with Bob's info
-    await expect(page.getByText('Bob Smith')).toBeVisible({ timeout: 5000 })
-    await expect(page.getByText('@bob')).toBeVisible()
+    // Use getByRole to scope to the dialog/modal
+    const profileModal = page.getByRole('dialog').last()
+    await expect(profileModal.getByText('Bob Smith')).toBeVisible({ timeout: 5000 })
+    await expect(profileModal.getByText('@bob')).toBeVisible()
 
     // Should NOT see Edit Profile button (viewing other user's profile)
     await expect(page.getByTestId('edit-profile-button')).not.toBeVisible()

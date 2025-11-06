@@ -62,11 +62,11 @@ test.describe('Authentication Flow', () => {
     await page.getByRole('textbox', { name: 'Password' }).fill(password)
     await page.getByRole('button', { name: 'Login' }).click()
 
-    await page.waitForURL(/\/(dashboard|feed)?/)
+    await page.waitForURL('/feed')
 
     // Open sidebar menu and click sign out
     await page.click('button[aria-label="Menu"]')
-    await page.click('button:has-text("Sign Out"), a:has-text("Sign Out")')
+    await page.getByRole('menuitem', { name: 'Sign Out' }).click()
 
     // Should redirect to login or home
     await expect(page).toHaveURL(/\/(auth\/login|\/)?/)

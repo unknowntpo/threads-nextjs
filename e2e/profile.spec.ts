@@ -8,7 +8,7 @@ test.describe('Profile Management', () => {
     await page.getByRole('textbox', { name: 'Email' }).fill(email)
     await page.getByRole('textbox', { name: 'Password' }).fill(password)
     await page.getByRole('button', { name: 'Login' }).click()
-    await page.waitForURL(/\/(dashboard|feed)?/)
+    await page.waitForURL('/feed')
   }
 
   test.skip('should view own profile', async ({ page }) => {
@@ -77,13 +77,13 @@ test.describe('Profile Management', () => {
     await page.click('button[aria-label="Profile"]')
 
     // Wait for profile sidebar to open
-    await expect(page.getByText('Your Profile')).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Your Profile' })).toBeVisible()
 
     // Click "Edit Profile" button
     await page.getByTestId('edit-profile-button').click()
 
     // Wait for edit form to appear
-    await expect(page.getByText('Edit Profile')).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Edit Profile' })).toBeVisible()
 
     // Verify username is read-only (locked)
     const usernameInput = page.getByTestId('username')
@@ -108,7 +108,7 @@ test.describe('Profile Management', () => {
     await page.getByTestId('save-button').click()
 
     // Should see success toast
-    await expect(page.getByText(/Profile updated successfully|Success/i)).toBeVisible({
+    await expect(page.getByText('Profile updated successfully')).toBeVisible({
       timeout: 5000,
     })
 

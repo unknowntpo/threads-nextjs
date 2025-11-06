@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { User } from '@prisma/client'
 import {
   Dialog,
@@ -20,39 +20,42 @@ interface ProfileModalProps {
   trigger?: React.ReactNode | null
   open?: boolean
   onOpenChange?: (open: boolean) => void
+  userId?: string // Optional: if provided, shows this user's profile (view-only)
 }
 
-export function ProfileModal({ trigger, open, onOpenChange }: ProfileModalProps) {
+export function ProfileModal({ trigger, open, onOpenChange, userId }: ProfileModalProps) {
   const [profile, setProfile] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isEditing, setIsEditing] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
+  const isViewingOtherUser = !!userId // If userId is provided, we're viewing another user
 
   // Use controlled or uncontrolled mode
   const isControlled = open !== undefined
   const dialogOpen = isControlled ? open : isOpen
   const setDialogOpen = isControlled ? onOpenChange || (() => {}) : setIsOpen
 
-  useEffect(() => {
-    if (dialogOpen) {
-      fetchProfile()
-    }
-  }, [dialogOpen])
-
-  const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
     setIsLoading(true)
     try {
-      const response = await fetch('/api/profiles')
+      const url = userId ? `/api/users/${userId}` : '/api/profiles'
+      const response = await fetch(url)
       if (response.ok) {
         const data = await response.json()
-        setProfile(data.profile)
+        setProfile(userId ? data.user : data.profile)
       }
     } catch (error) {
       console.error('Failed to fetch profile:', error)
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [userId])
+
+  useEffect(() => {
+    if (dialogOpen) {
+      fetchProfile()
+    }
+  }, [dialogOpen, fetchProfile])
 
   const handleProfileUpdate = (updatedProfile: User) => {
     setProfile(updatedProfile)
@@ -91,7 +94,7 @@ export function ProfileModal({ trigger, open, onOpenChange }: ProfileModalProps)
           <div className="flex items-center justify-center p-12">
             <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary"></div>
           </div>
-        ) : isEditing && profile ? (
+        ) : isEditing && profile && !isViewingOtherUser ? (
           <Card className="border-0 shadow-none">
             <CardHeader className="pb-4">
               <CardTitle>Edit Profile</CardTitle>
@@ -143,15 +146,17 @@ export function ProfileModal({ trigger, open, onOpenChange }: ProfileModalProps)
                 </div>
               </div>
 
-              {/* Edit Button */}
-              <Button
-                onClick={() => setIsEditing(true)}
-                className="w-full"
-                data-testid="edit-profile-button"
-              >
-                <EditIcon className="mr-2 h-4 w-4" />
-                Edit Profile
-              </Button>
+              {/* Edit Button - only show for own profile */}
+              {!isViewingOtherUser && (
+                <Button
+                  onClick={() => setIsEditing(true)}
+                  className="w-full"
+                  data-testid="edit-profile-button"
+                >
+                  <EditIcon className="mr-2 h-4 w-4" />
+                  Edit Profile
+                </Button>
+              )}
             </CardContent>
           </Card>
         ) : (

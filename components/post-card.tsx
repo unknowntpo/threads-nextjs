@@ -13,6 +13,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { UserActionMenu } from '@/components/user-action-menu'
 import { formatDistanceToNow } from '@/lib/utils'
 import { useToast } from '@/hooks/use-toast'
 import { usePostViewTracking } from '@/hooks/use-post-tracking'
@@ -68,6 +69,7 @@ export function PostCard({
     }>
   >([])
   const [commentsLoaded, setCommentsLoaded] = useState(false)
+  const [userMenuOpen, setUserMenuOpen] = useState(false)
 
   const handleLike = async () => {
     if (!currentUserId || isLiking) return
@@ -258,10 +260,27 @@ export function PostCard({
               </AvatarFallback>
             </Avatar>
             <div className="flex flex-col">
-              <p className="text-sm font-semibold" data-testid="post-author">
+              <button
+                className="text-left text-sm font-semibold hover:underline"
+                data-testid="post-author"
+                onClick={e => {
+                  e.stopPropagation()
+                  if (!isOwner) setUserMenuOpen(true)
+                }}
+                disabled={isOwner}
+              >
                 {post.user.displayName}
-              </p>
-              <p className="text-xs text-muted-foreground">@{post.user.username}</p>
+              </button>
+              <button
+                className="text-left text-xs text-muted-foreground hover:underline disabled:cursor-default disabled:no-underline"
+                onClick={e => {
+                  e.stopPropagation()
+                  if (!isOwner) setUserMenuOpen(true)
+                }}
+                disabled={isOwner}
+              >
+                @{post.user.username}
+              </button>
             </div>
           </div>
 
@@ -415,6 +434,19 @@ export function PostCard({
           </div>
         )}
       </CardContent>
+
+      {/* User Action Menu */}
+      {!isOwner && (
+        <UserActionMenu
+          userId={post.user.id}
+          username={post.user.username}
+          displayName={post.user.displayName}
+          avatarUrl={post.user.avatarUrl}
+          open={userMenuOpen}
+          onOpenChange={setUserMenuOpen}
+          trigger={null}
+        />
+      )}
     </Card>
   )
 }

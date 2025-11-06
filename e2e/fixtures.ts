@@ -28,6 +28,7 @@ async function cleanDatabase() {
  * Test helper functions for creating test data
  */
 const helpers = {
+  prisma,
   /**
    * Create a test user with credentials account and hashed password
    *

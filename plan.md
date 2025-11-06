@@ -1,271 +1,326 @@
-# Threads clone
+# Threads Clone - Development Plan
 
 Reference: https://www.threads.com
 
-## Arch
+**Current Status:** MVP 7.7 (GCP Deployment) - Core Complete ✅
 
-Framework:
+For completed MVP phases 1-6, see [PLAN_ARCHIVE.md](PLAN_ARCHIVE.md)
 
-- Next.js 15
-- PostgreSQL
-- Prisma ORM
-- NextAuth (or custom JWT auth)
+---
 
-## Features Implementation
+## Architecture
 
-### 1. Post Creation Feature
-
-**Backend:**
-
-- API Route: `POST /api/posts`
-- Prisma queries for database operations
-- WebSocket for real-time updates (optional, future enhancement)
-
-**Frontend Components:**
-
-- `PostComposer` - Text area with media upload
-- `PostSubmissionState` - Loading/success/error states
-- `MediaUploader` - Handle image/video uploads
-
-**Technical Tasks:**
-
-- Set up local file storage or S3 for media
-- Implement authorization checks in API routes
-- Create post creation API route with validation
-- Build composer UI with rich text support
-- Add optimistic UI updates
-
-### 2. Timeline Feature
-
-**Backend:**
-
-- API Routes: `GET /api/timeline?cursor=&limit=20`
-- Database: Join posts with user follows, cursor-based pagination
-- Optimized indexes on (user_id, created_at)
-
-**Frontend Components:**
-
-- `Timeline` - Main timeline container
-- `PostCard` - Individual post display
-- `InfiniteScroll` - Pagination handler
-- `TimelineLoader` - Loading states
-
-**Technical Tasks:**
-
-- Implement cursor-based pagination
-- Create timeline query with proper joins
-- Build infinite scroll with intersection observer
-- Add loading skeletons and empty states
-- Implement pull-to-refresh functionality
-- Cache management with React Query/SWR
-
-### 3. Post Interactions Feature
-
-**Backend:**
-
-- API Routes:
-  - `POST/DELETE /api/posts/[id]/like`
-  - `POST /api/posts/[id]/comments`
-  - `GET /api/posts/[id]/comments?cursor=&limit=10`
-- Functions: `toggle_like()`, `create_comment()`
-
-**Frontend Components:**
-
-- `InteractionBar` - Like, comment, share buttons
-- `CommentsList` - Comments display with pagination
-- `CommentComposer` - Comment input with @mentions
-- `MentionAutocomplete` - User search/selection
-- `FollowButton` - Follow/unfollow functionality
-
-**Technical Tasks:**
-
-- Implement optimistic like/unlike with rollback
-- Build @mention system with autocomplete
-- Create comment threading (if needed)
-- Implement follow/unfollow with authorization checks
-- User search and suggestion system
-
-### 4. User Relationships Feature
-
-**Backend:**
-
-- API Routes:
-  - `POST/DELETE /api/users/[id]/follow`
-  - `GET /api/users/[id]/followers`
-  - `GET /api/users/[id]/following`
-- Database triggers for follower counts and notifications
-
-**Frontend Components:**
-
-- `UserProfile` - Profile page with follow status
-- `FollowersList` - Followers/following lists
-- `UserCard` - User display component
-- `FollowSuggestions` - Discover new users
-
-**Technical Tasks:**
-
-- Implement follow/unfollow with proper authorization
-- Build user discovery algorithm
-- Create follower/following lists with pagination
-- Add mutual follow indicators
-- Implement follow suggestions
-- Private/public account settings
-
-## Technical Stack
-
-**Frontend:**
+**Framework:**
 
 - Next.js 15 with App Router
-- TypeScript for type safety
-- Tailwind CSS for styling
+- PostgreSQL + Prisma ORM
+- NextAuth v4 (OAuth + Credentials)
 - shadcn/ui components (Radix UI + Tailwind)
-- Client-side fetch for API calls
-- No client state management (using server components)
 
-**Backend:**
+**Deployment:**
 
-- Next.js API Routes (app/api/)
-- PostgreSQL database
-- Prisma ORM for type-safe database access
-- NextAuth or custom JWT for authentication
-- Local file storage or S3 for media
-- Direct Prisma queries in API routes
+- GCP Compute Engine (ARM64, c4a-standard-2, preemptible)
+- k0s Kubernetes cluster
+- ArgoCD (GitOps) + Keel (Image auto-update)
+- GitHub Actions CI/CD
+- Cloudflare Tunnel (public access)
 
-**Architecture Pattern:**
+---
 
-- Server Components: fetch() API routes server-side for initial data
-- Client Components: fetch() API routes client-side for mutations
-- router.refresh() for data revalidation
-- No Server Actions (following POC pattern)
+## Current Development Roadmap
 
-## Development Phases (Incremental MVPs)
+### MVP 7.8: Profile Management & UI Enhancement ✅ COMPLETE
 
-### MVP 1: Basic Auth & Profile Setup ✅
+**Goal:** Enable profile editing with modern Threads-style navigation
+**Deliverable:** Profile edit feature with Threads-style left sidebar
+**Status:** ✅ Complete (2025-11-06)
+**Priority:** High - Essential UX improvement
 
-**Goal:** User can sign up, sign in, and set up profile
-**Deliverable:** Working authentication flow with profile creation
-**Database:** `profiles` table only
-**Frontend:**
+**Features Implemented:**
 
-- [x] Login/signup pages
-- [x] Profile setup form
-- [x] Basic navigation
-      **Test:** User can create account and edit profile
+- [x] Profile edit API (PUT /api/profiles)
+  - Server-side validation (display_name ≤255, bio ≤500, avatar_url format)
+  - Session-based auth (users edit own profile only)
+  - Username locked (read-only with visual indicator)
+- [x] Profile edit form component
+  - Character counters (255/500 limits)
+  - Toast notifications
+  - Cancel/Save actions
+- [x] Threads-style left navigation sidebar
+  - 80px fixed sidebar with icons
+  - Home, Search, Create, Activity, Profile buttons
+  - Bottom menu with Sign Out
+- [x] Centered card-style profile modal
+  - Dialog instead of Sheet sidebar
+  - Clean UI without duplicate close buttons
+  - View/Edit mode toggle
+- [x] E2E test coverage
+  - Profile edit workflow
+  - Sidebar navigation
+  - Auth flow with new UI
 
-### MVP 2: Post Creation & Display ✅
+**Files Created:**
 
-**Goal:** User can create and view their own posts
-**Deliverable:** Simple post composer and personal feed
-**Database:** Add `posts` table
-**Frontend:**
+- `components/nav-sidebar.tsx` - Left navigation sidebar
+- `components/profile-modal.tsx` - Centered card profile modal
+- `components/profile-edit-form.tsx` - Profile edit form with validation
+- `components/ui/dialog.tsx` - shadcn Dialog component
 
-- [x] Post composer (text only)
-- [x] Personal posts list
-- [x] Basic post card display
-      **Test:** User can write posts and see them listed
+**Files Modified:**
 
-### MVP 3: Docker Image & CI/CD Setup ✅
-
-**Goal:** Automate Docker image building with semantic versioning
-**Deliverable:** GitHub Actions workflow that builds and tags Docker images
-**Tasks:**
-
-- [x] Create Dockerfile for Next.js app
-- [x] Set up GitHub Actions workflow for Docker build
-- [x] Implement semantic versioning (v1.0.0, v1.0.1, etc.)
-- [x] Tag images with version, latest, and git SHA
-- [x] Push images to GitHub Container Registry (ghcr.io)
-- [x] Configure workflow triggers (push to main, tag creation)
-- [x] Add build caching for faster builds
-- [x] Test image locally before deployment
-      **Test:** Git tag triggers automated Docker build with proper version tags
-
-### MVP 4: PostgreSQL + Prisma Migration & DevOps Setup ✅
-
-**Goal:** Migrate to PostgreSQL + Prisma with complete development tooling and deployment
-**Deliverable:** Live application on Zeabur with professional development workflow
-**Epic:** See Issue #15 for detailed migration plan
-**Services:**
-
-- PostgreSQL (Docker Compose for local, Zeabur PostgreSQL for production)
-- Prisma ORM
-- Zeabur (Deployment platform)
-
-**Phase 1: Database & Auth Migration**
-
-- [x] Set up PostgreSQL with Docker Compose locally
-- [x] Initialize Prisma with schema
-- [x] Migrate existing schema to Prisma
-- [x] Implement NextAuth or custom JWT auth
-- [x] Replace all Supabase client calls with Prisma
-- [x] Update middleware for new auth
-
-**Phase 2: Development Tooling**
-
-- [ ] Configure Prettier with project standards
-- [ ] Configure ESLint with Next.js rules
-- [ ] Set up Husky + lint-staged for pre-commit
-- [ ] Add format/lint npm scripts
-- [ ] Document coding standards
-
-**Phase 3: Testing Updates**
-
-- [x] Update Vitest integration tests for Prisma
-- [x] Update E2E tests for new auth
-- [x] Add Prisma test database setup/teardown
-- [x] Ensure all tests pass locally
-
-**Phase 4: CI/CD Pipeline**
-
-- [x] Add Prisma generate step to CI
-- [x] Add linter check to CI
-- [x] Add Prisma migration check to CI
-- [x] Run unit + E2E tests in CI
-- [x] Build Docker image on merge
-
-**Phase 5: Zeabur Deployment**
-
-- [x] Create Zeabur project
-- [x] Add PostgreSQL service in Zeabur
-- [x] Configure environment variables
-- [x] Deploy application
-- [x] Run Prisma migrations in production
-- [x] Verify live application works
+- `app/api/profiles/route.ts` - Added PUT handler
+- `app/feed/page.tsx` - Integrated NavSidebar, removed header
+- `e2e/profile.spec.ts` - Updated for sidebar workflow
+- `e2e/auth.spec.ts` - Updated for sidebar UI
 
 **Test:**
 
-1. ✅ Application works locally with PostgreSQL + Prisma
-2. ✅ All tests pass (unit + E2E) locally and in CI
-3. ✅ Code quality checks pass (Prettier + ESLint)
-4. ✅ CI/CD pipeline is green
-5. ✅ Application is deployed and accessible on Zeabur
+1. ✅ Profile edit API validates and saves changes
+2. ✅ Username field is locked (disabled with lock icon)
+3. ✅ Character counters work correctly
+4. ✅ Sidebar navigation matches Threads UX
+5. ✅ Profile modal opens centered (no close button)
+6. ✅ E2E tests pass in CI
+7. ✅ Build passes locally and in CI
+8. ✅ Deployed via ArgoCD GitOps
 
-### MVP 5: Following & Timeline
+**Status:** ✅ Complete - Deployed to production
 
-**Goal:** Users can follow others and see followed posts
-**Deliverable:** Social timeline with follow functionality
-**Database:** Add `follows` table
+---
+
+### MVP 8: Notification System 🔔
+
+**Goal:** Users receive notifications for social interactions
+**Deliverable:** Real-time notification system for likes, comments, reposts, and mentions
+**Database:** `notifications` table (already exists in schema)
+**Status:** 📋 Ready to implement
+**Priority:** High - Essential for user engagement
+
+**Backend:**
+
+- [ ] `POST /api/notifications/create` - Create notification on interaction
+- [ ] `GET /api/notifications` - Fetch user's notifications with pagination
+- [ ] `PATCH /api/notifications/[id]/read` - Mark notification as read
+- [ ] `PATCH /api/notifications/read-all` - Mark all as read
+- [ ] Database triggers or API hooks for:
+  - Like notifications (when someone likes your post)
+  - Comment notifications (when someone comments on your post)
+  - Repost notifications (when someone reposts your post)
+  - Mention notifications (when someone @mentions you)
+  - Follow notifications (when someone follows you) - future
+
 **Frontend:**
 
-- [x] User search and profile pages
-- [x] Follow/unfollow buttons
-- [x] Timeline showing followed users' posts
-      **Test:** User can follow others and see their posts in timeline
+- [ ] `NotificationBell` - Header notification icon with unread count badge
+- [ ] `NotificationDropdown` - Dropdown panel showing recent notifications
+- [ ] `NotificationList` - Full notifications page with pagination
+- [ ] `NotificationItem` - Individual notification card with:
+  - User avatar and name
+  - Notification type and action
+  - Related post preview (if applicable)
+  - Timestamp
+  - Read/unread status indicator
+- [ ] Real-time updates (polling every 30s or WebSocket for future)
+- [ ] Toast notifications for new interactions (optional)
 
-### MVP 6: Basic Interactions ✅
+**Technical Tasks:**
 
-**Goal:** Users can like, comment, repost, and share posts
-**Deliverable:** Interactive social features
-**Database:** Add `likes`, `comments` tables, and `originalPostId` field for reposts
-**Frontend:**
+- [ ] Add notification creation hooks to like/comment/repost APIs
+- [ ] Implement efficient notification queries (index on user_id, read, created_at)
+- [ ] Build notification polling system (useEffect with interval)
+- [ ] Add unread count API and badge display
+- [ ] Handle notification navigation (clicking notification goes to related post)
+- [ ] Add notification preferences (future: enable/disable by type)
 
-- [x] Like button with counter and optimistic updates
-- [x] Comment API (GET/POST) - UI pending
-- [x] Repost functionality (creates new post with originalPostId)
-- [x] Share functionality (copy shareable link)
-- [x] Visual feedback (heart fill, green repost, checkmark)
-- [x] Toast notifications for all interactions
-      **Test:** ✅ User can like, repost, and share posts. Comments API ready.
+**Test:**
+
+1. User A likes User B's post → User B receives notification
+2. User A comments on User B's post → User B receives notification
+3. User A reposts User B's post → User B receives notification
+4. User A @mentions User B → User B receives notification
+5. Notification badge shows correct unread count
+6. Clicking notification marks as read and navigates to post
+7. Notifications are sorted by newest first
+
+**Effort Estimate:** ~16-24 hours
+
+**Status:** 📋 Next priority after current deployment stabilizes
+
+---
+
+### MVP 7.7: GCP Deployment with Terraform 🚀 CORE COMPLETE
+
+**Goal:** Deploy entire application stack to GCP using Infrastructure as Code
+**Deliverable:** Production-ready GCP deployment with Terraform, maximizing free tier
+**Status:** ✅ Core Complete (2025-11-05)
+**Priority:** High - Required for cost optimization and production deployment
+
+**Documentation:** [GCP_DEPLOYMENT.md](docs/GCP_DEPLOYMENT.md) (to be created)
+
+**Architecture:**
+
+```
+Terraform-managed GCP Resources (us-east1-b)
+├── VPC & Networking
+│   ├── Custom VPC network
+│   ├── Firewall rules (SSH via IAP)
+│   └── Cloudflare Tunnel (public access)
+├── Compute Engine c4a-standard-2 (ARM64, preemptible)
+│   ├── k0s Kubernetes v1.34.1
+│   ├── PostgreSQL (StatefulSet)
+│   ├── ArgoCD (GitOps)
+│   ├── Keel (Image auto-update)
+│   └── Local-path storage provisioner
+├── Artifact Registry
+│   └── Docker images (nextjs, ml-service) ARM64
+└── Secret Manager (planned)
+    ├── Database credentials
+    ├── NextAuth secrets
+    └── OAuth credentials
+```
+
+**Infrastructure as Code (Terraform):**
+
+- [x] Terraform project structure (`terraform/`)
+- [x] VPC and networking resources
+- [x] Compute Engine VM with startup script (c4a-standard-2 ARM64, preemptible)
+- [x] IAM service accounts and roles
+- [x] Firewall rules (SSH via IAP)
+- [x] k0s Kubernetes cluster on VM
+- [x] ArgoCD for GitOps deployments
+- [x] Keel for automatic image updates from Artifact Registry
+- [x] GitHub Actions CI/CD (build ARM64 images, push to Artifact Registry)
+- [ ] State backend (GCS bucket with versioning) - using local state
+- [ ] Secret Manager integration - using k8s secrets
+- [ ] Cloud NAT for VM egress - using direct internet access
+
+**VM Setup (c4a-standard-2 ARM64, preemptible):**
+
+- [x] k0s Kubernetes v1.34.1 installed via startup script
+- [x] PostgreSQL deployed as k8s StatefulSet
+- [x] ArgoCD deployed for GitOps
+- [x] Keel deployed for image auto-updates (keelhq/keel-aarch64)
+- [x] Local-path storage provisioner for PVCs
+- [x] IAP tunnel for k8s API access
+- [ ] Automated backups (Cloud Storage)
+- [ ] Monitoring and health checks
+- [ ] Dagster daemon container (planned)
+- [ ] Dagster webserver container (:3001) (planned)
+
+**Kubernetes Deployment (k0s on VM):**
+
+- [x] Build and push Docker images to Artifact Registry (ARM64)
+- [x] Next.js app deployed as Deployment
+- [x] ML service deployed as Deployment
+- [x] Environment variables configured with k8s secrets
+- [x] Keel polling Artifact Registry for :latest tag updates
+- [x] ArgoCD syncing from Git repository
+- [x] Services exposed via NodePort (Next.js: 30000)
+- [x] Cloudflare Tunnel for public access
+- [ ] Configure custom domain (if applicable)
+- [ ] Enable logging and monitoring
+
+**CI/CD Integration:**
+
+- [x] GitHub Actions workflow (deploy-gke.yml)
+- [x] Docker build and push to Artifact Registry (ARM64)
+- [x] Automatic deployment via Keel (polls every 1min)
+- [x] Removed Zeabur workflows
+- [ ] Terraform plan on PR
+- [ ] Terraform apply on merge to main
+- [ ] Prisma migrations in CI/CD
+- [ ] Smoke tests after deployment
+
+**What's Complete:**
+
+- ✅ Terraform infrastructure (VPC, VM, IAM, firewall)
+- ✅ k0s Kubernetes cluster on ARM64 VM
+- ✅ ArgoCD + Keel GitOps pipeline
+- ✅ GitHub Actions CI/CD with ARM64 builds
+- ✅ Next.js and ML service deployments
+- ✅ Script library for IAP tunnel management
+- ✅ NextAuth v4 OAuth integration fixes (Google, GitHub)
+- ✅ Custom PrismaAdapter for auto-generating usernames from email
+- ✅ Session security improvements (1-day token expiry, NEXTAUTH_SECRET)
+- ✅ Production database reset with proper seed data from GSM secrets
+- ✅ Cloudflare Tunnel integration for public access
+- ✅ Profile management with Threads-style sidebar
+
+**Future Enhancements:**
+
+- [ ] Migrate to proper GKE cluster (if budget allows)
+- [ ] Cloud SQL migration (if budget allows)
+- [ ] Dagster deployment for ML pipeline orchestration
+- [ ] Multi-region deployment
+- [ ] CDN integration (Cloud CDN)
+- [ ] Load balancing for high availability
+- [ ] Monitoring and alerting setup (Prometheus, Grafana)
+
+**Test:**
+
+1. ✅ Terraform plan succeeds without errors
+2. ✅ All GCP resources created in us-east1-b
+3. ✅ PostgreSQL accessible within k8s cluster
+4. ✅ Next.js app deployed and accessible via Cloudflare Tunnel
+5. ✅ ML service deployed and accessible
+6. ✅ CI/CD pipeline builds and pushes ARM64 images successfully
+7. ✅ Keel automatically updates pods when new :latest images pushed
+8. ✅ ArgoCD syncs manifests from Git
+9. ⏳ Monthly cost monitoring (preemptible VM reduces costs)
+10. ⏳ Dagster deployment (planned)
+
+**Effort Estimate:** ~40-60 hours (Core infrastructure: ~25 hours completed)
+
+**Status:** ✅ Core deployment complete, monitoring/enhancements pending
+
+---
+
+### MVP 7.5: Dagster + Ollama Fake User Simulation 🤖
+
+**Goal:** Automate realistic user behavior simulation for ML training data
+**Deliverable:** Dagster-orchestrated fake users generating interest-based posts and interactions
+**Status:** 📋 Planned
+**Priority:** Medium - Enhances ML model training with realistic data
+
+**Documentation:** [DAGSTER_FAKE_USER_SIMULATION.md](docs/DAGSTER_FAKE_USER_SIMULATION.md)
+
+**Architecture:**
+
+- Dagster orchestration (continuous 1-min + manual triggers)
+- Ollama LLM (Gemma 3 270M) for content generation
+- 5-10 fake users with interests (sports, tech, anime, cars, food)
+- Docker Compose integration (all services in one place)
+
+**Components:**
+
+- **LLM Service** (`app/infrastructure/llm/ollama_service.py`)
+  - Generate posts, comments based on interest
+  - Interest-based interaction matching
+- **Fake User Factory** (`app/domain/factories/fake_user_factory.py`)
+  - Create users with "FAKE_USER" bio marker
+  - No schema changes (uses existing Prisma tables)
+- **Dagster Assets**
+  - `fake_users` - Ensure 5-10 bots exist
+  - `generated_posts` - Create posts every 1 min
+  - `simulated_interactions` - Generate likes, views, comments
+- **Docker Services**
+  - Ollama (auto-pulls gemma3:270m on startup)
+  - Dagster webserver (UI at :3000)
+
+**Test:**
+
+1. ✅ All services start via `docker-compose up`
+2. ✅ Fake users created with bio marker
+3. ✅ Posts generated every 1 min
+4. ✅ Interactions match user interests
+5. ✅ Manual trigger from Dagster UI works
+6. ✅ ML model trains on synthetic data
+
+**Effort Estimate:** ~16-24 hours
+
+**Status:** 📋 Planned - Pending Dagster deployment on GCP
+
+---
 
 ### MVP 7: ML-Powered Personalized Feed ✅ CORE COMPLETE
 
@@ -335,291 +390,13 @@ Framework:
 
 ---
 
-### MVP 7.5: Dagster + Ollama Fake User Simulation 🤖
-
-**Goal:** Automate realistic user behavior simulation for ML training data
-**Deliverable:** Dagster-orchestrated fake users generating interest-based posts and interactions
-**Status:** 📋 Planned
-**Priority:** Medium - Enhances ML model training with realistic data
-
-**Documentation:** [DAGSTER_FAKE_USER_SIMULATION.md](docs/DAGSTER_FAKE_USER_SIMULATION.md)
-
-**Architecture:**
-
-- Dagster orchestration (continuous 1-min + manual triggers)
-- Ollama LLM (Gemma 3 270M) for content generation
-- 5-10 fake users with interests (sports, tech, anime, cars, food)
-- Docker Compose integration (all services in one place)
-
-**Components:**
-
-- **LLM Service** (`app/infrastructure/llm/ollama_service.py`)
-  - Generate posts, comments based on interest
-  - Interest-based interaction matching
-- **Fake User Factory** (`app/domain/factories/fake_user_factory.py`)
-  - Create users with "FAKE_USER" bio marker
-  - No schema changes (uses existing Prisma tables)
-- **Dagster Assets**
-  - `fake_users` - Ensure 5-10 bots exist
-  - `generated_posts` - Create posts every 1 min
-  - `simulated_interactions` - Generate likes, views, comments
-- **Docker Services**
-  - Ollama (auto-pulls gemma3:270m on startup)
-  - Dagster webserver (UI at :3000)
-
-**Test:**
-
-1. ✅ All services start via `docker-compose up`
-2. ✅ Fake users created with bio marker
-3. ✅ Posts generated every 1 min
-4. ✅ Interactions match user interests
-5. ✅ Manual trigger from Dagster UI works
-6. ✅ ML model trains on synthetic data
-
-**Effort Estimate:** ~16-24 hours
-
----
-
-### MVP 7.7: GCP Deployment with Terraform 🚀
-
-**Goal:** Deploy entire application stack to GCP using Infrastructure as Code
-**Deliverable:** Production-ready GCP deployment with Terraform, maximizing free tier
-**Status:** 📋 Planned
-**Priority:** High - Required for cost optimization and production deployment
-
-**Documentation:** [GCP_DEPLOYMENT.md](docs/GCP_DEPLOYMENT.md) (to be created)
-
-**Architecture:**
-
-```
-Terraform-managed GCP Resources (us-east1)
-├── VPC & Networking
-│   ├── Custom VPC network
-│   ├── Firewall rules (PostgreSQL :5432, Dagster :3001)
-│   └── Cloud NAT (for VM egress)
-├── Compute Engine e2-micro (always-free tier)
-│   ├── PostgreSQL 16 (threads + dagster databases)
-│   ├── Dagster daemon (job orchestration)
-│   ├── Dagster webserver (:3001)
-│   └── Ollama service (:11434) - if fits in 1GB RAM
-├── Cloud Run Services (2M requests/mo free)
-│   ├── nextjs-app (Next.js 15 application)
-│   └── ml-service (FastAPI collaborative filtering)
-├── Secret Manager
-│   ├── Database credentials
-│   ├── NextAuth secrets
-│   └── OAuth credentials
-└── Artifact Registry
-    └── Docker images (nextjs, ml-service)
-```
-
-**Free Tier Optimization:**
-
-- **Compute Engine:** 1x e2-micro (us-east1) - always free
-  - 0.25-0.5 vCPU, 1 GB RAM
-  - 30 GB standard persistent disk
-  - Hosts: PostgreSQL, Dagster daemon, Dagster webserver
-- **Cloud Run:** 2M requests/mo, 360K GB-seconds, 180K vCPU-seconds - free
-  - Next.js app (serverless, auto-scaling)
-  - ML service (serverless, auto-scaling)
-- **Networking:** 1 GB egress/mo (North America) - free
-- **Secret Manager:** 6 active secrets - free
-- **Artifact Registry:** 0.5 GB storage - free
-
-**Infrastructure as Code (Terraform):**
-
-- [x] Terraform project structure (`terraform/`)
-- [x] VPC and networking resources
-- [x] Compute Engine VM with startup script (c4a-standard-2 ARM64, preemptible)
-- [x] IAM service accounts and roles
-- [x] Firewall rules (SSH via IAP)
-- [x] k0s Kubernetes cluster on VM
-- [x] ArgoCD for GitOps deployments
-- [x] Keel for automatic image updates from Artifact Registry
-- [x] GitHub Actions CI/CD (build ARM64 images, push to Artifact Registry)
-- [ ] State backend (GCS bucket with versioning) - using local state
-- [ ] Secret Manager integration - using k8s secrets
-- [ ] Cloud NAT for VM egress - using direct internet access
-
-**VM Setup (c4a-standard-2 ARM64, preemptible):**
-
-- [x] k0s Kubernetes v1.34.1 installed via startup script
-- [x] PostgreSQL deployed as k8s StatefulSet
-- [x] ArgoCD deployed for GitOps
-- [x] Keel deployed for image auto-updates (keelhq/keel-aarch64)
-- [x] Local-path storage provisioner for PVCs
-- [x] IAP tunnel for k8s API access
-- [ ] Automated backups (Cloud Storage)
-- [ ] Monitoring and health checks
-- [ ] Dagster daemon container (planned)
-- [ ] Dagster webserver container (:3001) (planned)
-
-**Kubernetes Deployment (k0s on VM):**
-
-- [x] Build and push Docker images to Artifact Registry (ARM64)
-- [x] Next.js app deployed as Deployment
-- [x] ML service deployed as Deployment
-- [x] Environment variables configured with k8s secrets
-- [x] Keel polling Artifact Registry for :latest tag updates
-- [x] ArgoCD syncing from Git repository
-- [x] Services exposed via NodePort (Next.js: 30000)
-- [ ] Configure custom domain (if applicable)
-- [ ] Enable logging and monitoring
-
-**CI/CD Integration:**
-
-- [x] GitHub Actions workflow (deploy-gke.yml)
-- [x] Docker build and push to Artifact Registry (ARM64)
-- [x] Automatic deployment via Keel (polls every 1min)
-- [x] Removed Zeabur workflows
-- [ ] Terraform plan on PR
-- [ ] Terraform apply on merge to main
-- [ ] Prisma migrations in CI/CD
-- [ ] Smoke tests after deployment
-
-**Monitoring & Observability:**
-
-- [ ] Cloud Monitoring dashboards
-- [ ] Uptime checks for all services
-- [ ] Alert policies (CPU, memory, errors)
-- [ ] Log aggregation (Cloud Logging)
-- [ ] Cost monitoring and budgets
-
-**Migration Strategy:**
-
-1. **Setup Phase:**
-   - Create GCP project
-   - Set up Terraform state backend
-   - Configure service accounts and IAM
-2. **Infrastructure Phase:**
-   - Deploy VM with PostgreSQL + Dagster
-   - Verify database connectivity
-   - Restore database backup from Zeabur
-3. **Application Phase:**
-   - Deploy Next.js to Cloud Run
-   - Deploy ML service to Cloud Run
-   - Run Prisma migrations
-4. **Verification Phase:**
-   - Test all endpoints
-   - Verify ML recommendations
-   - Test Dagster pipelines
-5. **Cutover Phase:**
-   - Update DNS (if applicable)
-   - Monitor for 24-48 hours
-   - Archive Zeabur deployment (keep config)
-
-**Rollback Strategy:**
-
-- Keep Zeabur configuration files (docker-compose, env vars)
-- Database backup before migration
-- DNS quick-switch capability
-- Terraform destroy plan ready
-
-**Test:**
-
-1. ✅ Terraform plan succeeds without errors
-2. ✅ All GCP resources created in us-east1-b
-3. ✅ PostgreSQL accessible within k8s cluster
-4. ✅ Next.js app deployed and accessible via NodePort
-5. ✅ ML service deployed and accessible
-6. ✅ CI/CD pipeline builds and pushes ARM64 images successfully
-7. ✅ Keel automatically updates pods when new :latest images pushed
-8. ✅ ArgoCD syncs manifests from Git
-9. ⏳ Monthly cost monitoring (preemptible VM reduces costs)
-10. ⏳ Dagster deployment (planned)
-
-**Effort Estimate:** ~40-60 hours (Core infrastructure: ~20 hours completed)
-
-**What's Complete:**
-
-- ✅ Terraform infrastructure (VPC, VM, IAM, firewall)
-- ✅ k0s Kubernetes cluster on ARM64 VM
-- ✅ ArgoCD + Keel GitOps pipeline
-- ✅ GitHub Actions CI/CD with ARM64 builds
-- ✅ Next.js and ML service deployments
-- ✅ Script library for IAP tunnel management
-- ✅ NextAuth v4 OAuth integration fixes (Google, GitHub)
-- ✅ Custom PrismaAdapter for auto-generating usernames from email
-- ✅ Session security improvements (1-day token expiry, NEXTAUTH_SECRET)
-- ✅ Production database reset with proper seed data from GSM secrets
-
-**Future Enhancements:**
-
-- [ ] Migrate to proper GKE cluster (if budget allows)
-- [ ] Cloud SQL migration (if budget allows)
-- [ ] Dagster deployment for ML pipeline orchestration
-- [ ] Multi-region deployment
-- [ ] CDN integration (Cloud CDN)
-- [ ] Load balancing for high availability
-- [ ] Monitoring and alerting setup
-
-**Status:** ✅ Core deployment complete, enhancements pending
-
----
-
-### MVP 8: Notification System 🔔
-
-**Goal:** Users receive notifications for social interactions
-**Deliverable:** Real-time notification system for likes, comments, reposts, and mentions
-**Database:** `notifications` table (already exists in schema)
-**Priority:** High - Essential for user engagement
-
-**Backend:**
-
-- [ ] `POST /api/notifications/create` - Create notification on interaction
-- [ ] `GET /api/notifications` - Fetch user's notifications with pagination
-- [ ] `PATCH /api/notifications/[id]/read` - Mark notification as read
-- [ ] `PATCH /api/notifications/read-all` - Mark all as read
-- [ ] Database triggers or API hooks for:
-  - Like notifications (when someone likes your post)
-  - Comment notifications (when someone comments on your post)
-  - Repost notifications (when someone reposts your post)
-  - Mention notifications (when someone @mentions you)
-  - Follow notifications (when someone follows you) - future
-
-**Frontend:**
-
-- [ ] `NotificationBell` - Header notification icon with unread count badge
-- [ ] `NotificationDropdown` - Dropdown panel showing recent notifications
-- [ ] `NotificationList` - Full notifications page with pagination
-- [ ] `NotificationItem` - Individual notification card with:
-  - User avatar and name
-  - Notification type and action
-  - Related post preview (if applicable)
-  - Timestamp
-  - Read/unread status indicator
-- [ ] Real-time updates (polling every 30s or WebSocket for future)
-- [ ] Toast notifications for new interactions (optional)
-
-**Technical Tasks:**
-
-- [ ] Add notification creation hooks to like/comment/repost APIs
-- [ ] Implement efficient notification queries (index on user_id, read, created_at)
-- [ ] Build notification polling system (useEffect with interval)
-- [ ] Add unread count API and badge display
-- [ ] Handle notification navigation (clicking notification goes to related post)
-- [ ] Add notification preferences (future: enable/disable by type)
-
-**Test:**
-
-1. User A likes User B's post → User B receives notification
-2. User A comments on User B's post → User B receives notification
-3. User A reposts User B's post → User B receives notification
-4. User A @mentions User B → User B receives notification
-5. Notification badge shows correct unread count
-6. Clicking notification marks as read and navigates to post
-7. Notifications are sorted by newest first
-
-**Effort Estimate:** ~16-24 hours
-
-**Status:** 📋 Ready to implement
-
----
-
-### MVP 9: Enhanced Features
+### MVP 9: Enhanced Features 📋 FUTURE
 
 **Goal:** Polish and advanced features
 **Deliverable:** Production-ready app with rich media and mentions
+**Status:** 📋 Planned
+**Priority:** Medium
+
 **Frontend:**
 
 - [ ] Media uploads (images/videos in posts)
@@ -627,7 +404,12 @@ Terraform-managed GCP Resources (us-east1)
 - [ ] Infinite scroll and performance optimizations
 - [ ] Profile pages with user posts
 - [ ] Follow/unfollow functionality
-      **Test:** Full social media experience with rich content
+
+**Test:** Full social media experience with rich content
+
+**Status:** 📋 Future enhancement
+
+---
 
 ## Implementation Strategy
 
@@ -646,13 +428,6 @@ Each MVP should be:
 
 **Issue:** `/auth/forgot-password` route returns 404 error
 
-**Error URL:** `https://threads-nextjs.zeabur.app/auth/forgot-password?_rsc=1n57a`
-
-**Root Cause:**
-
-- Login form has link to `/auth/forgot-password` (components/login-form.tsx:72)
-- Page route not implemented in `app/auth/forgot-password/page.tsx`
-
 **Solution Implemented:**
 
 - ✅ Created `app/auth/forgot-password/page.tsx` with password reset form
@@ -669,9 +444,9 @@ Each MVP should be:
 
 **Status:** ✅ Fixed (basic UI/API implemented, email functionality pending)
 
-### 2. Chrome Ad Blocker Warning
+### 2. Chrome Ad Blocker Warning ⏸️
 
-**Issue:** Chrome showing warning "This site tends to show ads that interrupt, distract, mislead, or prevent user control"
+**Issue:** Chrome showing warning \"This site tends to show ads that interrupt, distract, mislead, or prevent user control\"
 
 **Potential Causes:**
 
@@ -689,29 +464,6 @@ Each MVP should be:
 
 ---
 
-## Current Status: MVP 7 Completed ✅
-
-**What's Working:**
-
-- ✅ Authentication (NextAuth with credentials, Google, GitHub)
-- ✅ Post creation and display
-- ✅ Social interactions (Like, Comment, Repost, Share)
-- ✅ ML-powered personalized feed (collaborative filtering)
-- ✅ Interaction tracking (view, click, like, share)
-- ✅ Full CI/CD pipeline with tests
-- ✅ Deployed on Zeabur
-
-**Next Phase:** MVP 8 - Notification System 🔔
-
-**Why Notifications Next:**
-
-- Essential for user engagement and retention
-- Users need to know when others interact with their content
-- Foundation for building an active community
-- Complements ML recommendations (users get notified about relevant interactions)
-
----
-
 ## Technical Debt & Refactoring
 
 ### Error Handling Improvements 🔧
@@ -720,7 +472,7 @@ Each MVP should be:
 
 **Current Issues:**
 
-- Generic errors like "CredentialsSignin" don't provide enough context for debugging
+- Generic errors like \"CredentialsSignin\" don't provide enough context for debugging
 - No trace/correlation IDs to track errors across logs
 - Sensitive error details might be exposed to users
 
@@ -759,3 +511,41 @@ Each MVP should be:
 **Priority:** Medium - Improves debugging and user experience
 
 **Status:** 📋 Planned
+
+---
+
+## Current Status Summary
+
+**What's Working:**
+
+- ✅ Authentication (NextAuth v4 with credentials, Google, GitHub OAuth)
+- ✅ Post creation and display
+- ✅ Social interactions (Like, Comment, Repost, Share)
+- ✅ ML-powered personalized feed (collaborative filtering)
+- ✅ Interaction tracking (view, click, like, share)
+- ✅ Profile management with Threads-style sidebar
+- ✅ Full CI/CD pipeline with tests
+- ✅ Deployed on GCP with k0s Kubernetes + ArgoCD GitOps
+
+**Next Priorities:**
+
+1. **MVP 8: Notification System** 🔔 - Essential for user engagement
+2. **Monitoring & Observability** 📊 - Production reliability
+3. **MVP 7.5: Dagster + Ollama** 🤖 - ML training data generation
+
+**Why Notifications Next:**
+
+- Essential for user engagement and retention
+- Users need to know when others interact with their content
+- Foundation for building an active community
+- Complements ML recommendations (users get notified about relevant interactions)
+
+---
+
+## Archive
+
+For completed MVP phases 1-6 (Auth, Post Creation, CI/CD, PostgreSQL Migration, Following, Interactions), see [PLAN_ARCHIVE.md](PLAN_ARCHIVE.md).
+
+---
+
+**Last Updated:** 2025-11-06

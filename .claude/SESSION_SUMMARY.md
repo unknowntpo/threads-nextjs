@@ -1,7 +1,7 @@
-# Session Summary - GitOps + Cloudflare Tunnel Setup
+# Session Summary - Threads Clone Development
 
-**Last Updated**: 2025-11-05
-**Status**: ✅ COMPLETE - Profile Edit Feature + UI Refactor
+**Last Updated**: 2025-11-06
+**Status**: ✅ COMPLETE - MVP 8: Follow & Followers
 
 ## Current State
 
@@ -62,6 +62,327 @@ terraform/
     ├── namespaces/                 # Application namespaces
     └── kubectl-setup/              # Kubectl configuration
 ```
+
+## Work Completed (2025-11-06)
+
+### MVP 8: Follow & Followers Implementation ✅
+
+**Goal**: Enable users to follow/unfollow other users and interact with profiles throughout the app
+
+**User Requirements**:
+
+- Click on any username (posts, comments) to see Follow/Visit Profile options
+- Follow button shows status ("Follow" or "Following")
+- Visit Profile opens modal to view user's profile
+- Users can interact with any profile they see in the app
+
+#### 1. Backend Implementation
+
+**1.1 FollowRepository** (`lib/repositories/follow.repository.ts`):
+
+```typescript
+export class FollowRepository {
+  async create(followerId: string, followingId: string): Promise<Follow>
+  async delete(followerId: string, followingId: string): Promise<void>
+  async isFollowing(followerId: string, followingId: string): Promise<boolean>
+  async getFollowerCount(userId: string): Promise<number>
+  async getFollowingCount(userId: string): Promise<number>
+}
+```
+
+**Features**:
+
+- CRUD operations for follow relationships
+- Unique constraint on [followerId, followingId] (prevents duplicate follows)
+- Count queries for follower/following stats
+- Cascade delete on user deletion
+
+**1.2 ProfileRepository Enhancement** (`lib/repositories/profile.repository.ts:17-37`):
+
+```typescript
+async findByIdWithCounts(id: string): Promise<
+  | (User & {
+      _count: {
+        followers: number
+        following: number
+      }
+    })
+  | null
+>
+```
+
+**Features**:
+
+- Fetches user with follower/following counts
+- Uses Prisma's `_count` for efficient aggregation
+- Single query for profile + stats
+
+**1.3 User Profile API** (`app/api/users/[id]/route.ts`):
+
+```typescript
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> })
+```
+
+**Response**:
+
+```json
+{
+  "user": {
+    /* User with _count */
+  },
+  "isFollowing": true,
+  "followerCount": 42,
+  "followingCount": 15
+}
+```
+
+**Features**:
+
+- Returns user profile with counts
+- Includes `isFollowing` status for current user
+- Public endpoint (no auth required for viewing)
+
+**1.4 Follow/Unfollow API** (`app/api/users/[id]/follow/route.ts`):
+
+```typescript
+export async function POST(request, { params }) // Follow user
+export async function DELETE(request, { params }) // Unfollow user
+```
+
+**Security**:
+
+- Auth required (401 if not authenticated)
+- Cannot follow yourself (400 error)
+- Validates target user exists (404 if not found)
+- Checks existing relationship before create/delete
+
+**Next.js 15 Compatibility**:
+
+- Fixed async params typing: `{ params: Promise<{ id: string }> }`
+- All route handlers use `await params`
+
+#### 2. Frontend Implementation
+
+**2.1 UserActionMenu Component** (`components/user-action-menu.tsx`):
+
+**Features**:
+
+- Minimal Dialog popup (not full ProfileModal)
+- Avatar + display name + @username
+- Two action buttons:
+  - **Follow/Following**: Shows current status, clickable to toggle
+  - **Visit Profile**: Opens ProfileModal to view full profile
+- Fetches follow status on open
+- Optimistic UI updates (instant feedback)
+- Toast notifications for success/error
+- Controlled/uncontrolled mode support
+
+**State Management**:
+
+```typescript
+const [isFollowing, setIsFollowing] = useState(false)
+const [isLoadingFollow, setIsLoadingFollow] = useState(false)
+const [isProfileModalOpen, setIsProfileModalOpen] = useState(false)
+```
+
+**2.2 ProfileModal Enhancement** (`components/profile-modal.tsx`):
+
+**New Feature**: View other users' profiles
+
+```typescript
+interface ProfileModalProps {
+  userId?: string // NEW: If provided, shows this user's profile (view-only)
+  // ... existing props
+}
+```
+
+**Behavior**:
+
+- If `userId` provided: Fetch `/api/users/[id]`, view-only mode (no Edit button)
+- If `userId` not provided: Fetch `/api/profiles`, editable (own profile)
+- Single component handles both self and other user viewing
+
+**2.3 PostCard Enhancement** (`components/post-card.tsx`):
+
+**Clickable Usernames**:
+
+```typescript
+// Post author (lines 263-283)
+<button
+  className="text-sm font-semibold hover:underline"
+  onClick={() => setUserMenuOpen(true)}
+  disabled={isOwner}
+>
+  {post.user.displayName}
+</button>
+
+// Comment authors (lines 429-448)
+<button
+  className="text-sm font-semibold hover:underline"
+  onClick={() => setCommentUserMenuOpen(comment.id)}
+  disabled={isCommentOwner}
+>
+  {comment.user.displayName}
+</button>
+```
+
+**Features**:
+
+- Display name and @username both clickable
+- Opens UserActionMenu on click
+- Disabled for own posts/comments (cannot follow self)
+- Each comment gets independent menu state
+- Added `user.id` to comment type
+
+#### 3. Testing
+
+**3.1 Integration Tests** (`tests/lib/repositories/follow.repository.test.ts`):
+
+**13 test cases**:
+
+- ✅ Create follow relationship
+- ✅ Fail when following same user twice
+- ✅ Delete follow relationship
+- ✅ Fail when deleting non-existent follow
+- ✅ Check isFollowing (true/false)
+- ✅ Follow is directional (A→B ≠ B→A)
+- ✅ Get follower count (including 0)
+- ✅ Get following count (including 0)
+- ✅ Mutual follows work correctly
+- ✅ Counts update on unfollow
+
+**3.2 E2E Tests** (`e2e/follow.spec.ts`):
+
+**7 test cases**:
+
+- ✅ Open user action menu by clicking username
+- ✅ Follow a user from menu (toast confirmation)
+- ✅ Unfollow a user from menu
+- ✅ Visit Profile button opens ProfileModal
+- ✅ Profile shows user info without Edit button
+- ✅ Own posts don't show menu (disabled)
+- ✅ Mutual follows handled correctly
+
+#### 4. Commits
+
+**Commit 1**: `ed8ce3b - feat(follow): implement user follow/unfollow functionality`
+
+**Changes**:
+
+- Created FollowRepository (5 methods)
+- Enhanced ProfileRepository (findByIdWithCounts)
+- Created /api/users/[id] endpoint
+- Created /api/users/[id]/follow endpoint
+- Created UserActionMenu component
+- Modified ProfileModal (userId prop for other users)
+- Modified PostCard (clickable post author usernames)
+- Integration tests (13 tests)
+- E2E tests (7 tests)
+
+**Lines**: +977 insertions, -25 deletions
+
+**Commit 2**: `810433f - feat(follow): make comment usernames clickable`
+
+**Changes**:
+
+- Added `user.id` to comment type
+- Made comment display names and @usernames clickable
+- Added UserActionMenu for each comment
+- Comment author interaction (follow/visit profile)
+
+**Lines**: +57 insertions, -18 deletions
+
+#### 5. Technical Decisions
+
+**5.1 Follow Model Design**:
+
+- Unique compound index: `[followerId, followingId]`
+- Separate indexes on followerId and followingId for query performance
+- Cascade delete: Remove follows when user deleted
+- Directional relationship (explicit follower/following)
+
+**5.2 UI Pattern**:
+
+```
+Click Username → UserActionMenu (minimal popup)
+                 ├─ Follow/Following button
+                 └─ Visit Profile → ProfileModal (full profile)
+```
+
+**Why two modals?**:
+
+- UserActionMenu: Quick actions (follow/visit)
+- ProfileModal: Full profile view (bio, stats, posts - future)
+- Separation of concerns: Action vs. Information
+
+**5.3 State Management**:
+
+- Post author menu: Single boolean state
+- Comment menus: String state (tracks which comment's menu is open)
+- Prevents multiple menus open simultaneously
+
+**5.4 Pagination Strategy (Future)**:
+
+- Offset-based (already used in `/api/feeds`)
+- FollowRepository queries optimized with indexes
+- Ready for "Posts from Followed Users" feature
+
+#### 6. Current Status
+
+**Completed** ✅:
+
+- FollowRepository with full CRUD
+- Follow/unfollow API endpoints
+- UserActionMenu component
+- ProfileModal: View other users
+- Clickable usernames (posts + comments)
+- Integration tests (13 tests)
+- E2E tests (7 tests)
+- Build passing
+- Commits pushed
+
+**Dev Server**: Running on http://localhost:3000
+
+**Pending** (Future MVPs):
+
+- Infinite scrolling in feed
+- Display user's posts in ProfileModal
+- Feed filter: "Posts from followed users"
+- useFollow custom hook (optional refactor)
+
+#### 7. Files Created/Modified
+
+**Files Created** (6):
+
+- `lib/repositories/follow.repository.ts` (51 lines)
+- `app/api/users/[id]/route.ts` (54 lines)
+- `app/api/users/[id]/follow/route.ts` (123 lines)
+- `components/user-action-menu.tsx` (185 lines)
+- `tests/lib/repositories/follow.repository.test.ts` (188 lines)
+- `e2e/follow.spec.ts` (281 lines)
+
+**Files Modified** (2):
+
+- `lib/repositories/profile.repository.ts` (+20 lines)
+- `components/profile-modal.tsx` (+15 lines, +userId prop support)
+- `components/post-card.tsx` (+75 lines, clickable usernames)
+
+#### 8. Next Steps
+
+**Immediate** (User Requested):
+
+1. Mark MVP 8 complete in plan.md
+2. Add infinite scrolling to feed (pagination)
+3. Display user posts in ProfileModal
+
+**Future Enhancements**:
+
+- Feed filter: Show only followed users' posts
+- Follower/following list pages
+- Notifications for new followers
+- Mutual follow indicators
+
+---
 
 ## Work Completed (2025-11-05)
 

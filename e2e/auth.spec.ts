@@ -46,8 +46,8 @@ test.describe('Authentication Flow', () => {
     // Wait for page to load completely
     await page.waitForLoadState('networkidle')
 
-    // Should see user profile indicator in header
-    await expect(page.getByText('Welcome back, Alice Cooper!')).toBeVisible()
+    // Should see sidebar with profile button
+    await expect(page.locator('button[aria-label="Profile"]')).toBeVisible()
   })
 
   test('should sign out successfully', async ({ page }) => {
@@ -64,10 +64,9 @@ test.describe('Authentication Flow', () => {
 
     await page.waitForURL(/\/(dashboard|feed)?/)
 
-    // Find and click sign out button
-    await page.click(
-      'button:has-text("Sign Out"), button:has-text("Logout"), a:has-text("Sign Out")'
-    )
+    // Open sidebar menu and click sign out
+    await page.click('button[aria-label="Menu"]')
+    await page.click('button:has-text("Sign Out"), a:has-text("Sign Out")')
 
     // Should redirect to login or home
     await expect(page).toHaveURL(/\/(auth\/login|\/)?/)

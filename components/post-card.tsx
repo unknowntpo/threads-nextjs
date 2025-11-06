@@ -62,6 +62,7 @@ export function PostCard({
       content: string
       createdAt: string
       user: {
+        id: string
         username: string
         displayName: string | null
         avatarUrl: string | null
@@ -70,6 +71,7 @@ export function PostCard({
   >([])
   const [commentsLoaded, setCommentsLoaded] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const [commentUserMenuOpen, setCommentUserMenuOpen] = useState<string | null>(null)
 
   const handleLike = async () => {
     if (!currentUserId || isLiking) return
@@ -409,26 +411,63 @@ export function PostCard({
             {/* Comments List */}
             {comments.length > 0 && (
               <div className="space-y-3">
-                {comments.map(comment => (
-                  <div key={comment.id} className="flex space-x-3">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={comment.user.avatarUrl || ''} alt={comment.user.username} />
-                      <AvatarFallback>
-                        {comment.user.displayName?.charAt(0).toUpperCase() || 'U'}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 space-y-1">
-                      <div className="flex items-center space-x-2">
-                        <p className="text-sm font-semibold">{comment.user.displayName}</p>
-                        <p className="text-xs text-muted-foreground">@{comment.user.username}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {formatDistanceToNow(new Date(comment.createdAt))} ago
-                        </p>
+                {comments.map(comment => {
+                  const isCommentOwner = currentUserId === comment.user.id
+                  return (
+                    <div key={comment.id} className="flex space-x-3">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage
+                          src={comment.user.avatarUrl || ''}
+                          alt={comment.user.username}
+                        />
+                        <AvatarFallback>
+                          {comment.user.displayName?.charAt(0).toUpperCase() || 'U'}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 space-y-1">
+                        <div className="flex items-center space-x-2">
+                          <button
+                            className="text-sm font-semibold hover:underline disabled:cursor-default disabled:no-underline"
+                            onClick={e => {
+                              e.stopPropagation()
+                              if (!isCommentOwner) setCommentUserMenuOpen(comment.id)
+                            }}
+                            disabled={isCommentOwner}
+                          >
+                            {comment.user.displayName}
+                          </button>
+                          <button
+                            className="text-xs text-muted-foreground hover:underline disabled:cursor-default disabled:no-underline"
+                            onClick={e => {
+                              e.stopPropagation()
+                              if (!isCommentOwner) setCommentUserMenuOpen(comment.id)
+                            }}
+                            disabled={isCommentOwner}
+                          >
+                            @{comment.user.username}
+                          </button>
+                          <p className="text-xs text-muted-foreground">
+                            {formatDistanceToNow(new Date(comment.createdAt))} ago
+                          </p>
+                        </div>
+                        <p className="text-sm">{comment.content}</p>
                       </div>
-                      <p className="text-sm">{comment.content}</p>
+
+                      {/* Comment User Action Menu */}
+                      {!isCommentOwner && (
+                        <UserActionMenu
+                          userId={comment.user.id}
+                          username={comment.user.username}
+                          displayName={comment.user.displayName}
+                          avatarUrl={comment.user.avatarUrl}
+                          open={commentUserMenuOpen === comment.id}
+                          onOpenChange={open => setCommentUserMenuOpen(open ? comment.id : null)}
+                          trigger={null}
+                        />
+                      )}
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             )}
           </div>

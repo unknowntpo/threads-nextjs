@@ -158,4 +158,4 @@ This file contains completed MVP phases (MVP 1-6) that have been archived for re
 
 ---
 
-**Note:** These MVPs have been completed and archived. For current development roadmap, see [plan.md](plan.md).
+**Note:** These MVPs have been completed and archived. For current development roadmap, see [plan.md](development_plan/plan.md).

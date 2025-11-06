@@ -14,6 +14,28 @@ export class ProfileRepository {
     })
   }
 
+  async findByIdWithCounts(id: string): Promise<
+    | (User & {
+        _count: {
+          followers: number
+          following: number
+        }
+      })
+    | null
+  > {
+    return prisma.user.findUnique({
+      where: { id },
+      include: {
+        _count: {
+          select: {
+            followers: true,
+            following: true,
+          },
+        },
+      },
+    })
+  }
+
   async create(data: {
     email: string
     username: string

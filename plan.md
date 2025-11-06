@@ -29,6 +29,12 @@ For completed MVP phases 1-6, see [PLAN_ARCHIVE.md](PLAN_ARCHIVE.md)
 
 ## Current Development Roadmap
 
+MVP 8: Follow and followers 🔔
+
+- when user click on information of another user. a card should pop up.
+  - when user click follow button. he should follow this user.
+- user can see posts from his followers.
+
 ### MVP 7.8: Profile Management & UI Enhancement ✅ COMPLETE
 
 **Goal:** Enable profile editing with modern Threads-style navigation

@@ -116,7 +116,7 @@ test.describe('Profile Management', () => {
     await expect(page.getByText('Alice Updated')).toBeVisible()
   })
 
-  test.skip('should display user posts on profile', async ({ page }) => {
+  test('should display user posts on profile', async ({ page }) => {
     // TODO: Implement /profile route first
     // Create test user and post
     const { user, password } = await helpers.createUser({
@@ -128,11 +128,19 @@ test.describe('Profile Management', () => {
       content: 'Just deployed my first Next.js app! 🚀',
     })
 
+    await helpers.createPost({
+      userId: user.id,
+      content: 'Shadcn/ui is awesome!',
+    })
+
     // Login
     await loginUser(page, user.email, password)
     await page.goto('/profile')
 
     // Should see user's posts
+    await expect(page.locator('text=/Just deployed my first Next.js app/i')).toBeVisible({
+      timeout: 10000,
+    })
     await expect(page.locator('text=/Just deployed my first Next.js app/i')).toBeVisible({
       timeout: 10000,
     })

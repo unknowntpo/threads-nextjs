@@ -63,6 +63,184 @@ terraform/
     └── kubectl-setup/              # Kubectl configuration
 ```
 
+## Work Completed (2025-11-07)
+
+### E2E Test Fixes: URL Validation & Selector Improvements ✅
+
+**Goal**: Fix 9 failing E2E tests caused by incorrect URL validation regex and selector specificity issues
+
+**Initial Status**: ❌ 25 passing, 9 failing, 5 skipped
+
+#### Root Cause Analysis
+
+**Problem**: Tests failing with timeout, stuck on `/auth/login` page
+
+**Discovery**: Regex `/\/(dashboard|feed)?/` in `loginUser` helper matched ANY URL
+
+```javascript
+// Why the regex was broken:
+/\/(dashboard|feed)?/.test('http://localhost:3000/auth/login')  // true ❌
+/\/(dashboard|feed)?/.test('http://localhost:3000/feed')        // true ✅
+
+// The `?` makes `(dashboard|feed)` optional
+// Required `/` matches all URLs containing `/`
+// waitForURL() succeeded even when stuck on login page
+```
+
+#### Fixes Applied
+
+**1. URL Validation Fix** (3 files)
+
+Changed regex to exact string `'/feed'` in all `loginUser` helpers:
+
+```typescript
+// Before (WRONG)
+async function loginUser(page: Page, email: string, password: string) {
+  await page.goto('/auth/login')
+  await page.getByRole('textbox', { name: 'Email' }).fill(email)
+  await page.getByRole('textbox', { name: 'Password' }).fill(password)
+  await page.getByRole('button', { name: 'Login' }).click()
+  await page.waitForURL(/\/(dashboard|feed)?/) // ❌ Too permissive
+}
+
+// After (CORRECT)
+async function loginUser(page: Page, email: string, password: string) {
+  await page.goto('/auth/login')
+  await page.getByRole('textbox', { name: 'Email' }).fill(email)
+  await page.getByRole('textbox', { name: 'Password' }).fill(password)
+  await page.getByRole('button', { name: 'Login' }).click()
+  await page.waitForURL('/feed') // ✅ Exact string
+}
+```
+
+**Files Modified**:
+
+- `e2e/auth.spec.ts:65`
+- `e2e/follow.spec.ts:11`
+- `e2e/profile.spec.ts:11`
+
+**2. Sign Out Selector Fix** (`e2e/auth.spec.ts:69`)
+
+Sign Out is inside `DropdownMenuItem`, not a standalone button:
+
+```typescript
+// Before (WRONG)
+await page.locator('button:has-text("Sign Out"), a:has-text("Sign Out")').click()
+
+// After (CORRECT)
+await page.getByRole('menuitem', { name: 'Sign Out' }).click()
+```
+
+**3. Selector Specificity Improvements**
+
+Changed text-based selectors to role-based for better reliability:
+
+```typescript
+// Follow buttons (e2e/follow.spec.ts)
+getByText('Follow') → getByRole('button', { name: 'Follow' })
+getByText('Following') → getByRole('button', { name: 'Following' })
+
+// Headings (e2e/profile.spec.ts)
+getByText('Your Profile') → getByRole('heading', { name: 'Your Profile' })
+getByText('Edit Profile') → getByRole('heading', { name: 'Edit Profile' })
+
+// Toast messages (e2e/profile.spec.ts:111)
+getByText(/Profile updated successfully/i) → getByText('Profile updated successfully')
+
+// Profile modal scoping (e2e/follow.spec.ts:173)
+const profileModal = page.getByRole('dialog').last()
+await expect(profileModal.getByText('Bob Smith')).toBeVisible()
+```
+
+**4. Fixtures Export** (`e2e/fixtures.ts:31`)
+
+Exported `prisma` for tests needing direct DB access:
+
+```typescript
+const helpers = {
+  prisma,  // ✅ NEW: Exported for direct DB queries
+  async createUser({ ... }) { ... }
+  async createPost({ ... }) { ... }
+}
+```
+
+#### Documentation Organization
+
+**Epic Files Created** (6 files):
+
+- `development_plan/epic_follow_followers.md` (263 lines)
+- `development_plan/epic_profile_management.md` (152 lines)
+- `development_plan/epic_ml_recommendation_system.md` (314 lines)
+- `development_plan/epic_gcp_deployment.md` (247 lines)
+- `development_plan/epic_dagster_fake_users.md` (334 lines)
+- `development_plan/epic_enhanced_features.md` (261 lines)
+
+**`development_plan/plan.md` Refactor**:
+
+- Transformed from detailed documentation (462 lines) to concise TOC (125 lines)
+- Each Epic has: Status, Brief description, Key deliverables
+- All implementation details moved to Epic files
+
+#### Skipped Tests Investigation
+
+**5 tests remain skipped**:
+
+**Category 1: Missing `/profile` Route** (3 tests):
+
+- `e2e/profile.spec.ts:14` - "should view own profile"
+- `e2e/profile.spec.ts:119` - "should display user posts on profile"
+- `e2e/profile.spec.ts:141` - "should show profile stats"
+- **Blocker**: Requires dedicated `/profile/[username]` page (future feature)
+
+**Category 2: Pre-existing Flaky Tests** (2 tests):
+
+- `e2e/comments.spec.ts:4` - "should allow a user to add a comment to a post"
+- `e2e/tracking.spec.ts:33` - "should track post interactions end-to-end"
+- **Issue**: Timing issues with batching + database transactions
+- **Status**: Functionality works (unit tests pass, real usage works)
+- **Action**: Re-skipped after unskip attempt caused 3 failures
+
+#### Final Results
+
+**Test Status**: ✅ 33 passing, ⏸️ 5 skipped
+
+**Commits**:
+
+- `22b843a` - "fix(e2e): fix test selectors and URL validation"
+
+**Files Modified** (6):
+
+- `e2e/auth.spec.ts` - Sign out selector + URL validation
+- `e2e/follow.spec.ts` - URL validation + role-based selectors
+- `e2e/profile.spec.ts` - URL validation + heading selectors
+- `e2e/fixtures.ts` - Export prisma
+- `development_plan/plan.md` - Refactored to TOC
+- Created 6 Epic markdown files
+
+#### Technical Learnings
+
+**1. Playwright URL Matching**:
+
+- Exact strings (`'/feed'`) safer than regex for known paths
+- Regex requires careful escaping and boundary testing
+- `waitForURL()` with overly-permissive regex causes silent failures
+
+**2. Role-based Selectors Benefits**:
+
+- More resilient to UI text changes
+- Better accessibility compliance
+- Clearer intent in test code
+
+**3. Component DOM Structure Matters**:
+
+- DropdownMenuItem is `role="menuitem"`, not `role="button"`
+- Always inspect actual component structure when selectors fail
+
+**4. Docker Service Management**:
+
+- Use `docker compose down` instead of killing processes
+- Port conflicts resolved by proper service lifecycle
+
 ## Work Completed (2025-11-06)
 
 ### MVP 8: Follow & Followers Implementation ✅

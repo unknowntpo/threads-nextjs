@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import type { Post } from '@prisma/client'
+import {logger} from "@/lib/logger.ts";
 
 export type PostWithUser = Post & {
   user: {
@@ -59,6 +60,7 @@ export class PostRepository {
   }
 
   async findByUserId(userId: string, limit = 50): Promise<Post[]> {
+    logger.info('PostRepository.findByUserId', userId)
     return prisma.post.findMany({
       where: { userId },
       take: limit,

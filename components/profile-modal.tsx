@@ -57,7 +57,7 @@ export function ProfileModal({ trigger, open, onOpenChange, userId }: ProfileMod
   const fetchPosts = useCallback(async () => {
     setIsLoadingPosts(true)
     try {
-      const response = await fetch(`/api/posts?user_id=${userId ?? profile.id}&limit=50`)
+      const response = await fetch(`/api/posts?user_id=${profile.id}&limit=50`)
       if (response.ok) {
         const data = await response.json()
         setPosts(data.posts || [])

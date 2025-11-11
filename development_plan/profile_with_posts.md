@@ -1,5 +1,9 @@
 # Profile page with Posts
 
+## TODO
+- refactor error type in `app/api/posts/route.ts`, custom `InternalServerError`. `InvalidArgumentError`
+- `lib/logger.ts` Logger should record request param and session.user.id
+
 When user click a profile of himself or other users. it opens a profile page.  
 This page should contains user's information and his historical posts.
 

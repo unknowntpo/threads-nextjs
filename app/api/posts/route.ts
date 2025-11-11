@@ -9,19 +9,21 @@ const postRepo = new PostRepository()
 export async function GET(request: NextRequest) {
   const startTime = Date.now()
   const searchParams = request.nextUrl.searchParams
-  const userId = searchParams.get('userId')
+  const userId = searchParams.get('user_id')
   const limitParam = searchParams.get('limit')
   const limit = limitParam ? parseInt(limitParam, 10) : 50
   const maxLimit = 100
 
   if (limitParam && limit < 1 || limit > maxLimit) {
-    return NextResponse.json({ error: 'Limit must be between 1 and 100' }, { status: 400 })
+    // FIXME: dedicated error type
+    logger.apiError('GET', '/api/posts', new Error('limit must be between 1 and 100'), session.user.id);
+    return NextResponse.json({ error }, { status: 400 })
   }
 
   try {
-    logger.apiRequest('GET', '/api/posts')
-
     const session = await auth()
+    // FIXME: should record request param and session.user.id
+    logger.apiRequest('GET', '/api/posts', session.user.id)
 
     if (!session?.user?.id) {
       logger.apiError('GET', '/api/posts', 'Unauthorized')

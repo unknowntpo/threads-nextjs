@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { User } from '@prisma/client'
+import {Post, User} from '@prisma/client'
 import {
   Dialog,
   DialogContent,
@@ -28,6 +28,8 @@ export function ProfileModal({ trigger, open, onOpenChange, userId }: ProfileMod
   const [isLoading, setIsLoading] = useState(true)
   const [isEditing, setIsEditing] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
+  const [posts, setPosts] = useState<any[]>([])
+  const [isLoadingPosts, setIsLoadingPosts] = useState(false)
   const isViewingOtherUser = !!userId // If userId is provided, we're viewing another user
 
   // Use controlled or uncontrolled mode
@@ -51,11 +53,33 @@ export function ProfileModal({ trigger, open, onOpenChange, userId }: ProfileMod
     }
   }, [userId])
 
+
+  const fetchPosts = useCallback(async () => {
+    setIsLoadingPosts(true)
+    try {
+      const response = await fetch(`/api/posts?user_id=${userId ?? profile.id}&limit=50`)
+      if (response.ok) {
+        const data = await response.json()
+        setPosts(data.posts || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch posts:', error)
+    } finally {
+      setIsLoadingPosts(false)
+    }
+  }, [profile?.id])
+
   useEffect(() => {
     if (dialogOpen) {
       fetchProfile()
     }
   }, [dialogOpen, fetchProfile])
+
+  useEffect(() => {
+    if (dialogOpen && profile) {
+      fetchPosts()
+    }
+  }, [dialogOpen, profile?.id, fetchPosts])
 
   const handleProfileUpdate = (updatedProfile: User) => {
     setProfile(updatedProfile)
@@ -157,8 +181,27 @@ export function ProfileModal({ trigger, open, onOpenChange, userId }: ProfileMod
                   Edit Profile
                 </Button>
               )}
+              {/* Display posts for this user */}
               <div className="mt-6 border-t pt-6">
-                <h3 className="mb-4 text-lg font-semibold">Posts</h3>
+                <h3 className="text-lg font-semibold mb-4">Posts</h3>
+
+                {isLoadingPosts && posts.length == 0 && (
+                  <p className="text-sm text-muted-foreground">Loading posts...</p>
+                )}
+
+                {!isLoadingPosts && posts.length == 0 && (
+                  <p className="text-sm text-muted-foreground">No posts yet</p>
+                )}
+
+                {!isLoadingPosts && posts.map((post) => (
+                  <div key={post.id} className="border rounded-lg p-4 mb-4">
+                    <p className="text-sm">{post.content}</p>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      {new Date(post.createdAt).toLocaleString()}
+                    </p>
+                  </div>
+                ))}
+
                 {/* Single hardcoded post */}
                 <div className="mb-4 rounded-lg border p-4">
                   <p className="font-semibold">Test Post Title</p>

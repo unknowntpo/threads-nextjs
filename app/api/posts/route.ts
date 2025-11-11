@@ -6,8 +6,17 @@ import { PostRepository } from '@/lib/repositories/post.repository'
 
 const postRepo = new PostRepository()
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const startTime = Date.now()
+  const searchParams = request.nextUrl.searchParams
+  const userId = searchParams.get('userId')
+  const limitParam = searchParams.get('limit')
+  const limit = limitParam ? parseInt(limitParam, 10) : 50
+  const maxLimit = 100
+
+  if (limitParam && limit < 1 || limit > maxLimit) {
+    return NextResponse.json({ error: 'Limit must be between 1 and 100' }, { status: 400 })
+  }
 
   try {
     logger.apiRequest('GET', '/api/posts')
@@ -20,7 +29,9 @@ export async function GET() {
     }
 
     // Fetch posts with user information
-    const posts = await postRepo.findAll(50)
+    const posts = userId
+      ? await postRepo.findByUserId(userId, limit)
+      : await postRepo.findAll(limit)
 
     const duration = Date.now() - startTime
     logger.apiSuccess('GET', '/api/posts', duration, session.user.id)

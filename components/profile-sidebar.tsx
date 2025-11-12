@@ -1,7 +1,7 @@
-'use client'
+'use client';
 
-import { useState, useEffect } from 'react'
-import { User } from '@prisma/client'
+import { useState, useEffect } from 'react';
+import { User } from '@prisma/client';
 import {
   Sheet,
   SheetContent,
@@ -9,65 +9,65 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from '@/components/ui/sheet'
-import { Button } from '@/components/ui/button'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { ProfileEditForm } from '@/components/profile-edit-form'
-import { UserIcon, EditIcon } from 'lucide-react'
+} from '@/components/ui/sheet';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ProfileEditForm } from '@/components/profile-edit-form';
+import { UserIcon, EditIcon } from 'lucide-react';
 
 interface ProfileSidebarProps {
-  trigger?: React.ReactNode | null
-  open?: boolean
-  onOpenChange?: (open: boolean) => void
+  trigger?: React.ReactNode | null;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 export function ProfileSidebar({ trigger, open, onOpenChange }: ProfileSidebarProps) {
-  const [profile, setProfile] = useState<User | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [isEditing, setIsEditing] = useState(false)
-  const [isOpen, setIsOpen] = useState(false)
+  const [profile, setProfile] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
 
   // Use controlled or uncontrolled mode
-  const isControlled = open !== undefined
-  const sheetOpen = isControlled ? open : isOpen
-  const setSheetOpen = isControlled ? onOpenChange || (() => {}) : setIsOpen
+  const isControlled = open !== undefined;
+  const sheetOpen = isControlled ? open : isOpen;
+  const setSheetOpen = isControlled ? onOpenChange || (() => {}) : setIsOpen;
 
   useEffect(() => {
     if (sheetOpen) {
-      fetchProfile()
+      fetchProfile();
     }
-  }, [sheetOpen])
+  }, [sheetOpen]);
 
   const fetchProfile = async () => {
-    setIsLoading(true)
+    setIsLoading(true);
     try {
-      const response = await fetch('/api/profiles')
+      const response = await fetch('/api/profiles');
       if (response.ok) {
-        const data = await response.json()
-        setProfile(data.profile)
+        const data = await response.json();
+        setProfile(data.profile);
       }
     } catch (error) {
-      console.error('Failed to fetch profile:', error)
+      console.error('Failed to fetch profile:', error);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleProfileUpdate = (updatedProfile: User) => {
-    setProfile(updatedProfile)
-    setIsEditing(false)
+    setProfile(updatedProfile);
+    setIsEditing(false);
     // Optionally trigger a page refresh or revalidation
-  }
+  };
 
   const getInitials = (name: string | null) => {
-    if (!name) return '?'
+    if (!name) return '?';
     return name
       .split(' ')
       .map(n => n[0])
       .join('')
       .toUpperCase()
-      .slice(0, 2)
-  }
+      .slice(0, 2);
+  };
 
   return (
     <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
@@ -152,5 +152,5 @@ export function ProfileSidebar({ trigger, open, onOpenChange }: ProfileSidebarPr
         )}
       </SheetContent>
     </Sheet>
-  )
+  );
 }

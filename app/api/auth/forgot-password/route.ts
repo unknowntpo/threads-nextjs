@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { logger } from '@/lib/logger'
-import { prisma } from '@/lib/prisma'
+import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
+import { prisma } from '@/lib/prisma';
 
 /**
  * POST /api/auth/forgot-password
@@ -19,22 +19,22 @@ import { prisma } from '@/lib/prisma'
  */
 export async function POST(request: NextRequest) {
   try {
-    logger.apiRequest('POST', '/api/auth/forgot-password')
+    logger.apiRequest('POST', '/api/auth/forgot-password');
 
-    const body = await request.json()
-    const { email } = body
+    const body = await request.json();
+    const { email } = body;
 
     // Validate email
     if (!email || typeof email !== 'string') {
-      logger.apiError('POST', '/api/auth/forgot-password', 'Invalid email')
-      return NextResponse.json({ error: 'Email is required' }, { status: 400 })
+      logger.apiError('POST', '/api/auth/forgot-password', 'Invalid email');
+      return NextResponse.json({ error: 'Email is required' }, { status: 400 });
     }
 
     // Check if user exists
     const user = await prisma.user.findUnique({
       where: { email: email.toLowerCase() },
       select: { id: true, email: true, username: true },
-    })
+    });
 
     // TODO: Implement actual password reset functionality:
     // 1. Generate secure random token
@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
     // For now, we just log and return success
 
     if (user) {
-      logger.info('Password reset requested for user:', user.id)
+      logger.info('Password reset requested for user:', user.id);
 
       // TODO: Send email with reset link
       // Example:
@@ -60,13 +60,13 @@ export async function POST(request: NextRequest) {
 
     // Always return success to prevent email enumeration
     // (Don't reveal whether the email exists in our system)
-    logger.apiSuccess('POST', '/api/auth/forgot-password', 0)
+    logger.apiSuccess('POST', '/api/auth/forgot-password', 0);
 
     return NextResponse.json({
       message: 'If an account exists with that email, a reset link has been sent',
-    })
+    });
   } catch (error) {
-    logger.apiError('POST', '/api/auth/forgot-password', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    logger.apiError('POST', '/api/auth/forgot-password', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

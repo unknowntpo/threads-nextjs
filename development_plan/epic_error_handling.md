@@ -43,7 +43,7 @@ Comprehensive error handling system with trace IDs, sanitized error messages, an
 ```typescript
 // Generate unique trace ID
 export function generateTraceId(): string {
-  return `${Date.now()}-${crypto.randomUUID()}`
+  return `${Date.now()}-${crypto.randomUUID()}`;
 }
 
 // Error types
@@ -54,7 +54,7 @@ export class AppError extends Error {
     public code: string,
     public traceId: string
   ) {
-    super(message)
+    super(message);
   }
 }
 
@@ -64,7 +64,7 @@ export function sanitizeError(error: Error, traceId: string) {
     error: error.message,
     trace_id: traceId,
     message: 'An error occurred. Please try again.',
-  }
+  };
 }
 
 // Log error server-side
@@ -74,7 +74,7 @@ export function logError(error: Error, traceId: string, context?: any) {
     error: error.message,
     stack: error.stack,
     context,
-  })
+  });
 }
 ```
 
@@ -83,24 +83,24 @@ export function logError(error: Error, traceId: string, context?: any) {
 **File:** `middleware/trace.ts`
 
 ```typescript
-import { NextRequest } from 'next/server'
+import { NextRequest } from 'next/server';
 
 export function withTrace(handler: Function) {
   return async (req: NextRequest, ...args: any[]) => {
-    const traceId = generateTraceId()
-    req.headers.set('x-trace-id', traceId)
+    const traceId = generateTraceId();
+    req.headers.set('x-trace-id', traceId);
 
     try {
-      return await handler(req, ...args)
+      return await handler(req, ...args);
     } catch (error) {
       logError(error, traceId, {
         url: req.url,
         method: req.method,
-      })
+      });
 
-      return NextResponse.json(sanitizeError(error, traceId), { status: 500 })
+      return NextResponse.json(sanitizeError(error, traceId), { status: 500 });
     }
-  }
+  };
 }
 ```
 
@@ -110,12 +110,12 @@ export function withTrace(handler: Function) {
 
 ```typescript
 export const PUT = withTrace(async (request: NextRequest) => {
-  const traceId = request.headers.get('x-trace-id')!
+  const traceId = request.headers.get('x-trace-id')!;
 
   try {
     // ... existing logic
   } catch (error) {
-    logError(error, traceId, { userId: session.user.id })
+    logError(error, traceId, { userId: session.user.id });
 
     return NextResponse.json(
       {
@@ -124,9 +124,9 @@ export const PUT = withTrace(async (request: NextRequest) => {
         message: 'Unable to update your profile. Please try again.',
       },
       { status: 500 }
-    )
+    );
   }
-})
+});
 ```
 
 ### Frontend
@@ -138,10 +138,10 @@ export const PUT = withTrace(async (request: NextRequest) => {
 ```tsx
 interface ErrorDisplayProps {
   error: {
-    error: string
-    trace_id: string
-    message: string
-  }
+    error: string;
+    trace_id: string;
+    message: string;
+  };
 }
 
 export function ErrorDisplay({ error }: ErrorDisplayProps) {
@@ -156,7 +156,7 @@ export function ErrorDisplay({ error }: ErrorDisplayProps) {
         Please provide this trace ID when reporting the issue.
       </p>
     </div>
-  )
+  );
 }
 ```
 
@@ -196,7 +196,7 @@ export function useErrorToast() {
 export function logClientError(error: Error, context?: any) {
   // Log to console in development
   if (process.env.NODE_ENV === 'development') {
-    console.error('Client Error:', error, context)
+    console.error('Client Error:', error, context);
   }
 
   // Send to error tracking service (optional)
@@ -357,7 +357,7 @@ console.error({
     url: request.url,
     method: request.method,
   },
-})
+});
 ```
 
 ### Client-Side Logging
@@ -367,7 +367,7 @@ logClientError(error, {
   component: 'PostCard',
   action: 'like',
   postId: post.id,
-})
+});
 ```
 
 ## Testing
@@ -430,11 +430,11 @@ Sentry.init({
       event.tags = {
         ...event.tags,
         trace_id: hint.originalException.trace_id,
-      }
+      };
     }
-    return event
+    return event;
   },
-})
+});
 ```
 
 ## Status

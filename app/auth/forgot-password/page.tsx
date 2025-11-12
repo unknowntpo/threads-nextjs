@@ -1,5 +1,5 @@
-import { ForgotPasswordForm } from '@/components/forgot-password-form'
-import Link from 'next/link'
+import { ForgotPasswordForm } from '@/components/forgot-password-form';
+import Link from 'next/link';
 
 export default function ForgotPasswordPage() {
   return (
@@ -16,5 +16,5 @@ export default function ForgotPasswordPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }

@@ -1,27 +1,27 @@
-'use client'
+'use client';
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { ProfileModal } from '@/components/profile-modal'
-import { UserIcon, UserPlus, CheckCircle } from 'lucide-react'
-import { useToast } from '@/hooks/use-toast'
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ProfileModal } from '@/components/profile-modal';
+import { UserIcon, UserPlus, CheckCircle } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface UserActionMenuProps {
-  userId: string
-  username: string
-  displayName?: string | null
-  avatarUrl?: string | null
-  open?: boolean
-  onOpenChange?: (open: boolean) => void
-  trigger?: React.ReactNode | null
+  userId: string;
+  username: string;
+  displayName?: string | null;
+  avatarUrl?: string | null;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  trigger?: React.ReactNode | null;
 }
 
 export function UserActionMenu({
@@ -33,80 +33,80 @@ export function UserActionMenu({
   onOpenChange,
   trigger,
 }: UserActionMenuProps) {
-  const [isOpen, setIsOpen] = useState(false)
-  const [isFollowing, setIsFollowing] = useState(false)
-  const [isLoadingFollow, setIsLoadingFollow] = useState(false)
-  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false)
-  const { toast } = useToast()
+  const [isOpen, setIsOpen] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [isLoadingFollow, setIsLoadingFollow] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const { toast } = useToast();
 
   // Use controlled or uncontrolled mode
-  const isControlled = open !== undefined
-  const dialogOpen = isControlled ? open : isOpen
-  const setDialogOpen = isControlled ? onOpenChange || (() => {}) : setIsOpen
+  const isControlled = open !== undefined;
+  const dialogOpen = isControlled ? open : isOpen;
+  const setDialogOpen = isControlled ? onOpenChange || (() => {}) : setIsOpen;
 
   const fetchFollowStatus = useCallback(async () => {
     try {
-      const response = await fetch(`/api/users/${userId}`)
+      const response = await fetch(`/api/users/${userId}`);
       if (response.ok) {
-        const data = await response.json()
-        setIsFollowing(data.isFollowing)
+        const data = await response.json();
+        setIsFollowing(data.isFollowing);
       }
     } catch (error) {
-      console.error('Failed to fetch follow status:', error)
+      console.error('Failed to fetch follow status:', error);
     }
-  }, [userId])
+  }, [userId]);
 
   // Fetch follow status when dialog opens
   useEffect(() => {
     if (dialogOpen) {
-      fetchFollowStatus()
+      fetchFollowStatus();
     }
-  }, [dialogOpen, fetchFollowStatus])
+  }, [dialogOpen, fetchFollowStatus]);
 
   const handleFollowToggle = async () => {
-    setIsLoadingFollow(true)
+    setIsLoadingFollow(true);
     try {
       const response = await fetch(`/api/users/${userId}/follow`, {
         method: isFollowing ? 'DELETE' : 'POST',
-      })
+      });
 
       if (!response.ok) {
-        const data = await response.json()
-        throw new Error(data.error || 'Failed to update follow status')
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to update follow status');
       }
 
-      setIsFollowing(!isFollowing)
+      setIsFollowing(!isFollowing);
       toast({
         title: isFollowing ? 'Unfollowed' : 'Followed',
         description: isFollowing
           ? `You unfollowed @${username}`
           : `You are now following @${username}`,
-      })
+      });
     } catch (error) {
       toast({
         title: 'Error',
         description: error instanceof Error ? error.message : 'Failed to update follow status',
         variant: 'destructive',
-      })
+      });
     } finally {
-      setIsLoadingFollow(false)
+      setIsLoadingFollow(false);
     }
-  }
+  };
 
   const handleVisitProfile = () => {
-    setDialogOpen(false)
-    setIsProfileModalOpen(true)
-  }
+    setDialogOpen(false);
+    setIsProfileModalOpen(true);
+  };
 
   const getInitials = (name: string | null | undefined) => {
-    if (!name) return username?.slice(0, 2).toUpperCase() || '?'
+    if (!name) return username?.slice(0, 2).toUpperCase() || '?';
     return name
       .split(' ')
       .map(n => n[0])
       .join('')
       .toUpperCase()
-      .slice(0, 2)
-  }
+      .slice(0, 2);
+  };
 
   return (
     <>
@@ -178,8 +178,8 @@ export function UserActionMenu({
         userId={userId}
       />
     </>
-  )
+  );
 }
 
 // Import the DialogTrigger to avoid error
-import { DialogTrigger } from '@/components/ui/dialog'
+import { DialogTrigger } from '@/components/ui/dialog';

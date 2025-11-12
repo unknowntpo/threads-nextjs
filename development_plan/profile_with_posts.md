@@ -1,6 +1,7 @@
 # Profile page with Posts
 
 ## TODO
+
 - refactor error type in `app/api/posts/route.ts`, custom `InternalServerError`. `InvalidArgumentError`
 - `lib/logger.ts` Logger should record request param and session.user.id
 
@@ -10,52 +11,52 @@ This page should contains user's information and his historical posts.
 - Frontend (`components/profile-modal.tsx`):
   - **State management**: Add 3 states
     ```typescript
-    const [posts, setPosts] = useState<PostType[]>([])
-    const [isLoadingPosts, setIsLoadingPosts] = useState(false)
-    const [postsError, setPostsError] = useState<string | null>(null)
+    const [posts, setPosts] = useState<PostType[]>([]);
+    const [isLoadingPosts, setIsLoadingPosts] = useState(false);
+    const [postsError, setPostsError] = useState<string | null>(null);
     ```
   - **Fetch function**: Implement `fetchPosts` with useCallback
     ```typescript
     const fetchPosts = useCallback(async () => {
-      if (!profile?.id) return
-      setIsLoadingPosts(true)
-      setPostsError(null)
+      if (!profile?.id) return;
+      setIsLoadingPosts(true);
+      setPostsError(null);
       try {
-        const res = await fetch(`/api/posts?user_id=${profile.id}&limit=50`)
+        const res = await fetch(`/api/posts?user_id=${profile.id}&limit=50`);
         if (res.ok) {
-          const data = await res.json()
-          setPosts(data.posts)
+          const data = await res.json();
+          setPosts(data.posts);
         } else {
-          setPostsError('Failed to load posts')
+          setPostsError('Failed to load posts');
         }
       } catch (error) {
-        setPostsError('Failed to load posts')
+        setPostsError('Failed to load posts');
       } finally {
-        setIsLoadingPosts(false)
+        setIsLoadingPosts(false);
       }
-    }, [profile?.id])
+    }, [profile?.id]);
     ```
   - **useEffect**: Call fetchPosts when modal opens
     ```typescript
     useEffect(() => {
       if (dialogOpen && profile) {
-        fetchPosts()
+        fetchPosts();
       }
-    }, [dialogOpen, profile?.id, fetchPosts])
+    }, [dialogOpen, profile?.id, fetchPosts]);
     ```
   - **Get currentUserId**: Add prop or use session (check `components/feed.tsx` pattern)
 
     ```typescript
     // Option 1: Add prop
     interface ProfileModalProps {
-      userId?: string
-      currentUserId?: string // NEW: Pass from parent
+      userId?: string;
+      currentUserId?: string; // NEW: Pass from parent
     }
 
     // Option 2: Use session in component
-    import { useSession } from 'next-auth/react'
-    const { data: session } = useSession()
-    const currentUserId = session?.user?.id
+    import { useSession } from 'next-auth/react';
+    const { data: session } = useSession();
+    const currentUserId = session?.user?.id;
     ```
 
   - **Render posts**: Add to CardContent (after profile info)
@@ -95,16 +96,16 @@ This page should contains user's information and his historical posts.
 
     ```typescript
     export async function GET(request: NextRequest) {
-      const searchParams = request.nextUrl.searchParams
-      const userId = searchParams.get('user_id')
-      const limit = parseInt(searchParams.get('limit') || '50')
+      const searchParams = request.nextUrl.searchParams;
+      const userId = searchParams.get('user_id');
+      const limit = parseInt(searchParams.get('limit') || '50');
 
       if (!userId) {
-        return NextResponse.json({ error: 'user_id required' }, { status: 400 })
+        return NextResponse.json({ error: 'user_id required' }, { status: 400 });
       }
 
-      const posts = await postRepo.findByUserId(userId, limit)
-      return NextResponse.json({ posts })
+      const posts = await postRepo.findByUserId(userId, limit);
+      return NextResponse.json({ posts });
     }
     ```
 
@@ -186,9 +187,9 @@ You likely need to:
 
 ```typescript
 // You need in ProfileModal:
-const [posts, setPosts] = useState<PostType[]>([])
-const [isLoadingPosts, setIsLoadingPosts] = useState(false)
-const [postsError, setPostsError] = useState<string | null>(null)
+const [posts, setPosts] = useState<PostType[]>([]);
+const [isLoadingPosts, setIsLoadingPosts] = useState(false);
+const [postsError, setPostsError] = useState<string | null>(null);
 ```
 
 #### 5. Missing Error/Loading/Empty States
@@ -215,9 +216,9 @@ const [postsError, setPostsError] = useState<string | null>(null)
 // Should be similar to fetchProfile:
 useEffect(() => {
   if (dialogOpen && profile) {
-    fetchPosts()
+    fetchPosts();
   }
-}, [dialogOpen, profile?.id, fetchPosts]) // Need all dependencies
+}, [dialogOpen, profile?.id, fetchPosts]); // Need all dependencies
 ```
 
 #### 8. Test Plan Too Vague

@@ -368,18 +368,18 @@ ALTER TABLE users ADD COLUMN experiment_group VARCHAR(20) DEFAULT 'control';
 ```typescript
 // app/api/feeds/route.ts
 export async function GET(request: NextRequest) {
-  const session = await auth()
+  const session = await auth();
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
     select: { experimentGroup: true },
-  })
+  });
 
   if (user.experimentGroup === 'treatment') {
     // ML recommendations
-    return fetchMLRecommendations(session.user.id, limit)
+    return fetchMLRecommendations(session.user.id, limit);
   } else {
     // Random feed (current Phase 1)
-    return fetchRandomPosts(session.user.id, limit)
+    return fetchRandomPosts(session.user.id, limit);
   }
 }
 ```

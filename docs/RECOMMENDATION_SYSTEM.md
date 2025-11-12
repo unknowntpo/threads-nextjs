@@ -153,13 +153,13 @@ export class FeedRepository {
     userId: string,
     limit: number = 50,
     offset: number = 0
-  ): Promise<PostWithUser[]>
+  ): Promise<PostWithUser[]>;
 
   /**
    * Fisher-Yates shuffle algorithm
    * Time: O(n), Space: O(1)
    */
-  private shuffleArray<T>(array: T[]): T[]
+  private shuffleArray<T>(array: T[]): T[];
 }
 ```
 
@@ -180,9 +180,9 @@ export async function GET(request: NextRequest) {
 ```typescript
 // components/feed.tsx
 const fetchPosts = async () => {
-  const response = await fetch('/api/feeds') // Changed from /api/posts
+  const response = await fetch('/api/feeds'); // Changed from /api/posts
   // ... rest of logic
-}
+};
 ```
 
 ### Algorithm: Fisher-Yates Shuffle
@@ -364,12 +364,12 @@ def build_user_recommendations():
 ```typescript
 // app/api/feeds/route.ts (Phase 2)
 export async function GET(request: NextRequest) {
-  const session = await auth()
-  const userId = session.user.id
+  const session = await auth();
+  const userId = session.user.id;
 
   // Query PostgreSQL for pre-computed recommendations
   // Uses optimized composite index (user_id, score DESC) for fast sorted lookups
-  const recommendations = await feedRepo.fetchPrecomputedRecommendations(userId, limit)
+  const recommendations = await feedRepo.fetchPrecomputedRecommendations(userId, limit);
 
   if (recommendations.length > 0) {
     return NextResponse.json({
@@ -379,19 +379,19 @@ export async function GET(request: NextRequest) {
         total: recommendations.length,
         generatedAt: recommendations[0]?.generated_at,
       },
-    })
+    });
   }
 
   // Fallback to random posts if no recommendations available
   // (e.g., new users, expired recommendations)
-  const random = await feedRepo.fetchRandomPosts(userId, limit)
+  const random = await feedRepo.fetchRandomPosts(userId, limit);
   return NextResponse.json({
     posts: random,
     metadata: {
       source: 'random_fallback',
       total: random.length,
     },
-  })
+  });
 }
 ```
 

@@ -1,136 +1,140 @@
-import { test, expect, helpers } from './fixtures'
-import type { Page } from '@playwright/test'
+import { test, expect, helpers } from './fixtures';
+import type { Page } from '@playwright/test';
 
 test.describe('Post Creation and Feed', () => {
   // Helper function to login
   async function loginUser(page: Page, email: string, password: string) {
-    await page.goto('/auth/login')
-    await page.getByRole('textbox', { name: 'Email' }).fill(email)
-    await page.getByRole('textbox', { name: 'Password' }).fill(password)
-    await page.getByRole('button', { name: 'Login' }).click()
-    await page.waitForURL('/feed')
-    await page.waitForLoadState('networkidle')
+    await page.goto('/auth/login');
+    await page.getByRole('textbox', { name: 'Email' }).fill(email);
+    await page.getByRole('textbox', { name: 'Password' }).fill(password);
+    await page.getByRole('button', { name: 'Login' }).click();
+    await page.waitForURL('/feed');
+    await page.waitForLoadState('networkidle');
   }
 
   test('should create a new post', async ({ page }) => {
     // Create test user
     const { user, password } = await helpers.createUser({
       displayName: 'Alice Cooper',
-    })
+    });
 
     // Login
-    await loginUser(page, user.email, password)
+    await loginUser(page, user.email, password);
 
     // Find and fill post creation form
     const contentInput = page
       .locator('textarea[name="content"], textarea[placeholder*="What"]')
-      .first()
-    await contentInput.fill('This is a test post from Playwright!')
+      .first();
+    await contentInput.fill('This is a test post from Playwright!');
 
     // Submit the post
-    await page.click('button:has-text("Post"), button:has-text("Share"), button:has-text("Submit")')
+    await page.click(
+      'button:has-text("Post"), button:has-text("Share"), button:has-text("Submit")'
+    );
 
     // Should see success message or new post in feed
     await expect(
       page.locator('text=/This is a test post from Playwright!|Post created|Success/i')
-    ).toBeVisible({ timeout: 5000 })
-  })
+    ).toBeVisible({ timeout: 5000 });
+  });
 
   test('should display posts in feed', async ({ page }) => {
     // Create test user and post
     const { user, password } = await helpers.createUser({
       displayName: 'Alice Cooper',
-    })
+    });
 
     await helpers.createPost({
       userId: user.id,
       content: 'Just deployed my first Next.js app! 🚀',
-    })
+    });
 
     // Login
-    await loginUser(page, user.email, password)
+    await loginUser(page, user.email, password);
 
     // Should see the post
     await expect(page.locator('text=/Just deployed my first Next.js app/i')).toBeVisible({
       timeout: 10000,
-    })
-  })
+    });
+  });
 
   test('should create post with image URL', async ({ page }) => {
     // Create test user
     const { user, password } = await helpers.createUser({
       displayName: 'Alice Cooper',
-    })
+    });
 
     // Login
-    await loginUser(page, user.email, password)
+    await loginUser(page, user.email, password);
 
     // Fill post content
     const contentInput = page
       .locator('textarea[name="content"], textarea[placeholder*="What"]')
-      .first()
-    await contentInput.fill('Test post with image')
+      .first();
+    await contentInput.fill('Test post with image');
 
     // Fill image URL if available
-    const imageInput = page.locator('input[name="image_url"], input[placeholder*="image"]')
+    const imageInput = page.locator('input[name="image_url"], input[placeholder*="image"]');
     if ((await imageInput.count()) > 0) {
       await imageInput
         .first()
-        .fill('https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200')
+        .fill('https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200');
     }
 
     // Submit
-    await page.click('button:has-text("Post"), button:has-text("Share"), button:has-text("Submit")')
+    await page.click(
+      'button:has-text("Post"), button:has-text("Share"), button:has-text("Submit")'
+    );
 
     // Verify post appears
-    await expect(page.locator('text=/Test post with image/i')).toBeVisible({ timeout: 5000 })
-  })
+    await expect(page.locator('text=/Test post with image/i')).toBeVisible({ timeout: 5000 });
+  });
 
   test('should show user profile info on posts', async ({ page }) => {
     // Create test user and post
     const { user, password } = await helpers.createUser({
       displayName: 'Alice Cooper',
-    })
+    });
 
     await helpers.createPost({
       userId: user.id,
       content: 'Test post for profile info',
-    })
+    });
 
     // Login
-    await loginUser(page, user.email, password)
+    await loginUser(page, user.email, password);
 
     // Should see username or display name on posts in a post card
     await expect(
       page.locator('.text-sm.font-semibold').filter({ hasText: 'Alice Cooper' }).first()
-    ).toBeVisible()
-  })
+    ).toBeVisible();
+  });
 
   test('should refresh feed', async ({ page }) => {
     // Create test user and post
     const { user, password } = await helpers.createUser({
       displayName: 'Alice Cooper',
-    })
+    });
 
     await helpers.createPost({
       userId: user.id,
       content: 'Test post for refresh',
-    })
+    });
 
     // Login
-    await loginUser(page, user.email, password)
+    await loginUser(page, user.email, password);
 
     // Look for refresh button
-    const refreshButton = page.locator('button:has-text("Refresh"), button[aria-label="Refresh"]')
+    const refreshButton = page.locator('button:has-text("Refresh"), button[aria-label="Refresh"]');
 
     if ((await refreshButton.count()) > 0) {
-      await refreshButton.first().click()
+      await refreshButton.first().click();
 
       // Should show loading state or updated feed
-      await page.waitForTimeout(1000)
+      await page.waitForTimeout(1000);
 
       // Feed header should still be visible
-      await expect(page.getByRole('heading', { name: 'Feed' })).toBeVisible()
+      await expect(page.getByRole('heading', { name: 'Feed' })).toBeVisible();
     }
-  })
-})
+  });
+});

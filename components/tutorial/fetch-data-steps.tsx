@@ -1,5 +1,5 @@
-import { TutorialStep } from './tutorial-step'
-import { CodeBlock } from './code-block'
+import { TutorialStep } from './tutorial-step';
+import { CodeBlock } from './code-block';
 
 const create = `create table notes (
   id bigserial primary key,
@@ -11,12 +11,12 @@ values
   ('Today I created a Supabase project.'),
   ('I added some data and queried it from Next.js.'),
   ('It was awesome!');
-`.trim()
+`.trim();
 
 const rls = `alter table notes enable row level security;
 create policy "Allow public read access" on notes
 for select
-using (true);`.trim()
+using (true);`.trim();
 
 const server = `import { createClient } from '@/utils/supabase/server'
 
@@ -26,7 +26,7 @@ export default async function Page() {
 
   return <pre>{JSON.stringify(notes, null, 2)}</pre>
 }
-`.trim()
+`.trim();
 
 const client = `'use client'
 
@@ -47,7 +47,7 @@ export default function Page() {
 
   return <pre>{JSON.stringify(notes, null, 2)}</pre>
 }
-`.trim()
+`.trim();
 
 export function FetchDataSteps() {
   return (
@@ -152,5 +152,5 @@ export function FetchDataSteps() {
         <p>You&apos;re ready to launch your product to the world! 🚀</p>
       </TutorialStep>
     </ol>
-  )
+  );
 }

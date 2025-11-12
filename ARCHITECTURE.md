@@ -60,15 +60,15 @@ export default async function ProtectedPage() {
 
 ```typescript
 // components/sign-up-form.tsx
-'use client'
+'use client';
 
 const handleSubmit = async (e: React.FormEvent) => {
   const response = await fetch('/api/auth/signup', {
     method: 'POST',
     body: JSON.stringify({ email, password, username }),
-  })
-  router.push('/protected')
-}
+  });
+  router.push('/protected');
+};
 ```
 
 ### 3. API Routes (Backend)
@@ -80,18 +80,18 @@ const handleSubmit = async (e: React.FormEvent) => {
 ```typescript
 // app/api/auth/signup/route.ts
 export async function POST(request: NextRequest) {
-  const supabase = await createClient()
-  const body = await request.json()
+  const supabase = await createClient();
+  const body = await request.json();
 
   // Validation
   if (!body.email || !body.password) {
-    return NextResponse.json({ error: 'Required fields missing' }, { status: 400 })
+    return NextResponse.json({ error: 'Required fields missing' }, { status: 400 });
   }
 
   // Supabase operations
-  const { data, error } = await supabase.auth.signUp({ email, password })
+  const { data, error } = await supabase.auth.signUp({ email, password });
 
-  return NextResponse.json({ data })
+  return NextResponse.json({ data });
 }
 ```
 

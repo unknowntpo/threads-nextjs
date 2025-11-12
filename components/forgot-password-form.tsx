@@ -1,43 +1,43 @@
-'use client'
+'use client';
 
-import { cn } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { useState } from 'react'
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useState } from 'react';
 
 export function ForgotPasswordForm({ className, ...props }: React.ComponentPropsWithoutRef<'div'>) {
-  const [email, setEmail] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
-  const [isSubmitted, setIsSubmitted] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [email, setEmail] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-    setError(null)
+    e.preventDefault();
+    setIsLoading(true);
+    setError(null);
 
     try {
       const response = await fetch('/api/auth/forgot-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
-      })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to send reset email')
+        throw new Error(data.error || 'Failed to send reset email');
       }
 
-      setIsSubmitted(true)
+      setIsSubmitted(true);
     } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : 'An error occurred')
+      setError(error instanceof Error ? error.message : 'An error occurred');
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   if (isSubmitted) {
     return (
@@ -59,8 +59,8 @@ export function ForgotPasswordForm({ className, ...props }: React.ComponentProps
                 Didn&apos;t receive an email?{' '}
                 <button
                   onClick={() => {
-                    setIsSubmitted(false)
-                    setEmail('')
+                    setIsSubmitted(false);
+                    setEmail('');
                   }}
                   className="underline underline-offset-4 hover:text-primary"
                 >
@@ -71,7 +71,7 @@ export function ForgotPasswordForm({ className, ...props }: React.ComponentProps
           </CardContent>
         </Card>
       </div>
-    )
+    );
   }
 
   return (
@@ -107,5 +107,5 @@ export function ForgotPasswordForm({ className, ...props }: React.ComponentProps
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

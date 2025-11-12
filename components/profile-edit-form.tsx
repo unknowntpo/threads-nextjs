@@ -1,30 +1,30 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { User } from '@prisma/client'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { useToast } from '@/hooks/use-toast'
-import { LockIcon } from 'lucide-react'
+import { useState } from 'react';
+import { User } from '@prisma/client';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/hooks/use-toast';
+import { LockIcon } from 'lucide-react';
 
 interface ProfileEditFormProps {
-  profile: User
-  onSuccess?: (updatedProfile: User) => void
-  onCancel?: () => void
+  profile: User;
+  onSuccess?: (updatedProfile: User) => void;
+  onCancel?: () => void;
 }
 
 export function ProfileEditForm({ profile, onSuccess, onCancel }: ProfileEditFormProps) {
-  const [displayName, setDisplayName] = useState(profile.displayName || '')
-  const [bio, setBio] = useState(profile.bio || '')
-  const [avatarUrl, setAvatarUrl] = useState(profile.avatarUrl || '')
-  const [isLoading, setIsLoading] = useState(false)
-  const { toast } = useToast()
+  const [displayName, setDisplayName] = useState(profile.displayName || '');
+  const [bio, setBio] = useState(profile.bio || '');
+  const [avatarUrl, setAvatarUrl] = useState(profile.avatarUrl || '');
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
+    e.preventDefault();
+    setIsLoading(true);
 
     try {
       // Validate locally
@@ -33,8 +33,8 @@ export function ProfileEditForm({ profile, onSuccess, onCancel }: ProfileEditFor
           title: 'Validation Error',
           description: 'Display name must be 255 characters or less',
           variant: 'destructive',
-        })
-        return
+        });
+        return;
       }
 
       if (bio && bio.length > 500) {
@@ -42,20 +42,20 @@ export function ProfileEditForm({ profile, onSuccess, onCancel }: ProfileEditFor
           title: 'Validation Error',
           description: 'Bio must be 500 characters or less',
           variant: 'destructive',
-        })
-        return
+        });
+        return;
       }
 
       if (avatarUrl) {
         try {
-          new URL(avatarUrl)
+          new URL(avatarUrl);
         } catch {
           toast({
             title: 'Validation Error',
             description: 'Please enter a valid URL for avatar',
             variant: 'destructive',
-          })
-          return
+          });
+          return;
         }
       }
 
@@ -69,32 +69,32 @@ export function ProfileEditForm({ profile, onSuccess, onCancel }: ProfileEditFor
           bio: bio || null,
           avatar_url: avatarUrl || null,
         }),
-      })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to update profile')
+        throw new Error(data.error || 'Failed to update profile');
       }
 
       toast({
         title: 'Success',
         description: 'Profile updated successfully',
-      })
+      });
 
       if (onSuccess) {
-        onSuccess(data.profile)
+        onSuccess(data.profile);
       }
     } catch (error: unknown) {
       toast({
         title: 'Error',
         description: error instanceof Error ? error.message : 'An error occurred',
         variant: 'destructive',
-      })
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <form onSubmit={handleSubmit} className="mt-6 space-y-4">
@@ -181,5 +181,5 @@ export function ProfileEditForm({ profile, onSuccess, onCancel }: ProfileEditFor
         )}
       </div>
     </form>
-  )
+  );
 }

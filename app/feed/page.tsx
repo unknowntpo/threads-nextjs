@@ -1,32 +1,32 @@
-import { redirect } from 'next/navigation'
-import { ProfileSetupForm } from '@/components/profile-setup-form'
-import { NavSidebar } from '@/components/nav-sidebar'
-import { Feed } from '@/components/feed'
-import { CreatePostForm } from '@/components/create-post-form'
-import { Separator } from '@/components/ui/separator'
-import { auth } from '@/auth'
-import { ProfileRepository } from '@/lib/repositories/profile.repository'
+import { redirect } from 'next/navigation';
+import { ProfileSetupForm } from '@/components/profile-setup-form';
+import { NavSidebar } from '@/components/nav-sidebar';
+import { Feed } from '@/components/feed';
+import { CreatePostForm } from '@/components/create-post-form';
+import { Separator } from '@/components/ui/separator';
+import { auth } from '@/auth';
+import { ProfileRepository } from '@/lib/repositories/profile.repository';
 
-export const dynamic = 'force-dynamic'
+export const dynamic = 'force-dynamic';
 
 export default async function ProtectedPage() {
   try {
-    const session = await auth()
+    const session = await auth();
     if (process.env.NODE_ENV === 'development') {
-      console.log('[DEBUG] Feed page - session:', session)
+      console.log('[DEBUG] Feed page - session:', session);
     }
 
     if (!session?.user?.id) {
-      redirect('/auth/login')
+      redirect('/auth/login');
     }
 
     if (process.env.NODE_ENV === 'development') {
-      console.log('[DEBUG] Feed page - About to query profile for user ID:', session.user.id)
+      console.log('[DEBUG] Feed page - About to query profile for user ID:', session.user.id);
     }
-    const profileRepo = new ProfileRepository()
-    const profile = await profileRepo.findById(session.user.id)
+    const profileRepo = new ProfileRepository();
+    const profile = await profileRepo.findById(session.user.id);
     if (process.env.NODE_ENV === 'development') {
-      console.log('[DEBUG] Feed page - Profile fetched:', profile)
+      console.log('[DEBUG] Feed page - Profile fetched:', profile);
     }
 
     if (!profile) {
@@ -37,10 +37,10 @@ export default async function ProtectedPage() {
             <ProfileSetupForm />
           </div>
         </div>
-      )
+      );
     }
 
-    const user = session.user
+    const user = session.user;
 
     return (
       <>
@@ -60,9 +60,9 @@ export default async function ProtectedPage() {
           </div>
         </div>
       </>
-    )
+    );
   } catch (error) {
-    console.error('Error loading protected page:', error)
-    redirect('/auth/login')
+    console.error('Error loading protected page:', error);
+    redirect('/auth/login');
   }
 }

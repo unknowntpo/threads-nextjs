@@ -1,30 +1,30 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { Button } from '@/components/ui/button'
-import { ProfileModal } from '@/components/profile-modal'
-import { cn } from '@/lib/utils'
-import { Home, Search, PlusSquare, Heart, User, Menu, LogOut } from 'lucide-react'
+import { useState } from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { ProfileModal } from '@/components/profile-modal';
+import { cn } from '@/lib/utils';
+import { Home, Search, PlusSquare, Heart, User, Menu, LogOut } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { signOut } from 'next-auth/react'
+} from '@/components/ui/dropdown-menu';
+import { signOut } from 'next-auth/react';
 
 export function NavSidebar() {
-  const pathname = usePathname()
-  const [profileOpen, setProfileOpen] = useState(false)
+  const pathname = usePathname();
+  const [profileOpen, setProfileOpen] = useState(false);
 
   const navItems = [
     { icon: Home, label: 'Home', href: '/feed' },
     { icon: Search, label: 'Search', href: '/search', disabled: true },
     { icon: PlusSquare, label: 'Create', href: '/feed', scrollTo: 'create' },
     { icon: Heart, label: 'Activity', href: '/activity', disabled: true },
-  ]
+  ];
 
   return (
     <>
@@ -42,8 +42,8 @@ export function NavSidebar() {
           {/* Nav Items */}
           <nav className="flex flex-1 flex-col items-center gap-4">
             {navItems.map(item => {
-              const Icon = item.icon
-              const isActive = pathname === item.href
+              const Icon = item.icon;
+              const isActive = pathname === item.href;
 
               if (item.disabled) {
                 return (
@@ -57,7 +57,7 @@ export function NavSidebar() {
                   >
                     <Icon className="h-6 w-6" />
                   </Button>
-                )
+                );
               }
 
               return (
@@ -71,7 +71,7 @@ export function NavSidebar() {
                     <Icon className="h-6 w-6" />
                   </Button>
                 </Link>
-              )
+              );
             })}
 
             {/* Profile Button */}
@@ -109,5 +109,5 @@ export function NavSidebar() {
       {/* Profile Modal */}
       <ProfileModal trigger={null} open={profileOpen} onOpenChange={setProfileOpen} />
     </>
-  )
+  );
 }

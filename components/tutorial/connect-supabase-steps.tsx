@@ -1,4 +1,4 @@
-import { TutorialStep } from './tutorial-step'
+import { TutorialStep } from './tutorial-step';
 
 export function ConnectSupabaseSteps() {
   return (
@@ -55,5 +55,5 @@ export function ConnectSupabaseSteps() {
         <p>You may need to refresh the page for Next.js to load the new environment variables.</p>
       </TutorialStep>
     </ol>
-  )
+  );
 }

@@ -1,8 +1,8 @@
-import { test as base, expect } from '@playwright/test'
-import { PrismaClient } from '@prisma/client'
-import bcrypt from 'bcryptjs'
+import { test as base, expect } from '@playwright/test';
+import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 
-const prisma = new PrismaClient()
+const prisma = new PrismaClient();
 
 /**
  * Clean the database before each test
@@ -21,7 +21,7 @@ async function cleanDatabase() {
     prisma.account.deleteMany(),
     prisma.user.deleteMany(),
     prisma.verificationToken.deleteMany(),
-  ])
+  ]);
 }
 
 /**
@@ -36,23 +36,23 @@ const helpers = {
    * Consider adding timestamps or unique IDs to avoid conflicts.
    */
   async createUser(options: {
-    email?: string
-    username?: string
-    displayName?: string
-    password?: string
+    email?: string;
+    username?: string;
+    displayName?: string;
+    password?: string;
   }) {
     // Generate unique identifiers if not provided
-    const timestamp = Date.now()
-    const random = Math.random().toString(36).substring(7)
-    const uniqueId = `${timestamp}-${random}`
+    const timestamp = Date.now();
+    const random = Math.random().toString(36).substring(7);
+    const uniqueId = `${timestamp}-${random}`;
 
-    const email = options.email || `user-${uniqueId}@test.example.com`
-    const username = options.username || `user${uniqueId}`
-    const displayName = options.displayName || `Test User ${uniqueId}`
-    const password = options.password || 'password123'
+    const email = options.email || `user-${uniqueId}@test.example.com`;
+    const username = options.username || `user${uniqueId}`;
+    const displayName = options.displayName || `Test User ${uniqueId}`;
+    const password = options.password || 'password123';
 
     // Hash password for authentication
-    const hashedPassword = await bcrypt.hash(password, 10)
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await prisma.user.create({
       data: {
@@ -69,16 +69,16 @@ const helpers = {
           },
         },
       },
-    })
+    });
 
-    return { user, password }
+    return { user, password };
   },
 
   /**
    * Create a test post
    */
   async createPost(options: { userId: string; content: string; mediaUrls?: string[] }) {
-    const { userId, content, mediaUrls = [] } = options
+    const { userId, content, mediaUrls = [] } = options;
 
     const post = await prisma.post.create({
       data: {
@@ -86,32 +86,32 @@ const helpers = {
         content,
         mediaUrls,
       },
-    })
+    });
 
-    return post
+    return post;
   },
 
   /**
    * Create a like
    */
   async createLike(options: { userId: string; postId: string }) {
-    const { userId, postId } = options
+    const { userId, postId } = options;
 
     const like = await prisma.like.create({
       data: {
         userId,
         postId,
       },
-    })
+    });
 
-    return like
+    return like;
   },
 
   /**
    * Create a comment
    */
   async createComment(options: { userId: string; postId: string; content: string }) {
-    const { userId, postId, content } = options
+    const { userId, postId, content } = options;
 
     const comment = await prisma.comment.create({
       data: {
@@ -119,27 +119,27 @@ const helpers = {
         postId,
         content,
       },
-    })
+    });
 
-    return comment
+    return comment;
   },
 
   /**
    * Create a follow relationship
    */
   async createFollow(options: { followerId: string; followingId: string }) {
-    const { followerId, followingId } = options
+    const { followerId, followingId } = options;
 
     const follow = await prisma.follow.create({
       data: {
         followerId,
         followingId,
       },
-    })
+    });
 
-    return follow
+    return follow;
   },
-}
+};
 
 /**
  * Extended test with database cleanup and helpers
@@ -149,16 +149,16 @@ export const test = base.extend<{ cleanDb: void }>({
   cleanDb: [
     async ({}, use) => {
       // Clean database before test
-      await cleanDatabase()
+      await cleanDatabase();
 
       // Run the test
-      await use()
+      await use();
 
       // Optional: Clean database after test (not needed if beforeEach always cleans)
       // await cleanDatabase()
     },
     { auto: true }, // This fixture runs automatically for every test
   ],
-})
+});
 
-export { expect, helpers }
+export { expect, helpers };

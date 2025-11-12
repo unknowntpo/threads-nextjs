@@ -1,5 +1,5 @@
-import { prisma } from '@/lib/prisma'
-import type { Follow } from '@prisma/client'
+import { prisma } from '@/lib/prisma';
+import type { Follow } from '@prisma/client';
 
 export class FollowRepository {
   async create(followerId: string, followingId: string): Promise<Follow> {
@@ -8,7 +8,7 @@ export class FollowRepository {
         followerId,
         followingId,
       },
-    })
+    });
   }
 
   async delete(followerId: string, followingId: string): Promise<void> {
@@ -19,7 +19,7 @@ export class FollowRepository {
           followingId,
         },
       },
-    })
+    });
   }
 
   async isFollowing(followerId: string, followingId: string): Promise<boolean> {
@@ -30,8 +30,8 @@ export class FollowRepository {
           followingId,
         },
       },
-    })
-    return follow !== null
+    });
+    return follow !== null;
   }
 
   async getFollowerCount(userId: string): Promise<number> {
@@ -39,7 +39,7 @@ export class FollowRepository {
       where: {
         followingId: userId,
       },
-    })
+    });
   }
 
   async getFollowingCount(userId: string): Promise<number> {
@@ -47,6 +47,6 @@ export class FollowRepository {
       where: {
         followerId: userId,
       },
-    })
+    });
   }
 }

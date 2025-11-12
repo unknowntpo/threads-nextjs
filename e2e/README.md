@@ -34,7 +34,7 @@ Our E2E tests use an **isolated test pattern** where:
 The `fixtures.ts` file provides automatic database cleanup before each test:
 
 ```typescript
-import { test, expect, helpers } from './fixtures'
+import { test, expect, helpers } from './fixtures';
 
 test('my test', async ({ page }) => {
   // Database is automatically cleaned before this test starts
@@ -44,10 +44,10 @@ test('my test', async ({ page }) => {
     email: 'test@example.com',
     username: 'testuser',
     displayName: 'Test User',
-  })
+  });
 
   // Run test...
-})
+});
 ```
 
 ### 2. Helper Functions
@@ -62,7 +62,7 @@ const { user, password } = await helpers.createUser({
   username: 'alice',
   displayName: 'Alice Cooper',
   password: 'password123', // optional, defaults to 'password123'
-})
+});
 ```
 
 #### Create a Post
@@ -72,7 +72,7 @@ const post = await helpers.createPost({
   userId: user.id,
   content: 'My test post',
   mediaUrls: ['https://example.com/image.jpg'], // optional
-})
+});
 ```
 
 #### Create a Like
@@ -81,7 +81,7 @@ const post = await helpers.createPost({
 const like = await helpers.createLike({
   userId: user.id,
   postId: post.id,
-})
+});
 ```
 
 #### Create a Comment
@@ -91,7 +91,7 @@ const comment = await helpers.createComment({
   userId: user.id,
   postId: post.id,
   content: 'My comment',
-})
+});
 ```
 
 #### Create a Follow Relationship
@@ -100,13 +100,13 @@ const comment = await helpers.createComment({
 const follow = await helpers.createFollow({
   followerId: user1.id,
   followingId: user2.id,
-})
+});
 ```
 
 ## Example Test
 
 ```typescript
-import { test, expect, helpers } from './fixtures'
+import { test, expect, helpers } from './fixtures';
 
 test.describe('User Feed', () => {
   test('should display posts from followed users', async ({ page }) => {
@@ -115,38 +115,38 @@ test.describe('User Feed', () => {
       email: 'alice@example.com',
       username: 'alice',
       displayName: 'Alice',
-    })
+    });
 
     const { user: bob } = await helpers.createUser({
       email: 'bob@example.com',
       username: 'bob',
       displayName: 'Bob',
-    })
+    });
 
     // Alice follows Bob
     await helpers.createFollow({
       followerId: alice.id,
       followingId: bob.id,
-    })
+    });
 
     // Bob creates a post
     await helpers.createPost({
       userId: bob.id,
       content: 'Hello from Bob!',
-    })
+    });
 
     // Login as Alice
-    await page.goto('/auth/login')
-    await page.getByRole('textbox', { name: 'Email' }).fill(alice.email)
-    await page.getByRole('textbox', { name: 'Password' }).fill(alicePassword)
-    await page.getByRole('button', { name: 'Login' }).click()
+    await page.goto('/auth/login');
+    await page.getByRole('textbox', { name: 'Email' }).fill(alice.email);
+    await page.getByRole('textbox', { name: 'Password' }).fill(alicePassword);
+    await page.getByRole('button', { name: 'Login' }).click();
 
-    await page.waitForURL('/feed')
+    await page.waitForURL('/feed');
 
     // Verify Alice sees Bob's post
-    await expect(page.locator('text=Hello from Bob!')).toBeVisible()
-  })
-})
+    await expect(page.locator('text=Hello from Bob!')).toBeVisible();
+  });
+});
 ```
 
 ## Best Practices
@@ -162,20 +162,20 @@ test('should show empty feed', async ({ page }) => {
     email: 'alice@example.com',
     username: 'alice',
     displayName: 'Alice',
-  })
+  });
 
   // Login and verify empty state
   // ...
-})
+});
 
 // ❌ Bad - unnecessary users and posts
 test('should show empty feed', async ({ page }) => {
-  const alice = await helpers.createUser(/* ... */)
-  const bob = await helpers.createUser(/* ... */)
-  await helpers.createPost(/* ... */)
+  const alice = await helpers.createUser(/* ... */);
+  const bob = await helpers.createUser(/* ... */);
+  await helpers.createPost(/* ... */);
 
   // Why create bob and a post if testing empty state?
-})
+});
 ```
 
 ### 2. Use Descriptive Names
@@ -188,13 +188,13 @@ const { user: adminUser } = await helpers.createUser({
   email: 'admin@example.com',
   username: 'admin',
   displayName: 'Admin User',
-})
+});
 
 const { user: regularUser } = await helpers.createUser({
   email: 'user@example.com',
   username: 'user',
   displayName: 'Regular User',
-})
+});
 ```
 
 ### 3. Don't Rely on Test Order
@@ -206,27 +206,27 @@ Tests should work independently:
 test('test A', async () => {
   const user = await helpers.createUser({
     /* ... */
-  })
+  });
   // Test A logic
-})
+});
 
 test('test B', async () => {
   const user = await helpers.createUser({
     /* ... */
-  })
+  });
   // Test B logic
-})
+});
 
 // ❌ Bad - test B relies on test A
 test('test A', async () => {
   const user = await helpers.createUser({
     /* ... */
-  })
-})
+  });
+});
 
 test('test B', async () => {
   // Expects user from test A to exist - WRONG!
-})
+});
 ```
 
 ### 4. Use Unique Identifiers for Dynamic Data
@@ -237,17 +237,17 @@ When creating multiple items in a test, use timestamps or counters:
 test('should create multiple posts', async ({ page }) => {
   const { user } = await helpers.createUser({
     /* ... */
-  })
+  });
 
-  const postContent = `Post at ${Date.now()}`
+  const postContent = `Post at ${Date.now()}`;
   await helpers.createPost({
     userId: user.id,
     content: postContent,
-  })
+  });
 
   // Later in test, search for unique content
-  await expect(page.locator(`text=${postContent}`)).toBeVisible()
-})
+  await expect(page.locator(`text=${postContent}`)).toBeVisible();
+});
 ```
 
 ## Migration Guide
@@ -257,20 +257,20 @@ To migrate an existing test to the isolated pattern:
 ### Before (Global Seed)
 
 ```typescript
-import { test, expect } from '@playwright/test'
+import { test, expect } from '@playwright/test';
 
 test('my test', async ({ page }) => {
   // Relies on seeded alice user existing
-  await page.goto('/auth/login')
-  await page.fill('input[name="email"]', 'alice@example.com')
+  await page.goto('/auth/login');
+  await page.fill('input[name="email"]', 'alice@example.com');
   // ...
-})
+});
 ```
 
 ### After (Isolated)
 
 ```typescript
-import { test, expect, helpers } from './fixtures'
+import { test, expect, helpers } from './fixtures';
 
 test('my test', async ({ page }) => {
   // Create user explicitly
@@ -278,12 +278,12 @@ test('my test', async ({ page }) => {
     email: 'alice@example.com',
     username: 'alice',
     displayName: 'Alice',
-  })
+  });
 
-  await page.goto('/auth/login')
-  await page.getByRole('textbox', { name: 'Email' }).fill(user.email)
+  await page.goto('/auth/login');
+  await page.getByRole('textbox', { name: 'Email' }).fill(user.email);
   // ...
-})
+});
 ```
 
 ## Running Tests
@@ -314,10 +314,10 @@ Make sure you're importing from `./fixtures` and not `@playwright/test`:
 
 ```typescript
 // ✅ Correct
-import { test, expect, helpers } from './fixtures'
+import { test, expect, helpers } from './fixtures';
 
 // ❌ Wrong - won't have auto-cleanup
-import { test, expect } from '@playwright/test'
+import { test, expect } from '@playwright/test';
 ```
 
 ### Database not clean between tests

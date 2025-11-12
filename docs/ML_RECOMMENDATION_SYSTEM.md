@@ -738,27 +738,27 @@ services:
 
 ```typescript
 // lib/services/ml-service.ts
-import { logger } from '@/lib/logger'
+import { logger } from '@/lib/logger';
 
 interface RecommendationRequest {
-  user_id: string
-  limit: number
-  offset: number
+  user_id: string;
+  limit: number;
+  offset: number;
 }
 
 interface Recommendation {
-  post_id: string
-  score: number
-  reason: string
+  post_id: string;
+  score: number;
+  reason: string;
 }
 
 export class MLServiceClient {
-  private baseUrl: string
-  private timeout: number
+  private baseUrl: string;
+  private timeout: number;
 
   constructor() {
-    this.baseUrl = process.env.ML_SERVICE_URL || 'http://ml-service:8000'
-    this.timeout = 3000 // 3 second timeout
+    this.baseUrl = process.env.ML_SERVICE_URL || 'http://ml-service:8000';
+    this.timeout = 3000; // 3 second timeout
   }
 
   async getRecommendations(userId: string, limit: number = 50): Promise<Recommendation[] | null> {
@@ -768,18 +768,18 @@ export class MLServiceClient {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ user_id: userId, limit }),
         signal: AbortSignal.timeout(this.timeout),
-      })
+      });
 
       if (!response.ok) {
-        logger.warn('ML service returned non-200', { status: response.status })
-        return null
+        logger.warn('ML service returned non-200', { status: response.status });
+        return null;
       }
 
-      const data = await response.json()
-      return data.recommendations
+      const data = await response.json();
+      return data.recommendations;
     } catch (error) {
-      logger.error('Failed to fetch ML recommendations', { error })
-      return null // Fallback to random
+      logger.error('Failed to fetch ML recommendations', { error });
+      return null; // Fallback to random
     }
   }
 
@@ -787,10 +787,10 @@ export class MLServiceClient {
     try {
       const response = await fetch(`${this.baseUrl}/health`, {
         signal: AbortSignal.timeout(1000),
-      })
-      return response.ok
+      });
+      return response.ok;
     } catch {
-      return false
+      return false;
     }
   }
 }
@@ -800,13 +800,13 @@ export class MLServiceClient {
 
 ```typescript
 // lib/repositories/feed.repository.ts
-import { MLServiceClient } from '@/lib/services/ml-service'
+import { MLServiceClient } from '@/lib/services/ml-service';
 
 export class FeedRepository {
-  private mlClient: MLServiceClient
+  private mlClient: MLServiceClient;
 
   constructor() {
-    this.mlClient = new MLServiceClient()
+    this.mlClient = new MLServiceClient();
   }
 
   async fetchPersonalizedFeed(
@@ -814,25 +814,25 @@ export class FeedRepository {
     limit: number = 50
   ): Promise<{ posts: PostWithUser[]; source: string }> {
     // Try ML recommendations first
-    const recommendations = await this.mlClient.getRecommendations(userId, limit)
+    const recommendations = await this.mlClient.getRecommendations(userId, limit);
 
     if (recommendations && recommendations.length > 0) {
       // Fetch posts by recommended IDs
-      const postIds = recommendations.map(r => r.post_id)
-      const posts = await this.fetchPostsByIds(postIds)
+      const postIds = recommendations.map(r => r.post_id);
+      const posts = await this.fetchPostsByIds(postIds);
 
       return {
         posts,
         source: 'ml_recommendations',
-      }
+      };
     }
 
     // Fallback to random shuffle
-    const posts = await this.fetchRandomPostsWithCounts(userId, limit)
+    const posts = await this.fetchRandomPostsWithCounts(userId, limit);
     return {
       posts,
       source: 'random_fallback',
-    }
+    };
   }
 }
 ```

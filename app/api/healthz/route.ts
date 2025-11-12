@@ -1,9 +1,9 @@
-import { NextResponse } from 'next/server'
+import { NextResponse } from 'next/server';
 
-import { prisma } from '@/lib/prisma'
-import { logger } from '@/lib/logger'
+import { prisma } from '@/lib/prisma';
+import { logger } from '@/lib/logger';
 
-const HEALTH_PATH = '/api/healthz'
+const HEALTH_PATH = '/api/healthz';
 
 /**
  * GET /api/healthz
@@ -24,16 +24,16 @@ const HEALTH_PATH = '/api/healthz'
  *   }
  */
 export async function GET() {
-  const startTime = Date.now()
+  const startTime = Date.now();
 
-  logger.apiRequest('GET', HEALTH_PATH)
+  logger.apiRequest('GET', HEALTH_PATH);
 
   try {
     // Ensure database connectivity
-    await prisma.$queryRaw`SELECT 1`
+    await prisma.$queryRaw`SELECT 1`;
 
-    const duration = Date.now() - startTime
-    logger.apiSuccess('GET', HEALTH_PATH, duration)
+    const duration = Date.now() - startTime;
+    logger.apiSuccess('GET', HEALTH_PATH, duration);
 
     return NextResponse.json({
       status: 'ok',
@@ -42,9 +42,9 @@ export async function GET() {
       },
       uptime: process.uptime(),
       timestamp: new Date().toISOString(),
-    })
+    });
   } catch (error) {
-    logger.apiError('GET', HEALTH_PATH, error)
+    logger.apiError('GET', HEALTH_PATH, error);
 
     return NextResponse.json(
       {
@@ -55,6 +55,6 @@ export async function GET() {
         timestamp: new Date().toISOString(),
       },
       { status: 503 }
-    )
+    );
   }
 }

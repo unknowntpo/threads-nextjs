@@ -1,46 +1,46 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { Button } from '@/components/ui/button'
-import { Textarea } from '@/components/ui/textarea'
-import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Label } from '@/components/ui/label'
-import { Loader2, ImagePlus, X } from 'lucide-react'
-import { useToast } from '@/hooks/use-toast'
-import type { CreatePostDTO } from '@/lib/types/entities'
-import type { Post } from '@prisma/client'
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Loader2, ImagePlus, X } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import type { CreatePostDTO } from '@/lib/types/entities';
+import type { Post } from '@prisma/client';
 
 interface CreatePostFormProps {
-  onPostCreated?: (post: Post) => void
+  onPostCreated?: (post: Post) => void;
 }
 
 export function CreatePostForm({ onPostCreated }: CreatePostFormProps) {
-  const [content, setContent] = useState('')
-  const [imageUrl, setImageUrl] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [showImageInput, setShowImageInput] = useState(false)
-  const { toast } = useToast()
+  const [content, setContent] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [showImageInput, setShowImageInput] = useState(false);
+  const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
     if (!content.trim()) {
       toast({
         title: 'Error',
         description: 'Please enter some content for your post',
         variant: 'destructive',
-      })
-      return
+      });
+      return;
     }
 
-    setLoading(true)
+    setLoading(true);
 
     try {
       const postData: CreatePostDTO = {
         content: content.trim(),
         ...(imageUrl.trim() && { image_url: imageUrl.trim() }),
-      }
+      };
 
       const response = await fetch('/api/posts', {
         method: 'POST',
@@ -48,44 +48,44 @@ export function CreatePostForm({ onPostCreated }: CreatePostFormProps) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(postData),
-      })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to create post')
+        throw new Error(data.error || 'Failed to create post');
       }
 
       // Reset form
-      setContent('')
-      setImageUrl('')
-      setShowImageInput(false)
+      setContent('');
+      setImageUrl('');
+      setShowImageInput(false);
 
       // Call callback if provided
-      onPostCreated?.(data.post)
+      onPostCreated?.(data.post);
 
       toast({
         title: 'Success',
         description: 'Your post has been created!',
-      })
+      });
     } catch (error) {
-      console.error('Error creating post:', error)
+      console.error('Error creating post:', error);
       toast({
         title: 'Error',
         description: error instanceof Error ? error.message : 'Failed to create post',
         variant: 'destructive',
-      })
+      });
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const removeImage = () => {
-    setImageUrl('')
-    setShowImageInput(false)
-  }
+    setImageUrl('');
+    setShowImageInput(false);
+  };
 
-  const remainingChars = 500 - content.length
+  const remainingChars = 500 - content.length;
 
   return (
     <Card className="mx-auto w-full max-w-2xl">
@@ -147,7 +147,7 @@ export function CreatePostForm({ onPostCreated }: CreatePostFormProps) {
                         title: 'Invalid Image',
                         description: 'The image URL appears to be invalid',
                         variant: 'destructive',
-                      })
+                      });
                     }}
                   />
                 </div>
@@ -189,5 +189,5 @@ export function CreatePostForm({ onPostCreated }: CreatePostFormProps) {
         </form>
       </CardContent>
     </Card>
-  )
+  );
 }

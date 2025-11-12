@@ -1,7 +1,7 @@
-'use client'
+'use client';
 
-import { useState, useEffect, useCallback } from 'react'
-import type { Post, User } from '@prisma/client'
+import { useState, useEffect, useCallback } from 'react';
+import type { Post, User } from '@prisma/client';
 import {
   Dialog,
   DialogContent,
@@ -9,91 +9,91 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { ProfileEditForm } from '@/components/profile-edit-form'
-import { UserIcon, EditIcon } from 'lucide-react'
+} from '@/components/ui/dialog';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ProfileEditForm } from '@/components/profile-edit-form';
+import { UserIcon, EditIcon } from 'lucide-react';
 
 interface ProfileModalProps {
-  trigger?: React.ReactNode | null
-  open?: boolean
-  onOpenChange?: (open: boolean) => void
-  userId?: string // Optional: if provided, shows this user's profile (view-only)
+  trigger?: React.ReactNode | null;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  userId?: string; // Optional: if provided, shows this user's profile (view-only)
 }
 
 export function ProfileModal({ trigger, open, onOpenChange, userId }: ProfileModalProps) {
-  const [profile, setProfile] = useState<User | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [isEditing, setIsEditing] = useState(false)
-  const [isOpen, setIsOpen] = useState(false)
-  const [posts, setPosts] = useState<Post[]>([])
-  const [isLoadingPosts, setIsLoadingPosts] = useState(false)
-  const isViewingOtherUser = !!userId // If userId is provided, we're viewing another user
+  const [profile, setProfile] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [isLoadingPosts, setIsLoadingPosts] = useState(false);
+  const isViewingOtherUser = !!userId; // If userId is provided, we're viewing another user
 
   // Use controlled or uncontrolled mode
-  const isControlled = open !== undefined
-  const dialogOpen = isControlled ? open : isOpen
-  const setDialogOpen = isControlled ? onOpenChange || (() => {}) : setIsOpen
+  const isControlled = open !== undefined;
+  const dialogOpen = isControlled ? open : isOpen;
+  const setDialogOpen = isControlled ? onOpenChange || (() => {}) : setIsOpen;
 
   const fetchProfile = useCallback(async () => {
-    setIsLoading(true)
+    setIsLoading(true);
     try {
-      const url = userId ? `/api/users/${userId}` : '/api/profiles'
-      const response = await fetch(url)
+      const url = userId ? `/api/users/${userId}` : '/api/profiles';
+      const response = await fetch(url);
       if (response.ok) {
-        const data = await response.json()
-        setProfile(userId ? data.user : data.profile)
+        const data = await response.json();
+        setProfile(userId ? data.user : data.profile);
       }
     } catch (error) {
-      console.error('Failed to fetch profile:', error)
+      console.error('Failed to fetch profile:', error);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }, [userId])
+  }, [userId]);
 
   const fetchPosts = useCallback(async () => {
-    setIsLoadingPosts(true)
+    setIsLoadingPosts(true);
     try {
-      const response = await fetch(`/api/posts?user_id=${profile.id}&limit=50`)
+      const response = await fetch(`/api/posts?user_id=${profile.id}&limit=50`);
       if (response.ok) {
-        const data = await response.json()
-        setPosts(data.posts || [])
+        const data = await response.json();
+        setPosts(data.posts || []);
       }
     } catch (error) {
-      console.error('Failed to fetch posts:', error)
+      console.error('Failed to fetch posts:', error);
     } finally {
-      setIsLoadingPosts(false)
+      setIsLoadingPosts(false);
     }
-  }, [profile?.id])
+  }, [profile?.id]);
 
   useEffect(() => {
     if (dialogOpen) {
-      fetchProfile()
+      fetchProfile();
     }
-  }, [dialogOpen, fetchProfile])
+  }, [dialogOpen, fetchProfile]);
 
   useEffect(() => {
     if (dialogOpen && profile?.id) {
-      fetchPosts()
+      fetchPosts();
     }
-  }, [dialogOpen, profile?.id, fetchPosts])
+  }, [dialogOpen, profile?.id, fetchPosts]);
 
   const handleProfileUpdate = (updatedProfile: User) => {
-    setProfile(updatedProfile)
-    setIsEditing(false)
-  }
+    setProfile(updatedProfile);
+    setIsEditing(false);
+  };
 
   const getInitials = (name: string | null) => {
-    if (!name) return '?'
+    if (!name) return '?';
     return name
       .split(' ')
       .map(n => n[0])
       .join('')
       .toUpperCase()
-      .slice(0, 2)
-  }
+      .slice(0, 2);
+  };
 
   return (
     <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -220,5 +220,5 @@ export function ProfileModal({ trigger, open, onOpenChange, userId }: ProfileMod
         )}
       </DialogContent>
     </Dialog>
-  )
+  );
 }

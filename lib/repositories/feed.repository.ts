@@ -1,6 +1,6 @@
-import { prisma } from '@/lib/prisma'
-import type { PostWithUser } from './post.repository'
-import { PostRepository } from './post.repository'
+import { prisma } from '@/lib/prisma';
+import type { PostWithUser } from './post.repository';
+import { PostRepository } from './post.repository';
 
 /**
  * FeedRepository handles personalized feed recommendations
@@ -8,10 +8,10 @@ import { PostRepository } from './post.repository'
  * Phase 2: Will integrate with pre-computed ML recommendations
  */
 export class FeedRepository {
-  private postRepository: PostRepository
+  private postRepository: PostRepository;
 
   constructor() {
-    this.postRepository = new PostRepository()
+    this.postRepository = new PostRepository();
   }
   /**
    * Fetch random posts for user's personalized feed
@@ -31,15 +31,15 @@ export class FeedRepository {
   ): Promise<PostWithUser[]> {
     // Validate inputs
     if (limit < 1 || limit > 100) {
-      throw new Error('Limit must be between 1 and 100')
+      throw new Error('Limit must be between 1 and 100');
     }
     if (offset < 0) {
-      throw new Error('Offset must be non-negative')
+      throw new Error('Offset must be non-negative');
     }
 
     // Fetch all posts (including user's own posts)
     // We fetch more than needed to ensure enough posts after shuffle
-    const fetchSize = Math.min(limit * 3, 500) // Fetch 3x or 500 max
+    const fetchSize = Math.min(limit * 3, 500); // Fetch 3x or 500 max
 
     const allPosts = await prisma.post.findMany({
       take: fetchSize,
@@ -54,15 +54,15 @@ export class FeedRepository {
           },
         },
       },
-    })
+    });
 
     // Apply Fisher-Yates shuffle for randomization
-    const shuffled = this.shuffleArray(allPosts)
+    const shuffled = this.shuffleArray(allPosts);
 
     // Apply pagination
-    const paginated = shuffled.slice(offset, offset + limit)
+    const paginated = shuffled.slice(offset, offset + limit);
 
-    return paginated
+    return paginated;
   }
 
   /**
@@ -81,17 +81,17 @@ export class FeedRepository {
    * @returns Shuffled array (in-place mutation)
    */
   private shuffleArray<T>(array: T[]): T[] {
-    const result = [...array] // Create copy to avoid mutating original
+    const result = [...array]; // Create copy to avoid mutating original
 
     for (let i = result.length - 1; i > 0; i--) {
       // Generate random index from 0 to i
-      const j = Math.floor(Math.random() * (i + 1))
+      const j = Math.floor(Math.random() * (i + 1));
 
       // Swap elements at i and j
-      ;[result[i], result[j]] = [result[j], result[i]]
+      [result[i], result[j]] = [result[j], result[i]];
     }
 
-    return result
+    return result;
   }
 
   /**
@@ -112,23 +112,23 @@ export class FeedRepository {
   ): Promise<PostWithUser[]> {
     // Validate inputs
     if (limit < 1 || limit > 100) {
-      throw new Error('Limit must be between 1 and 100')
+      throw new Error('Limit must be between 1 and 100');
     }
     if (offset < 0) {
-      throw new Error('Offset must be non-negative')
+      throw new Error('Offset must be non-negative');
     }
 
     // Fetch posts with counts (fetch 3x or 500 max for shuffling)
-    const fetchSize = Math.min(limit * 3, 500)
-    const allPosts = await this.postRepository.findAllWithCounts(userId, fetchSize, 0)
+    const fetchSize = Math.min(limit * 3, 500);
+    const allPosts = await this.postRepository.findAllWithCounts(userId, fetchSize, 0);
 
     // Apply Fisher-Yates shuffle for randomization
-    const shuffled = this.shuffleArray(allPosts)
+    const shuffled = this.shuffleArray(allPosts);
 
     // Apply pagination
-    const paginated = shuffled.slice(offset, offset + limit)
+    const paginated = shuffled.slice(offset, offset + limit);
 
-    return paginated
+    return paginated;
   }
 
   /**
@@ -137,17 +137,17 @@ export class FeedRepository {
    * @returns Feed statistics
    */
   async getFeedStats(): Promise<{
-    totalAvailablePosts: number
-    totalUsers: number
+    totalAvailablePosts: number;
+    totalUsers: number;
   }> {
     const [totalAvailablePosts, totalUsers] = await Promise.all([
       prisma.post.count(),
       prisma.user.count(),
-    ])
+    ]);
 
     return {
       totalAvailablePosts,
       totalUsers,
-    }
+    };
   }
 }

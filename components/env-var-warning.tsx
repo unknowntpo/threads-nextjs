@@ -1,5 +1,5 @@
-import { Badge } from './ui/badge'
-import { Button } from './ui/button'
+import { Badge } from './ui/badge';
+import { Button } from './ui/button';
 
 export function EnvVarWarning() {
   return (
@@ -16,5 +16,5 @@ export function EnvVarWarning() {
         </Button>
       </div>
     </div>
-  )
+  );
 }

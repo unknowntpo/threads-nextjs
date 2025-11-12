@@ -7,27 +7,27 @@ import {
   InteractionType,
   TrackInteractionRequest,
   BatchTrackInteractionRequest,
-} from '@/lib/types/tracking'
+} from '@/lib/types/tracking';
 
 interface QueuedInteraction {
-  post_id: string
-  interaction_type: InteractionType
-  metadata?: Record<string, unknown>
-  timestamp: number
+  post_id: string;
+  interaction_type: InteractionType;
+  metadata?: Record<string, unknown>;
+  timestamp: number;
 }
 
 class TrackingService {
-  private queue: QueuedInteraction[] = []
-  private batchInterval = 5000 // 5 seconds
-  private maxBatchSize = 20
-  private timerId: NodeJS.Timeout | null = null
+  private queue: QueuedInteraction[] = [];
+  private batchInterval = 5000; // 5 seconds
+  private maxBatchSize = 20;
+  private timerId: NodeJS.Timeout | null = null;
 
   constructor() {
     if (typeof window !== 'undefined') {
       // Flush queue before page unload
       window.addEventListener('beforeunload', () => {
-        this.flush()
-      })
+        this.flush();
+      });
     }
   }
 
@@ -45,23 +45,23 @@ class TrackingService {
       interaction_type: interactionType,
       metadata,
       timestamp: Date.now(),
-    })
+    });
 
     // If queue exceeds max batch size, flush immediately
     if (this.queue.length >= this.maxBatchSize) {
-      await this.flush()
-      return
+      await this.flush();
+      return;
     }
 
     // Otherwise, schedule a batch flush
-    this.scheduleBatchFlush()
+    this.scheduleBatchFlush();
   }
 
   /**
    * Track multiple interactions immediately
    */
   async trackBatch(interactions: TrackInteractionRequest[]): Promise<void> {
-    if (interactions.length === 0) return
+    if (interactions.length === 0) return;
 
     try {
       const response = await fetch('/api/track', {
@@ -72,13 +72,13 @@ class TrackingService {
         body: JSON.stringify({
           interactions,
         } as BatchTrackInteractionRequest),
-      })
+      });
 
       if (!response.ok) {
-        console.error('Failed to track interactions:', await response.text())
+        console.error('Failed to track interactions:', await response.text());
       }
     } catch (error) {
-      console.error('Error tracking interactions:', error)
+      console.error('Error tracking interactions:', error);
     }
   }
 
@@ -86,12 +86,12 @@ class TrackingService {
    * Flush the queue and send all pending interactions
    */
   async flush(): Promise<void> {
-    if (this.queue.length === 0) return
+    if (this.queue.length === 0) return;
 
     // Clear timer
     if (this.timerId) {
-      clearTimeout(this.timerId)
-      this.timerId = null
+      clearTimeout(this.timerId);
+      this.timerId = null;
     }
 
     // Take all items from queue
@@ -99,19 +99,19 @@ class TrackingService {
       post_id: item.post_id,
       interaction_type: item.interaction_type,
       metadata: item.metadata,
-    }))
+    }));
 
-    await this.trackBatch(interactions)
+    await this.trackBatch(interactions);
   }
 
   private scheduleBatchFlush(): void {
     // Already scheduled
-    if (this.timerId) return
+    if (this.timerId) return;
 
     this.timerId = setTimeout(async () => {
-      this.timerId = null
-      await this.flush()
-    }, this.batchInterval)
+      this.timerId = null;
+      await this.flush();
+    }, this.batchInterval);
   }
 
   /**
@@ -120,19 +120,19 @@ class TrackingService {
    */
   destroy(): void {
     if (this.timerId) {
-      clearTimeout(this.timerId)
-      this.timerId = null
+      clearTimeout(this.timerId);
+      this.timerId = null;
     }
-    this.queue = []
+    this.queue = [];
   }
 }
 
 // Singleton instance
-export const trackingService = new TrackingService()
+export const trackingService = new TrackingService();
 
 // Expose to window for E2E testing
 if (typeof window !== 'undefined') {
-  ;(window as unknown as { trackingService: TrackingService }).trackingService = trackingService
+  (window as unknown as { trackingService: TrackingService }).trackingService = trackingService;
 }
 
 /**
@@ -142,26 +142,26 @@ export function trackView(
   postId: string,
   metadata?: { duration?: number; scroll_depth?: number; source?: string }
 ) {
-  return trackingService.track(postId, 'view', metadata)
+  return trackingService.track(postId, 'view', metadata);
 }
 
 /**
  * Track a post click
  */
 export function trackClick(postId: string, metadata?: { source?: string }) {
-  return trackingService.track(postId, 'click', metadata)
+  return trackingService.track(postId, 'click', metadata);
 }
 
 /**
  * Track a post like
  */
 export function trackLike(postId: string, metadata?: { source?: string }) {
-  return trackingService.track(postId, 'like', metadata)
+  return trackingService.track(postId, 'like', metadata);
 }
 
 /**
  * Track a post share
  */
 export function trackShare(postId: string, metadata?: { source?: string; method?: string }) {
-  return trackingService.track(postId, 'share', metadata)
+  return trackingService.track(postId, 'share', metadata);
 }

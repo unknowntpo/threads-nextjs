@@ -1,28 +1,28 @@
-import { prisma } from '@/lib/prisma'
-import type { Post } from '@prisma/client'
-import {logger} from "@/lib/logger.ts";
+import { prisma } from '@/lib/prisma';
+import type { Post } from '@prisma/client';
+import { logger } from '@/lib/logger.ts';
 
 export type PostWithUser = Post & {
   user: {
-    id: string
-    username: string
-    displayName: string | null
-    avatarUrl: string | null
-  }
+    id: string;
+    username: string;
+    displayName: string | null;
+    avatarUrl: string | null;
+  };
   _count?: {
-    likes: number
-    comments: number
-    reposts: number
-  }
-  isLikedByUser?: boolean
-  isRepostedByUser?: boolean
-}
+    likes: number;
+    comments: number;
+    reposts: number;
+  };
+  isLikedByUser?: boolean;
+  isRepostedByUser?: boolean;
+};
 
 export class PostRepository {
   async findById(id: string): Promise<Post | null> {
     return prisma.post.findUnique({
       where: { id },
-    })
+    });
   }
 
   async findByIdWithUser(id: string): Promise<PostWithUser | null> {
@@ -38,7 +38,7 @@ export class PostRepository {
           },
         },
       },
-    })
+    });
   }
 
   async findAll(limit = 50, offset = 0): Promise<PostWithUser[]> {
@@ -56,16 +56,16 @@ export class PostRepository {
           },
         },
       },
-    })
+    });
   }
 
   async findByUserId(userId: string, limit = 50): Promise<Post[]> {
-    logger.info('PostRepository.findByUserId', userId)
+    logger.info('PostRepository.findByUserId', userId);
     return prisma.post.findMany({
       where: { userId },
       take: limit,
       orderBy: { createdAt: 'desc' },
-    })
+    });
   }
 
   async create(data: { userId: string; content: string; mediaUrls?: string[] }): Promise<Post> {
@@ -75,20 +75,20 @@ export class PostRepository {
         content: data.content,
         mediaUrls: data.mediaUrls || [],
       },
-    })
+    });
   }
 
   async update(id: string, data: { content?: string; mediaUrls?: string[] }): Promise<Post> {
     return prisma.post.update({
       where: { id },
       data,
-    })
+    });
   }
 
   async delete(id: string): Promise<void> {
     await prisma.post.delete({
       where: { id },
-    })
+    });
   }
 
   async findAllWithCounts(
@@ -119,17 +119,17 @@ export class PostRepository {
           },
         },
       },
-    })
+    });
 
     // Get repost counts manually
     const postsWithCounts = await Promise.all(
       posts.map(async post => {
         const repostCount = await prisma.post.count({
           where: { originalPostId: post.id },
-        })
+        });
 
-        let isLikedByUser = false
-        let isRepostedByUser = false
+        let isLikedByUser = false;
+        let isRepostedByUser = false;
 
         if (userId) {
           const [like, repost] = await Promise.all([
@@ -147,10 +147,10 @@ export class PostRepository {
                 originalPostId: post.id,
               },
             }),
-          ])
+          ]);
 
-          isLikedByUser = !!like
-          isRepostedByUser = !!repost
+          isLikedByUser = !!like;
+          isRepostedByUser = !!repost;
         }
 
         return {
@@ -161,11 +161,11 @@ export class PostRepository {
           },
           isLikedByUser,
           isRepostedByUser,
-        }
+        };
       })
-    )
+    );
 
-    return postsWithCounts
+    return postsWithCounts;
   }
 
   async getInteractionCounts(postId: string) {
@@ -173,13 +173,13 @@ export class PostRepository {
       prisma.like.count({ where: { postId } }),
       prisma.comment.count({ where: { postId } }),
       prisma.post.count({ where: { originalPostId: postId } }),
-    ])
+    ]);
 
     return {
       likes: likesCount,
       comments: commentsCount,
       reposts: repostsCount,
-    }
+    };
   }
 
   async isLikedByUser(postId: string, userId: string): Promise<boolean> {
@@ -190,8 +190,8 @@ export class PostRepository {
           postId,
         },
       },
-    })
-    return !!like
+    });
+    return !!like;
   }
 
   async isRepostedByUser(postId: string, userId: string): Promise<boolean> {
@@ -200,7 +200,7 @@ export class PostRepository {
         userId,
         originalPostId: postId,
       },
-    })
-    return !!repost
+    });
+    return !!repost;
   }
 }

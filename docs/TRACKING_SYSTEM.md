@@ -51,7 +51,7 @@ Each interaction can include:
 #### Track Views (Automatic)
 
 ```tsx
-import { usePostViewTracking } from '@/hooks/use-post-tracking'
+import { usePostViewTracking } from '@/hooks/use-post-tracking';
 
 function PostCard({ post }) {
   const postRef = usePostViewTracking({
@@ -59,30 +59,30 @@ function PostCard({ post }) {
     threshold: 0.5, // 50% visible
     minDuration: 1000, // 1 second minimum
     source: 'feed',
-  })
+  });
 
-  return <div ref={postRef}>...</div>
+  return <div ref={postRef}>...</div>;
 }
 ```
 
 #### Track Manual Interactions
 
 ```tsx
-import { trackClick, trackLike, trackShare } from '@/lib/utils/tracking'
+import { trackClick, trackLike, trackShare } from '@/lib/utils/tracking';
 
 function handlePostClick() {
-  trackClick(post.id, { source: 'feed' })
+  trackClick(post.id, { source: 'feed' });
 }
 
 function handleLike() {
-  trackLike(post.id, { source: 'feed' })
+  trackLike(post.id, { source: 'feed' });
 }
 
 function handleShare() {
   trackShare(post.id, {
     source: 'feed',
     method: 'clipboard',
-  })
+  });
 }
 ```
 
@@ -171,7 +171,7 @@ const topPosts = await prisma.userInteraction.groupBy({
   _count: { id: true },
   orderBy: { _count: { id: 'desc' } },
   take: 10,
-})
+});
 ```
 
 ### User Engagement Rate
@@ -181,7 +181,7 @@ const engagement = await prisma.userInteraction.groupBy({
   by: ['userId', 'interactionType'],
   where: { createdAt: { gte: last30Days } },
   _count: { id: true },
-})
+});
 ```
 
 ### Average View Duration
@@ -197,7 +197,7 @@ const interactions = await prisma.$queryRaw`
   GROUP BY post_id
   ORDER BY avg_duration DESC
   LIMIT 10
-`
+`;
 ```
 
 ## Performance
@@ -278,7 +278,7 @@ usePostViewTracking({
   threshold: 0.5, // 50% visible to trigger
   minDuration: 1000, // 1s minimum view time
   source: 'feed', // Context for analytics
-})
+});
 ```
 
 ## Troubleshooting

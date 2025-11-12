@@ -1,4 +1,4 @@
-import { Checkbox } from '../ui/checkbox'
+import { Checkbox } from '../ui/checkbox';
 
 export function TutorialStep({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -14,5 +14,5 @@ export function TutorialStep({ title, children }: { title: string; children: Rea
         </div>
       </label>
     </li>
-  )
+  );
 }

@@ -1,14 +1,14 @@
-import { Button } from '@/components/ui/button'
-import Link from 'next/link'
-import { redirect } from 'next/navigation'
-import { auth } from '@/auth'
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
+import { redirect } from 'next/navigation';
+import { auth } from '@/auth';
 
 export default async function Home() {
-  const session = await auth()
+  const session = await auth();
 
   // Redirect logged-in users to feed
   if (session?.user) {
-    redirect('/feed')
+    redirect('/feed');
   }
 
   return (
@@ -41,5 +41,5 @@ export default async function Home() {
         </div>
       </div>
     </main>
-  )
+  );
 }

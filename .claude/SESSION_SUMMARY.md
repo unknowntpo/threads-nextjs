@@ -96,20 +96,20 @@ Changed regex to exact string `'/feed'` in all `loginUser` helpers:
 ```typescript
 // Before (WRONG)
 async function loginUser(page: Page, email: string, password: string) {
-  await page.goto('/auth/login')
-  await page.getByRole('textbox', { name: 'Email' }).fill(email)
-  await page.getByRole('textbox', { name: 'Password' }).fill(password)
-  await page.getByRole('button', { name: 'Login' }).click()
-  await page.waitForURL(/\/(dashboard|feed)?/) // ❌ Too permissive
+  await page.goto('/auth/login');
+  await page.getByRole('textbox', { name: 'Email' }).fill(email);
+  await page.getByRole('textbox', { name: 'Password' }).fill(password);
+  await page.getByRole('button', { name: 'Login' }).click();
+  await page.waitForURL(/\/(dashboard|feed)?/); // ❌ Too permissive
 }
 
 // After (CORRECT)
 async function loginUser(page: Page, email: string, password: string) {
-  await page.goto('/auth/login')
-  await page.getByRole('textbox', { name: 'Email' }).fill(email)
-  await page.getByRole('textbox', { name: 'Password' }).fill(password)
-  await page.getByRole('button', { name: 'Login' }).click()
-  await page.waitForURL('/feed') // ✅ Exact string
+  await page.goto('/auth/login');
+  await page.getByRole('textbox', { name: 'Email' }).fill(email);
+  await page.getByRole('textbox', { name: 'Password' }).fill(password);
+  await page.getByRole('button', { name: 'Login' }).click();
+  await page.waitForURL('/feed'); // ✅ Exact string
 }
 ```
 
@@ -125,10 +125,10 @@ Sign Out is inside `DropdownMenuItem`, not a standalone button:
 
 ```typescript
 // Before (WRONG)
-await page.locator('button:has-text("Sign Out"), a:has-text("Sign Out")').click()
+await page.locator('button:has-text("Sign Out"), a:has-text("Sign Out")').click();
 
 // After (CORRECT)
-await page.getByRole('menuitem', { name: 'Sign Out' }).click()
+await page.getByRole('menuitem', { name: 'Sign Out' }).click();
 ```
 
 **3. Selector Specificity Improvements**
@@ -260,11 +260,11 @@ const helpers = {
 
 ```typescript
 export class FollowRepository {
-  async create(followerId: string, followingId: string): Promise<Follow>
-  async delete(followerId: string, followingId: string): Promise<void>
-  async isFollowing(followerId: string, followingId: string): Promise<boolean>
-  async getFollowerCount(userId: string): Promise<number>
-  async getFollowingCount(userId: string): Promise<number>
+  async create(followerId: string, followingId: string): Promise<Follow>;
+  async delete(followerId: string, followingId: string): Promise<void>;
+  async isFollowing(followerId: string, followingId: string): Promise<boolean>;
+  async getFollowerCount(userId: string): Promise<number>;
+  async getFollowingCount(userId: string): Promise<number>;
 }
 ```
 
@@ -298,7 +298,7 @@ async findByIdWithCounts(id: string): Promise<
 **1.3 User Profile API** (`app/api/users/[id]/route.ts`):
 
 ```typescript
-export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> })
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> });
 ```
 
 **Response**:
@@ -323,8 +323,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 **1.4 Follow/Unfollow API** (`app/api/users/[id]/follow/route.ts`):
 
 ```typescript
-export async function POST(request, { params }) // Follow user
-export async function DELETE(request, { params }) // Unfollow user
+export async function POST(request, { params }); // Follow user
+export async function DELETE(request, { params }); // Unfollow user
 ```
 
 **Security**:
@@ -358,9 +358,9 @@ export async function DELETE(request, { params }) // Unfollow user
 **State Management**:
 
 ```typescript
-const [isFollowing, setIsFollowing] = useState(false)
-const [isLoadingFollow, setIsLoadingFollow] = useState(false)
-const [isProfileModalOpen, setIsProfileModalOpen] = useState(false)
+const [isFollowing, setIsFollowing] = useState(false);
+const [isLoadingFollow, setIsLoadingFollow] = useState(false);
+const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 ```
 
 **2.2 ProfileModal Enhancement** (`components/profile-modal.tsx`):
@@ -369,7 +369,7 @@ const [isProfileModalOpen, setIsProfileModalOpen] = useState(false)
 
 ```typescript
 interface ProfileModalProps {
-  userId?: string // NEW: If provided, shows this user's profile (view-only)
+  userId?: string; // NEW: If provided, shows this user's profile (view-only)
   // ... existing props
 }
 ```
@@ -581,12 +581,12 @@ Click Username → UserActionMenu (minimal popup)
 
 ```typescript
 export async function PUT(request: NextRequest) {
-  const session = await auth()
-  const body: UpdateProfileDTO = await request.json()
+  const session = await auth();
+  const body: UpdateProfileDTO = await request.json();
 
   // Authorization: Users can only edit their own profile
   if (!session?.user?.id) {
-    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
   }
 
   // Server-side validation
@@ -594,44 +594,44 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json(
       { error: 'Display name must be 255 characters or less' },
       { status: 400 }
-    )
+    );
   }
 
   if (body.bio && body.bio.length > 500) {
-    return NextResponse.json({ error: 'Bio must be 500 characters or less' }, { status: 400 })
+    return NextResponse.json({ error: 'Bio must be 500 characters or less' }, { status: 400 });
   }
 
   if (body.avatar_url) {
     try {
-      new URL(body.avatar_url)
+      new URL(body.avatar_url);
     } catch {
-      return NextResponse.json({ error: 'Invalid avatar URL format' }, { status: 400 })
+      return NextResponse.json({ error: 'Invalid avatar URL format' }, { status: 400 });
     }
   }
 
   // Update profile via repository
   const updateData: {
-    displayName?: string
-    bio?: string
-    avatarUrl?: string
-  } = {}
+    displayName?: string;
+    bio?: string;
+    avatarUrl?: string;
+  } = {};
 
   if (body.display_name !== undefined) {
-    updateData.displayName = body.display_name || undefined
+    updateData.displayName = body.display_name || undefined;
   }
   if (body.bio !== undefined) {
-    updateData.bio = body.bio || undefined
+    updateData.bio = body.bio || undefined;
   }
   if (body.avatar_url !== undefined) {
-    updateData.avatarUrl = body.avatar_url || undefined
+    updateData.avatarUrl = body.avatar_url || undefined;
   }
 
-  const profile = await profileRepo.update(session.user.id, updateData)
+  const profile = await profileRepo.update(session.user.id, updateData);
 
   return NextResponse.json({
     message: 'Profile updated successfully',
     profile,
-  })
+  });
 }
 ```
 
@@ -1156,37 +1156,37 @@ kubectl exec -it nextjs-xxx -n threads -- pnpm prisma db seed
 test('should edit profile information', async ({ page }) => {
   const { user, password } = await helpers.createUser({
     displayName: 'Alice Cooper',
-  })
+  });
 
-  await loginUser(page, user.email, password)
-  await page.goto('/feed')
+  await loginUser(page, user.email, password);
+  await page.goto('/feed');
 
   // Click profile button in sidebar
-  await page.waitForSelector('button[aria-label="Profile"]', { timeout: 10000 })
-  await page.click('button[aria-label="Profile"]')
+  await page.waitForSelector('button[aria-label="Profile"]', { timeout: 10000 });
+  await page.click('button[aria-label="Profile"]');
 
   // Verify profile modal opened
-  await expect(page.getByText('Your Profile')).toBeVisible()
+  await expect(page.getByText('Your Profile')).toBeVisible();
 
   // Click edit button
-  await page.getByTestId('edit-profile-button').click()
-  await expect(page.getByText('Edit Profile')).toBeVisible()
+  await page.getByTestId('edit-profile-button').click();
+  await expect(page.getByText('Edit Profile')).toBeVisible();
 
   // Verify username is read-only
-  await expect(page.getByTestId('username')).toBeDisabled()
+  await expect(page.getByTestId('username')).toBeDisabled();
 
   // Update fields
-  await page.getByTestId('display_name').fill('Alice Updated')
-  await page.getByTestId('bio').fill('Updated bio from E2E test')
-  await page.getByTestId('avatar_url').fill('https://example.com/avatar.jpg')
+  await page.getByTestId('display_name').fill('Alice Updated');
+  await page.getByTestId('bio').fill('Updated bio from E2E test');
+  await page.getByTestId('avatar_url').fill('https://example.com/avatar.jpg');
 
   // Submit form
-  await page.getByTestId('save-button').click()
-  await expect(page.getByText(/Profile updated successfully/i)).toBeVisible()
+  await page.getByTestId('save-button').click();
+  await expect(page.getByText(/Profile updated successfully/i)).toBeVisible();
 
   // Verify profile updated
-  await expect(page.getByText('Alice Updated')).toBeVisible()
-})
+  await expect(page.getByText('Alice Updated')).toBeVisible();
+});
 ```
 
 **Status**: ⚠️ Partial - Test written but has selector timing issues in CI
@@ -1211,24 +1211,24 @@ Type 'string | null | undefined' is not assignable to type 'string | undefined'.
 ```typescript
 // Before
 const updateData: {
-  displayName?: string
-  bio?: string | null // ❌ null not compatible
-  avatarUrl?: string | null
-} = {}
+  displayName?: string;
+  bio?: string | null; // ❌ null not compatible
+  avatarUrl?: string | null;
+} = {};
 
 if (body.bio !== undefined) {
-  updateData.bio = body.bio || null
+  updateData.bio = body.bio || null;
 }
 
 // After
 const updateData: {
-  displayName?: string
-  bio?: string // ✅ undefined only
-  avatarUrl?: string
-} = {}
+  displayName?: string;
+  bio?: string; // ✅ undefined only
+  avatarUrl?: string;
+} = {};
 
 if (body.bio !== undefined) {
-  updateData.bio = body.bio || undefined
+  updateData.bio = body.bio || undefined;
 }
 ```
 
@@ -1275,12 +1275,12 @@ Object literal may only specify known properties, and 'bio' does not exist in ty
 const { user, password } = await helpers.createUser({
   displayName: 'Alice Cooper',
   bio: 'Original bio', // ❌ Not in createUser type
-})
+});
 
 // After
 const { user, password } = await helpers.createUser({
   displayName: 'Alice Cooper',
-})
+});
 ```
 
 ### 7. Files Created/Modified
@@ -1445,21 +1445,21 @@ kubectl annotate externalsecret nextauth-credentials -n threads force-sync=$(dat
 **Before (v5)**:
 
 ```typescript
-import NextAuth from 'next-auth'
-import { PrismaAdapter } from '@auth/prisma-adapter'
+import NextAuth from 'next-auth';
+import { PrismaAdapter } from '@auth/prisma-adapter';
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: PrismaAdapter(prisma),
   // ... config
-})
+});
 ```
 
 **After (v4)**:
 
 ```typescript
-import type { NextAuthOptions } from 'next-auth'
-import { getServerSession } from 'next-auth'
-import { PrismaAdapter } from '@next-auth/prisma-adapter'
+import type { NextAuthOptions } from 'next-auth';
+import { getServerSession } from 'next-auth';
+import { PrismaAdapter } from '@next-auth/prisma-adapter';
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
@@ -1471,33 +1471,33 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async session({ session, token }) {
       if (token && session.user) {
-        session.user.id = token.sub!
+        session.user.id = token.sub!;
         if (token.username && token.displayName) {
-          session.user.username = token.username as string
-          session.user.displayName = token.displayName as string
+          session.user.username = token.username as string;
+          session.user.displayName = token.displayName as string;
         }
       }
-      return session
+      return session;
     },
     async jwt({ token, user }) {
       if (user) {
-        token.sub = user.id
+        token.sub = user.id;
         const dbUser = await prisma.user.findUnique({
           where: { id: user.id },
           select: { username: true, displayName: true },
-        })
+        });
         if (dbUser) {
-          token.username = dbUser.username
-          token.displayName = dbUser.displayName
+          token.username = dbUser.username;
+          token.displayName = dbUser.displayName;
         }
       }
-      return token
+      return token;
     },
   },
-}
+};
 
 // v5 compatibility wrapper
-export const auth = () => getServerSession(authOptions)
+export const auth = () => getServerSession(authOptions);
 ```
 
 #### 1.4 API Route (app/api/auth/[...nextauth]/route.ts)
@@ -1505,18 +1505,18 @@ export const auth = () => getServerSession(authOptions)
 **Before (v5)**:
 
 ```typescript
-import { handlers } from '@/auth'
-export const { GET, POST } = handlers
+import { handlers } from '@/auth';
+export const { GET, POST } = handlers;
 ```
 
 **After (v4)**:
 
 ```typescript
-import NextAuth from 'next-auth'
-import { authOptions } from '@/auth'
+import NextAuth from 'next-auth';
+import { authOptions } from '@/auth';
 
-const handler = NextAuth(authOptions)
-export { handler as GET, handler as POST }
+const handler = NextAuth(authOptions);
+export { handler as GET, handler as POST };
 ```
 
 #### 1.5 Environment Variables (k8s/base/nextjs.yaml)
@@ -1554,13 +1554,13 @@ Import trace: ./auth.ts -> ./middleware.ts
 **Before (middleware.ts)**:
 
 ```typescript
-export { auth as middleware } from '@/auth'
+export { auth as middleware } from '@/auth';
 ```
 
 **After (middleware.ts)**:
 
 ```typescript
-import { withAuth } from 'next-auth/middleware'
+import { withAuth } from 'next-auth/middleware';
 
 export default withAuth({
   callbacks: {
@@ -1569,11 +1569,11 @@ export default withAuth({
   pages: {
     signIn: '/auth/login',
   },
-})
+});
 
 export const config = {
   matcher: ['/((?!api|_next/static|_next/image|favicon.ico|auth).*)'],
-}
+};
 ```
 
 **Commit**: `d353fae - fix(middleware): use withAuth for Edge Runtime compatibility`

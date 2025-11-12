@@ -1,5 +1,5 @@
-import { NextLogo } from './next-logo'
-import { SupabaseLogo } from './supabase-logo'
+import { NextLogo } from './next-logo';
+import { SupabaseLogo } from './supabase-logo';
 
 export function Hero() {
   return (
@@ -40,5 +40,5 @@ export function Hero() {
       </p>
       <div className="my-8 w-full bg-gradient-to-r from-transparent via-foreground/10 to-transparent p-[1px]" />
     </div>
-  )
+  );
 }

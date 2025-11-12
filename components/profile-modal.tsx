@@ -201,15 +201,6 @@ export function ProfileModal({ trigger, open, onOpenChange, userId }: ProfileMod
                       </p>
                     </div>
                   ))}
-
-                {/* Single hardcoded post */}
-                <div className="mb-4 rounded-lg border p-4">
-                  <p className="font-semibold">Test Post Title</p>
-                  <p className="text-sm text-muted-foreground">
-                    This is a hardcoded post to verify rendering works
-                  </p>
-                  <p className="mt-2 text-xs text-muted-foreground">Posted 2 hours ago</p>
-                </div>
               </div>
             </CardContent>
           </Card>

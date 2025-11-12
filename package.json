@@ -60,6 +60,7 @@
   "devDependencies": {
     "@edge-runtime/vm": "^5.0.0",
     "@eslint/eslintrc": "^3.3.1",
+    "@next/eslint-plugin-next": "15",
     "@playwright/test": "^1.55.1",
     "@swc/core": "^1.13.5",
     "@types/bcryptjs": "^3.0.0",
@@ -72,6 +73,7 @@
     "dotenv-cli": "^10.0.0",
     "eslint": "9",
     "eslint-config-next": "15.3.1",
+    "eslint-plugin-react-hooks": "^7.0.1",
     "husky": "^9.1.7",
     "jsonwebtoken": "^9.0.2",
     "lint-staged": "^16.2.3",

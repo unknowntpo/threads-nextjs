@@ -89,7 +89,13 @@ export function NavSidebar() {
           {/* Bottom Menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-12 w-12" aria-label="Menu">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-12 w-12"
+                aria-label="Menu"
+                suppressHydrationWarning
+              >
                 <Menu className="h-6 w-6" />
               </Button>
             </DropdownMenuTrigger>

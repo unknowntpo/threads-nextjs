@@ -119,7 +119,7 @@ export function Feed({ currentUserId }: FeedProps) {
           <p>No posts yet. Be the first to share something!</p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-1">
           {posts.map(post => (
             <PostCard
               key={post.id}

@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import type { Post } from '@prisma/client';
-import { logger } from '@/lib/logger.ts';
+import { logger } from '@/lib/logger';
 
 export type PostWithUser = Post & {
   user: {

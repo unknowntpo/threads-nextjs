@@ -1,17 +1,10 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/dialog';
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ProfileModal } from '@/components/profile-modal';
-import { UserIcon, UserPlus, CheckCircle } from 'lucide-react';
+import { UserPlus, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface UserActionMenuProps {
@@ -19,9 +12,8 @@ interface UserActionMenuProps {
   username: string;
   displayName?: string | null;
   avatarUrl?: string | null;
-  open?: boolean;
-  onOpenChange?: (open: boolean) => void;
-  trigger?: React.ReactNode | null;
+  trigger?: React.ReactNode;
+  currentUserId?: string;
 }
 
 export function UserActionMenu({
@@ -29,39 +21,39 @@ export function UserActionMenu({
   username,
   displayName,
   avatarUrl,
-  open,
-  onOpenChange,
   trigger,
+  currentUserId,
 }: UserActionMenuProps) {
-  const [isOpen, setIsOpen] = useState(false);
   const [isFollowing, setIsFollowing] = useState(false);
   const [isLoadingFollow, setIsLoadingFollow] = useState(false);
-  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [userInfo, setUserInfo] = useState<{
+    bio: string | null;
+    followersCount: number;
+  } | null>(null);
   const { toast } = useToast();
 
-  // Use controlled or uncontrolled mode
-  const isControlled = open !== undefined;
-  const dialogOpen = isControlled ? open : isOpen;
-  const setDialogOpen = isControlled ? onOpenChange || (() => {}) : setIsOpen;
+  const isViewingSelf = currentUserId === userId;
 
-  const fetchFollowStatus = useCallback(async () => {
+  const fetchUserInfo = useCallback(async () => {
     try {
       const response = await fetch(`/api/users/${userId}`);
       if (response.ok) {
         const data = await response.json();
         setIsFollowing(data.isFollowing);
+        setUserInfo({
+          bio: data.user?.bio || null,
+          followersCount: data.user?._count?.followers || 0,
+        });
       }
     } catch (error) {
-      console.error('Failed to fetch follow status:', error);
+      console.error('Failed to fetch user info:', error);
     }
   }, [userId]);
 
-  // Fetch follow status when dialog opens
+  // Fetch user info on mount
   useEffect(() => {
-    if (dialogOpen) {
-      fetchFollowStatus();
-    }
-  }, [dialogOpen, fetchFollowStatus]);
+    fetchUserInfo();
+  }, [fetchUserInfo]);
 
   const handleFollowToggle = async () => {
     setIsLoadingFollow(true);
@@ -76,6 +68,15 @@ export function UserActionMenu({
       }
 
       setIsFollowing(!isFollowing);
+      // Update follower count locally
+      setUserInfo(prev =>
+        prev
+          ? {
+              ...prev,
+              followersCount: isFollowing ? prev.followersCount - 1 : prev.followersCount + 1,
+            }
+          : null
+      );
       toast({
         title: isFollowing ? 'Unfollowed' : 'Followed',
         description: isFollowing
@@ -93,11 +94,6 @@ export function UserActionMenu({
     }
   };
 
-  const handleVisitProfile = () => {
-    setDialogOpen(false);
-    setIsProfileModalOpen(true);
-  };
-
   const getInitials = (name: string | null | undefined) => {
     if (!name) return username?.slice(0, 2).toUpperCase() || '?';
     return name
@@ -109,77 +105,56 @@ export function UserActionMenu({
   };
 
   return (
-    <>
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        {trigger !== null && (
-          <DialogTrigger asChild>
-            {trigger || (
-              <Button variant="ghost" size="sm">
-                <UserIcon className="h-4 w-4" />
-              </Button>
-            )}
-          </DialogTrigger>
-        )}
-        <DialogContent className="max-w-sm p-6">
-          <DialogHeader className="sr-only">
-            <DialogTitle>User Actions</DialogTitle>
-            <DialogDescription>Follow or view {username}&apos;s profile</DialogDescription>
-          </DialogHeader>
-
-          {/* User Info */}
-          <div className="flex flex-col items-center space-y-4">
-            <Avatar className="h-16 w-16">
+    <HoverCard openDelay={200} closeDelay={100}>
+      {trigger && <HoverCardTrigger asChild>{trigger}</HoverCardTrigger>}
+      <HoverCardContent className="w-80" align="start" side="bottom" sideOffset={4}>
+        {/* User Info */}
+        <div className="space-y-3">
+          <div className="flex items-start">
+            <Avatar className="h-12 w-12">
               <AvatarImage src={avatarUrl || undefined} />
-              <AvatarFallback className="text-lg">{getInitials(displayName)}</AvatarFallback>
+              <AvatarFallback>{getInitials(displayName)}</AvatarFallback>
             </Avatar>
+          </div>
 
-            <div className="text-center">
-              <p className="font-semibold">{displayName || username}</p>
-              <p className="text-sm text-muted-foreground">@{username}</p>
-            </div>
+          <div>
+            <p className="font-semibold">{displayName || username}</p>
+          </div>
 
-            {/* Action Buttons */}
-            <div className="flex w-full flex-col gap-2">
-              <Button
-                onClick={handleFollowToggle}
-                disabled={isLoadingFollow}
-                variant={isFollowing ? 'secondary' : 'default'}
-                className="w-full"
-              >
-                {isLoadingFollow ? (
-                  'Loading...'
-                ) : isFollowing ? (
-                  <>
-                    <CheckCircle className="mr-2 h-4 w-4" />
-                    Following
-                  </>
-                ) : (
-                  <>
-                    <UserPlus className="mr-2 h-4 w-4" />
-                    Follow
-                  </>
-                )}
-              </Button>
+          {userInfo?.bio && <p className="text-sm">{userInfo.bio}</p>}
 
-              <Button onClick={handleVisitProfile} variant="outline" className="w-full">
-                <UserIcon className="mr-2 h-4 w-4" />
-                Visit Profile
-              </Button>
+          <div className="flex items-center gap-4 text-sm">
+            <div>
+              <span className="font-semibold">{userInfo?.followersCount || 0}</span>
+              <span className="ml-1 text-muted-foreground">followers</span>
             </div>
           </div>
-        </DialogContent>
-      </Dialog>
 
-      {/* Profile Modal */}
-      <ProfileModal
-        trigger={null}
-        open={isProfileModalOpen}
-        onOpenChange={setIsProfileModalOpen}
-        userId={userId}
-      />
-    </>
+          {!isViewingSelf && (
+            <Button
+              onClick={handleFollowToggle}
+              disabled={isLoadingFollow}
+              variant={isFollowing ? 'secondary' : 'default'}
+              size="sm"
+              className="w-full"
+            >
+              {isLoadingFollow ? (
+                'Loading...'
+              ) : isFollowing ? (
+                <>
+                  <CheckCircle className="mr-2 h-4 w-4" />
+                  Following
+                </>
+              ) : (
+                <>
+                  <UserPlus className="mr-2 h-4 w-4" />
+                  Follow
+                </>
+              )}
+            </Button>
+          )}
+        </div>
+      </HoverCardContent>
+    </HoverCard>
   );
 }
-
-// Import the DialogTrigger to avoid error
-import { DialogTrigger } from '@/components/ui/dialog';

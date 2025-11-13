@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { PostWithUser } from '@/lib/repositories/post.repository';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -13,8 +14,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { UserActionMenu } from '@/components/user-action-menu';
-import { ProfileModal } from '@/components/profile-modal';
 import { formatDistanceToNow } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { usePostViewTracking } from '@/hooks/use-post-tracking';
@@ -71,8 +70,6 @@ export function PostCard({
     }>
   >([]);
   const [commentsLoaded, setCommentsLoaded] = useState(false);
-  const [profileModalOpen, setProfileModalOpen] = useState(false);
-  const [selectedUserId, setSelectedUserId] = useState<string | undefined>();
 
   const handleLike = async () => {
     if (!currentUserId || isLiking) return;
@@ -263,26 +260,13 @@ export function PostCard({
                   {post.user.displayName?.charAt(0).toUpperCase() || 'U'}
                 </AvatarFallback>
               </Avatar>
-              <UserActionMenu
-                userId={post.user.id}
-                username={post.user.username}
-                displayName={post.user.displayName}
-                avatarUrl={post.user.avatarUrl}
-                currentUserId={currentUserId}
-                trigger={
-                  <button
-                    className="text-left text-sm font-semibold hover:underline"
-                    data-testid="post-author"
-                    onClick={e => {
-                      e.stopPropagation();
-                      setSelectedUserId(post.user.id);
-                      setProfileModalOpen(true);
-                    }}
-                  >
-                    {post.user.displayName}
-                  </button>
-                }
-              />
+              <Link
+                href={`/profile/${post.user.username}`}
+                className="text-left text-sm font-semibold hover:underline"
+                data-testid="post-author"
+              >
+                {post.user.displayName}
+              </Link>
             </div>
 
             <div className="flex items-center space-x-2">
@@ -423,25 +407,12 @@ export function PostCard({
                       </Avatar>
                       <div className="flex-1 space-y-1">
                         <div className="flex items-center space-x-2">
-                          <UserActionMenu
-                            userId={comment.user.id}
-                            username={comment.user.username}
-                            displayName={comment.user.displayName}
-                            avatarUrl={comment.user.avatarUrl}
-                            currentUserId={currentUserId}
-                            trigger={
-                              <button
-                                className="text-sm font-semibold hover:underline"
-                                onClick={e => {
-                                  e.stopPropagation();
-                                  setSelectedUserId(comment.user.id);
-                                  setProfileModalOpen(true);
-                                }}
-                              >
-                                {comment.user.displayName}
-                              </button>
-                            }
-                          />
+                          <Link
+                            href={`/profile/${comment.user.username}`}
+                            className="text-sm font-semibold hover:underline"
+                          >
+                            {comment.user.displayName}
+                          </Link>
                           <p className="text-xs text-muted-foreground">
                             {formatDistanceToNow(new Date(comment.createdAt))} ago
                           </p>
@@ -456,14 +427,6 @@ export function PostCard({
           )}
         </CardContent>
       </Card>
-
-      {/* Profile Modal - Opens centered */}
-      <ProfileModal
-        trigger={null}
-        open={profileModalOpen}
-        onOpenChange={setProfileModalOpen}
-        userId={selectedUserId}
-      />
     </>
   );
 }

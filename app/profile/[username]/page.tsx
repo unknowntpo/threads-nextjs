@@ -1,7 +1,8 @@
-import { redirect } from 'next/navigation';
+import { redirect, notFound } from 'next/navigation';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { ProfileView } from '@/components/profile-view';
 import { auth } from '@/auth';
+import { ProfileRepository } from '@/lib/repositories/profile.repository';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,12 +21,20 @@ export default async function ProfilePage({ params }: PageProps) {
 
     const { username } = await params;
 
+    // Fetch profile server-side for instant display
+    const profileRepo = new ProfileRepository();
+    const profile = await profileRepo.findByUsername(username);
+
+    if (!profile) {
+      notFound();
+    }
+
     return (
       <>
         <NavSidebar />
         <div className="flex w-full flex-1 flex-col items-center pl-20">
           <div className="w-full max-w-2xl p-6">
-            <ProfileView username={username} currentUserId={session.user.id} />
+            <ProfileView initialProfile={profile} currentUserId={session.user.id} />
           </div>
         </div>
       </>

@@ -33,9 +33,10 @@ For completed MVP phases 1-6, see [PLAN_ARCHIVE.md](../PLAN_ARCHIVE.md)
 
 **[Epic: Follow & Followers](epic_follow_followers.md)** 🤝
 
-- Status: ✅ Complete (2025-11-06)
-- Follow/unfollow functionality, follower counts, UserActionMenu, clickable usernames
-- 13 integration tests + 7 E2E tests
+- Status: ✅ Complete (2025-11-13)
+- Follow/unfollow functionality, follower counts, UserActionMenu with HoverCard
+- Clickable usernames, profile hover cards (Twitter/X-like behavior)
+- 13 integration tests + 7 E2E tests + 5 component tests
 
 **[Epic: Profile Management & UI Enhancement](epic_profile_management.md)** 📝
 
@@ -54,6 +55,17 @@ For completed MVP phases 1-6, see [PLAN_ARCHIVE.md](../PLAN_ARCHIVE.md)
 - Status: ✅ Core Complete (2025-11-05)
 - Terraform infrastructure, k0s Kubernetes, ArgoCD + Keel GitOps, CI/CD pipeline
 - Monitoring and enhancements pending
+
+---
+
+### In Progress Epics 🚧
+
+**[Epic: Threads UI Refactor](epic_threads_ui_refactor.md)** 🎨
+
+- Status: 🚧 In Progress (Started: 2025-11-13)
+- Priority: High - Visual redesign to match Threads app
+- Card roundness (16px), spacing (4px), profile drawer navigation
+- Effort: ~8-12 hours
 
 ---
 
@@ -129,4 +141,4 @@ For completed MVP phases 1-6 (Auth, Post Creation, CI/CD, PostgreSQL Migration, 
 
 ---
 
-**Last Updated:** 2025-11-06
+**Last Updated:** 2025-11-13

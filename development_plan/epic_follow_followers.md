@@ -1,8 +1,9 @@
 # Epic: Follow & Followers 🤝
 
-**Status:** ✅ Complete (2025-11-06)
+**Status:** ✅ Complete (2025-11-13)
 **Priority:** High - Core social feature
-**Effort:** ~16 hours (actual)
+**Effort:** ~20 hours (actual)
+**Final Update:** Added HoverCard component for Twitter/X-like profile hover behavior
 
 ## Goal
 

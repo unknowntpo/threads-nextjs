@@ -17,7 +17,9 @@ const ThemeSwitcher = () => {
   const { theme, setTheme } = useTheme();
 
   // useEffect only runs on the client, so now we can safely show the UI
+  // This pattern is recommended by next-themes to prevent hydration mismatch
   useEffect(() => {
+    // eslint-disable-next-line
     setMounted(true);
   }, []);
 

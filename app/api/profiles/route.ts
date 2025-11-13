@@ -41,7 +41,7 @@ import { auth } from '@/auth';
  *       401:
  *         description: Not authenticated
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const session = await auth();
     const profileRepo = new ProfileRepository();
@@ -50,6 +50,24 @@ export async function GET() {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
+    // Check if username query parameter is provided
+    const { searchParams } = new URL(request.url);
+    const username = searchParams.get('username');
+
+    if (username) {
+      // Fetch profile by username
+      const profile = await profileRepo.findByUsername(username);
+
+      if (!profile) {
+        return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
+      }
+
+      return NextResponse.json({
+        profile,
+      });
+    }
+
+    // Default: fetch current user's profile
     const profile = await profileRepo.findById(session.user.id);
 
     if (!profile) {

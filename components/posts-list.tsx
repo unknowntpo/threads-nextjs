@@ -30,8 +30,8 @@ export function PostsList({
   }
 
   return (
-    <div className="space-y-1">
-      {posts.map(post => (
+    <Card className="w-full">
+      {posts.map((post, index) => (
         <PostCard
           key={post.id}
           post={post}
@@ -39,8 +39,10 @@ export function PostsList({
           onEdit={onEdit}
           onDelete={onDelete}
           onInteractionChange={onInteractionChange}
+          variant="divider"
+          isLast={index === posts.length - 1}
         />
       ))}
-    </div>
+    </Card>
   );
 }

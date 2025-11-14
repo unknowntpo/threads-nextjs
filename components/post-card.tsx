@@ -335,11 +335,11 @@ export function PostCard({
             )}
 
             {/* Action buttons */}
-            <div className="-ml-2 mt-3 flex items-center gap-1">
+            <div className="mt-3 flex items-center gap-1">
               <Button
                 variant="ghost"
                 size="sm"
-                className="flex items-center space-x-1"
+                className="px-1"
                 onClick={handleLike}
                 disabled={!currentUserId || isLiking}
               >
@@ -350,7 +350,7 @@ export function PostCard({
               <Button
                 variant="ghost"
                 size="sm"
-                className="flex items-center space-x-1"
+                className="px-1"
                 onClick={handleCommentButtonClick}
                 disabled={!currentUserId}
                 data-testid="comment-button"
@@ -362,7 +362,7 @@ export function PostCard({
               <Button
                 variant="ghost"
                 size="sm"
-                className="flex items-center space-x-1"
+                className="px-1"
                 onClick={handleRepost}
                 disabled={!currentUserId || isReposting}
               >
@@ -370,7 +370,7 @@ export function PostCard({
                 <span className="text-xs">{repostCount}</span>
               </Button>
 
-              <Button variant="ghost" size="sm" onClick={handleShare}>
+              <Button variant="ghost" size="sm" className="px-1" onClick={handleShare}>
                 {linkCopied ? (
                   <Check className="h-4 w-4 text-green-500" />
                 ) : (

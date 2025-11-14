@@ -1,5 +1,6 @@
 import { NavSidebar } from '@/components/nav-sidebar';
 import { Separator } from '@/components/ui/separator';
+import { Card } from '@/components/ui/card';
 
 interface ViewTemplateProps {
   header?: React.ReactNode;
@@ -26,21 +27,24 @@ export function ViewTemplate({
       <NavSidebar />
       <div className="flex w-full flex-1 flex-col items-center pl-20">
         <div className={`w-full ${maxWidthClass} p-6`}>
-          <div className="space-y-8">
+          <Card className="overflow-hidden">
             {/* Header slot - Feed tabs or Profile card */}
-            {header && <div>{header}</div>}
+            {header}
 
             {/* Before content slot - CreatePostForm (conditional) */}
             {beforeContent && (
               <>
-                {beforeContent}
                 <Separator />
+                {beforeContent}
               </>
             )}
 
+            {/* Separator before content */}
+            {beforeContent && <Separator />}
+
             {/* Content slot - Feed or PostsList */}
             {content}
-          </div>
+          </Card>
         </div>
       </div>
     </>

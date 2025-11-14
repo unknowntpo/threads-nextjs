@@ -1,7 +1,6 @@
 'use client';
 
 import { PostCard } from '@/components/post-card';
-import { Card, CardContent } from '@/components/ui/card';
 import type { PostWithUser } from '@/lib/repositories/post.repository';
 
 interface PostsListProps {
@@ -22,15 +21,11 @@ export function PostsList({
   emptyMessage = 'No posts yet',
 }: PostsListProps) {
   if (posts.length === 0) {
-    return (
-      <Card className="w-full">
-        <CardContent className="p-6 text-center text-muted-foreground">{emptyMessage}</CardContent>
-      </Card>
-    );
+    return <div className="p-6 text-center text-muted-foreground">{emptyMessage}</div>;
   }
 
   return (
-    <Card className="w-full">
+    <>
       {posts.map((post, index) => (
         <PostCard
           key={post.id}
@@ -43,6 +38,6 @@ export function PostsList({
           isLast={index === posts.length - 1}
         />
       ))}
-    </Card>
+    </>
   );
 }

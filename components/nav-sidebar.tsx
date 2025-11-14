@@ -42,7 +42,7 @@ export function NavSidebar() {
 
   return (
     <>
-      <aside className="fixed left-0 top-0 z-40 h-screen w-20 border-r bg-background">
+      <aside className="fixed left-0 top-0 z-40 h-screen w-20 bg-secondary">
         <div className="flex h-full flex-col items-center py-6">
           {/* Logo */}
           <Link href="/feed" className="mb-8">

@@ -47,6 +47,7 @@ export default async function ProtectedPage() {
         header={<FeedTabs />}
         beforeContent={<CreatePostTrigger />}
         content={<Feed currentUserId={user.id} />}
+        centerContent={true}
       />
     );
   } catch (error) {

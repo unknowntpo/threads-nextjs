@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { UserActionMenu } from '@/components/user-action-menu';
 import { MoreHorizontal, Heart, MessageCircle, Repeat2, Share, Check, Loader2 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -260,13 +261,22 @@ export function PostCard({
                   {post.user.displayName?.charAt(0).toUpperCase() || 'U'}
                 </AvatarFallback>
               </Avatar>
-              <Link
-                href={`/profile/${post.user.username}`}
-                className="text-left text-sm font-semibold hover:underline"
-                data-testid="post-author"
-              >
-                {post.user.displayName}
-              </Link>
+              <UserActionMenu
+                userId={post.user.id}
+                username={post.user.username}
+                displayName={post.user.displayName}
+                avatarUrl={post.user.avatarUrl}
+                currentUserId={currentUserId}
+                trigger={
+                  <Link
+                    href={`/profile/${post.user.username}`}
+                    className="text-left text-sm font-semibold hover:underline"
+                    data-testid="post-author"
+                  >
+                    {post.user.displayName}
+                  </Link>
+                }
+              />
             </div>
 
             <div className="flex items-center space-x-2">
@@ -407,12 +417,21 @@ export function PostCard({
                       </Avatar>
                       <div className="flex-1 space-y-1">
                         <div className="flex items-center space-x-2">
-                          <Link
-                            href={`/profile/${comment.user.username}`}
-                            className="text-sm font-semibold hover:underline"
-                          >
-                            {comment.user.displayName}
-                          </Link>
+                          <UserActionMenu
+                            userId={comment.user.id}
+                            username={comment.user.username}
+                            displayName={comment.user.displayName}
+                            avatarUrl={comment.user.avatarUrl}
+                            currentUserId={currentUserId}
+                            trigger={
+                              <Link
+                                href={`/profile/${comment.user.username}`}
+                                className="text-sm font-semibold hover:underline"
+                              >
+                                {comment.user.displayName}
+                              </Link>
+                            }
+                          />
                           <p className="text-xs text-muted-foreground">
                             {formatDistanceToNow(new Date(comment.createdAt))} ago
                           </p>

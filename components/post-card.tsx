@@ -329,11 +329,11 @@ export function PostCard({
           </div>
         )}
 
-        <div className="mt-3 flex items-center justify-between border-t pt-3">
+        <div className="-ml-2 mt-3 flex items-center gap-1">
           <Button
             variant="ghost"
             size="sm"
-            className="flex items-center space-x-2"
+            className="flex items-center space-x-1"
             onClick={handleLike}
             disabled={!currentUserId || isLiking}
           >
@@ -344,7 +344,7 @@ export function PostCard({
           <Button
             variant="ghost"
             size="sm"
-            className="flex items-center space-x-2"
+            className="flex items-center space-x-1"
             onClick={handleCommentButtonClick}
             disabled={!currentUserId}
             data-testid="comment-button"
@@ -356,7 +356,7 @@ export function PostCard({
           <Button
             variant="ghost"
             size="sm"
-            className="flex items-center space-x-2"
+            className="flex items-center space-x-1"
             onClick={handleRepost}
             disabled={!currentUserId || isReposting}
           >

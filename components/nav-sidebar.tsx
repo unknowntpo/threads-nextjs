@@ -1,10 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { ProfileModal } from '@/components/profile-modal';
 import { cn } from '@/lib/utils';
 import { Home, Search, PlusSquare, Heart, User, Menu, LogOut } from 'lucide-react';
 import {
@@ -13,11 +12,26 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { signOut } from 'next-auth/react';
+import { signOut, useSession } from 'next-auth/react';
 
 export function NavSidebar() {
   const pathname = usePathname();
-  const [profileOpen, setProfileOpen] = useState(false);
+  const { data: session } = useSession();
+  const [username, setUsername] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (session?.user?.id) {
+      // Fetch current user's profile to get username
+      fetch('/api/profiles')
+        .then(res => res.json())
+        .then(data => {
+          if (data.profile?.username) {
+            setUsername(data.profile.username);
+          }
+        })
+        .catch(console.error);
+    }
+  }, [session?.user?.id]);
 
   const navItems = [
     { icon: Home, label: 'Home', href: '/feed' },
@@ -75,15 +89,23 @@ export function NavSidebar() {
             })}
 
             {/* Profile Button */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-12 w-12"
-              onClick={() => setProfileOpen(true)}
-              aria-label="Profile"
-            >
-              <User className="h-6 w-6" />
-            </Button>
+            {username ? (
+              <Link href={`/profile/${username}`}>
+                <Button variant="ghost" size="icon" className="h-12 w-12" aria-label="Profile">
+                  <User className="h-6 w-6" />
+                </Button>
+              </Link>
+            ) : (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-12 w-12 cursor-not-allowed opacity-50"
+                disabled
+                aria-label="Profile"
+              >
+                <User className="h-6 w-6" />
+              </Button>
+            )}
           </nav>
 
           {/* Bottom Menu */}
@@ -111,9 +133,6 @@ export function NavSidebar() {
           </DropdownMenu>
         </div>
       </aside>
-
-      {/* Profile Modal */}
-      <ProfileModal trigger={null} open={profileOpen} onOpenChange={setProfileOpen} />
     </>
   );
 }

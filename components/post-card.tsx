@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { PostWithUser } from '@/lib/repositories/post.repository';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { UserActionMenu } from '@/components/user-action-menu';
@@ -255,195 +255,206 @@ export function PostCard({
 
   const content = (
     <>
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
+      <CardContent className="pb-2 pt-6">
+        <div className="flex gap-3">
+          {/* Left column: Avatar */}
+          <div className="flex-shrink-0">
             <Avatar className="h-10 w-10">
               <AvatarImage src={post.user.avatarUrl || ''} alt={post.user.username} />
               <AvatarFallback>
                 {post.user.displayName?.charAt(0).toUpperCase() || 'U'}
               </AvatarFallback>
             </Avatar>
-            <UserActionMenu
-              userId={post.user.id}
-              username={post.user.username}
-              displayName={post.user.displayName}
-              avatarUrl={post.user.avatarUrl}
-              currentUserId={currentUserId}
-              trigger={
-                <Link
-                  href={`/profile/${post.user.username}`}
-                  className="text-left text-sm font-semibold hover:underline"
-                  data-testid="post-author"
-                >
-                  {post.user.displayName}
-                </Link>
-              }
-            />
           </div>
 
-          <div className="flex items-center space-x-2">
-            <span className="text-xs text-muted-foreground">
-              {formatDistanceToNow(new Date(post.createdAt))} ago
-            </span>
-
-            {isOwner && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => onEdit?.(post)}>Edit</DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => onDelete?.(post.id)}
-                    className="text-destructive"
-                  >
-                    Delete
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
-          </div>
-        </div>
-      </CardHeader>
-
-      <CardContent className="pb-2 pt-0">
-        <p
-          className="cursor-pointer whitespace-pre-wrap text-sm"
-          data-testid="post-content"
-          onClick={handlePostClick}
-        >
-          {post.content}
-        </p>
-
-        {post.mediaUrls && post.mediaUrls.length > 0 && (
-          <div className="mt-3">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={post.mediaUrls[0]}
-              alt="Post image"
-              className="h-auto max-w-full rounded-lg"
-            />
-          </div>
-        )}
-
-        <div className="-ml-2 mt-3 flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="flex items-center space-x-1"
-            onClick={handleLike}
-            disabled={!currentUserId || isLiking}
-          >
-            <Heart className={`h-4 w-4 ${isLiked ? 'fill-red-500 text-red-500' : ''}`} />
-            <span className="text-xs">{likeCount}</span>
-          </Button>
-
-          <Button
-            variant="ghost"
-            size="sm"
-            className="flex items-center space-x-1"
-            onClick={handleCommentButtonClick}
-            disabled={!currentUserId}
-            data-testid="comment-button"
-          >
-            <MessageCircle className="h-4 w-4" />
-            <span className="text-xs">{commentCount}</span>
-          </Button>
-
-          <Button
-            variant="ghost"
-            size="sm"
-            className="flex items-center space-x-1"
-            onClick={handleRepost}
-            disabled={!currentUserId || isReposting}
-          >
-            <Repeat2 className={`h-4 w-4 ${isReposted ? 'text-green-500' : ''}`} />
-            <span className="text-xs">{repostCount}</span>
-          </Button>
-
-          <Button variant="ghost" size="sm" onClick={handleShare}>
-            {linkCopied ? (
-              <Check className="h-4 w-4 text-green-500" />
-            ) : (
-              <Share className="h-4 w-4" />
-            )}
-          </Button>
-        </div>
-
-        {/* Comment Form */}
-        {showCommentForm && (
-          <div className="mt-4 space-y-4 border-t pt-4">
-            <div className="space-y-2">
-              <Textarea
-                placeholder="Write a comment..."
-                value={commentText}
-                onChange={e => setCommentText(e.target.value)}
-                className="min-h-[80px] resize-none"
-                disabled={isSubmittingComment}
-                data-testid="comment-textarea"
-              />
-              <div className="flex justify-end">
-                <Button
-                  size="sm"
-                  onClick={handleSubmitComment}
-                  disabled={!commentText.trim() || isSubmittingComment}
-                  data-testid="comment-submit-button"
-                >
-                  {isSubmittingComment ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Posting...
-                    </>
-                  ) : (
-                    'Post Comment'
-                  )}
-                </Button>
+          {/* Right column: Username, content, actions */}
+          <div className="min-w-0 flex-1">
+            {/* Username and timestamp row */}
+            <div className="mb-1 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <UserActionMenu
+                  userId={post.user.id}
+                  username={post.user.username}
+                  displayName={post.user.displayName}
+                  avatarUrl={post.user.avatarUrl}
+                  currentUserId={currentUserId}
+                  trigger={
+                    <Link
+                      href={`/profile/${post.user.username}`}
+                      className="text-left text-sm font-semibold hover:underline"
+                      data-testid="post-author"
+                    >
+                      {post.user.displayName}
+                    </Link>
+                  }
+                />
+                <span className="text-xs text-muted-foreground">
+                  {formatDistanceToNow(new Date(post.createdAt))} ago
+                </span>
               </div>
+
+              {isOwner && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => onEdit?.(post)}>Edit</DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => onDelete?.(post.id)}
+                      className="text-destructive"
+                    >
+                      Delete
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
             </div>
 
-            {/* Comments List */}
-            {comments.length > 0 && (
-              <div className="space-y-3">
-                {comments.map(comment => (
-                  <div key={comment.id} className="flex space-x-3">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={comment.user.avatarUrl || ''} alt={comment.user.username} />
-                      <AvatarFallback>
-                        {comment.user.displayName?.charAt(0).toUpperCase() || 'U'}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 space-y-1">
-                      <div className="flex items-center space-x-2">
-                        <UserActionMenu
-                          userId={comment.user.id}
-                          username={comment.user.username}
-                          displayName={comment.user.displayName}
-                          avatarUrl={comment.user.avatarUrl}
-                          currentUserId={currentUserId}
-                          trigger={
-                            <Link
-                              href={`/profile/${comment.user.username}`}
-                              className="text-sm font-semibold hover:underline"
-                            >
-                              {comment.user.displayName}
-                            </Link>
-                          }
-                        />
-                        <p className="text-xs text-muted-foreground">
-                          {formatDistanceToNow(new Date(comment.createdAt))} ago
-                        </p>
-                      </div>
-                      <p className="text-sm">{comment.content}</p>
-                    </div>
+            {/* Post content */}
+            <p
+              className="cursor-pointer whitespace-pre-wrap text-sm"
+              data-testid="post-content"
+              onClick={handlePostClick}
+            >
+              {post.content}
+            </p>
+
+            {/* Media */}
+            {post.mediaUrls && post.mediaUrls.length > 0 && (
+              <div className="mt-3">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={post.mediaUrls[0]}
+                  alt="Post image"
+                  className="h-auto max-w-full rounded-lg"
+                />
+              </div>
+            )}
+
+            {/* Action buttons */}
+            <div className="-ml-2 mt-3 flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="flex items-center space-x-1"
+                onClick={handleLike}
+                disabled={!currentUserId || isLiking}
+              >
+                <Heart className={`h-4 w-4 ${isLiked ? 'fill-red-500 text-red-500' : ''}`} />
+                <span className="text-xs">{likeCount}</span>
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="sm"
+                className="flex items-center space-x-1"
+                onClick={handleCommentButtonClick}
+                disabled={!currentUserId}
+                data-testid="comment-button"
+              >
+                <MessageCircle className="h-4 w-4" />
+                <span className="text-xs">{commentCount}</span>
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="sm"
+                className="flex items-center space-x-1"
+                onClick={handleRepost}
+                disabled={!currentUserId || isReposting}
+              >
+                <Repeat2 className={`h-4 w-4 ${isReposted ? 'text-green-500' : ''}`} />
+                <span className="text-xs">{repostCount}</span>
+              </Button>
+
+              <Button variant="ghost" size="sm" onClick={handleShare}>
+                {linkCopied ? (
+                  <Check className="h-4 w-4 text-green-500" />
+                ) : (
+                  <Share className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+
+            {/* Comment Form */}
+            {showCommentForm && (
+              <div className="mt-4 space-y-4 border-t pt-4">
+                <div className="space-y-2">
+                  <Textarea
+                    placeholder="Write a comment..."
+                    value={commentText}
+                    onChange={e => setCommentText(e.target.value)}
+                    className="min-h-[80px] resize-none"
+                    disabled={isSubmittingComment}
+                    data-testid="comment-textarea"
+                  />
+                  <div className="flex justify-end">
+                    <Button
+                      size="sm"
+                      onClick={handleSubmitComment}
+                      disabled={!commentText.trim() || isSubmittingComment}
+                      data-testid="comment-submit-button"
+                    >
+                      {isSubmittingComment ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Posting...
+                        </>
+                      ) : (
+                        'Post Comment'
+                      )}
+                    </Button>
                   </div>
-                ))}
+                </div>
+
+                {/* Comments List */}
+                {comments.length > 0 && (
+                  <div className="space-y-3">
+                    {comments.map(comment => (
+                      <div key={comment.id} className="flex space-x-3">
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage
+                            src={comment.user.avatarUrl || ''}
+                            alt={comment.user.username}
+                          />
+                          <AvatarFallback>
+                            {comment.user.displayName?.charAt(0).toUpperCase() || 'U'}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 space-y-1">
+                          <div className="flex items-center space-x-2">
+                            <UserActionMenu
+                              userId={comment.user.id}
+                              username={comment.user.username}
+                              displayName={comment.user.displayName}
+                              avatarUrl={comment.user.avatarUrl}
+                              currentUserId={currentUserId}
+                              trigger={
+                                <Link
+                                  href={`/profile/${comment.user.username}`}
+                                  className="text-sm font-semibold hover:underline"
+                                >
+                                  {comment.user.displayName}
+                                </Link>
+                              }
+                            />
+                            <p className="text-xs text-muted-foreground">
+                              {formatDistanceToNow(new Date(comment.createdAt))} ago
+                            </p>
+                          </div>
+                          <p className="text-sm">{comment.content}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>
-        )}
+        </div>
       </CardContent>
     </>
   );

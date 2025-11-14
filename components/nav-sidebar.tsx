@@ -54,7 +54,7 @@ export function NavSidebar() {
           </Link>
 
           {/* Nav Items */}
-          <nav className="flex flex-1 flex-col items-center gap-4">
+          <nav className="flex flex-1 flex-col items-center justify-center gap-6">
             {navItems.map(item => {
               const Icon = item.icon;
               const isActive = pathname === item.href;
@@ -65,11 +65,11 @@ export function NavSidebar() {
                     key={item.label}
                     variant="ghost"
                     size="icon"
-                    className="h-12 w-12 cursor-not-allowed opacity-50"
+                    className="h-14 w-14 cursor-not-allowed opacity-50"
                     disabled
                     aria-label={item.label}
                   >
-                    <Icon className="h-6 w-6" />
+                    <Icon className="h-7 w-7" />
                   </Button>
                 );
               }
@@ -79,10 +79,10 @@ export function NavSidebar() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className={cn('h-12 w-12', isActive && 'bg-accent text-accent-foreground')}
+                    className={cn('h-14 w-14', isActive && 'bg-accent text-accent-foreground')}
                     aria-label={item.label}
                   >
-                    <Icon className="h-6 w-6" />
+                    <Icon className="h-7 w-7" />
                   </Button>
                 </Link>
               );
@@ -91,19 +91,19 @@ export function NavSidebar() {
             {/* Profile Button */}
             {username ? (
               <Link href={`/profile/${username}`}>
-                <Button variant="ghost" size="icon" className="h-12 w-12" aria-label="Profile">
-                  <User className="h-6 w-6" />
+                <Button variant="ghost" size="icon" className="h-14 w-14" aria-label="Profile">
+                  <User className="h-7 w-7" />
                 </Button>
               </Link>
             ) : (
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-12 w-12 cursor-not-allowed opacity-50"
+                className="h-14 w-14 cursor-not-allowed opacity-50"
                 disabled
                 aria-label="Profile"
               >
-                <User className="h-6 w-6" />
+                <User className="h-7 w-7" />
               </Button>
             )}
           </nav>

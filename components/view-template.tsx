@@ -7,6 +7,7 @@ interface ViewTemplateProps {
   beforeContent?: React.ReactNode;
   content: React.ReactNode;
   maxWidth?: 'sm' | 'md' | 'lg' | '2xl';
+  centerContent?: boolean;
 }
 
 export function ViewTemplate({
@@ -14,6 +15,7 @@ export function ViewTemplate({
   beforeContent,
   content,
   maxWidth = '2xl',
+  centerContent = false,
 }: ViewTemplateProps) {
   const maxWidthClass = {
     sm: 'max-w-sm',
@@ -25,8 +27,8 @@ export function ViewTemplate({
   return (
     <>
       <NavSidebar />
-      <div className="flex w-full flex-1 flex-col items-center bg-secondary pl-20">
-        <div className={`w-full ${maxWidthClass} -ml-10 p-6`}>
+      <div className="flex min-h-screen w-full flex-1 flex-col items-center bg-secondary pl-20">
+        <div className={`w-full ${maxWidthClass} ${centerContent ? '-ml-10' : ''} p-6`}>
           {/* Header slot - Feed tabs (outside Card) */}
           {header}
 

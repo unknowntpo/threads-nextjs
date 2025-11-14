@@ -1,5 +1,4 @@
 import { redirect, notFound } from 'next/navigation';
-import { ViewTemplate } from '@/components/view-template';
 import { ProfileView } from '@/components/profile-view';
 import { auth } from '@/auth';
 import { ProfileRepository } from '@/lib/repositories/profile.repository';
@@ -37,14 +36,10 @@ export default async function ProfilePage({ params }: PageProps) {
     const userPosts = posts.filter(post => post.userId === profile.id);
 
     return (
-      <ViewTemplate
-        content={
-          <ProfileView
-            initialProfile={profile}
-            currentUserId={session.user.id}
-            initialPosts={userPosts}
-          />
-        }
+      <ProfileView
+        initialProfile={profile}
+        currentUserId={session.user.id}
+        initialPosts={userPosts}
       />
     );
   } catch (error) {

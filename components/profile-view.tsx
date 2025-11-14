@@ -6,11 +6,12 @@ import type { User } from '@prisma/client';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Separator } from '@/components/ui/separator';
 import { ProfileEditForm } from '@/components/profile-edit-form';
 import { PostsList } from '@/components/posts-list';
-import { CreatePostForm } from '@/components/create-post-form';
+import { ViewTemplate } from '@/components/view-template';
 import type { PostWithUser } from '@/lib/repositories/post.repository';
-import { EditIcon, ChevronLeft } from 'lucide-react';
+import { EditIcon, ArrowLeft } from 'lucide-react';
 
 interface ProfileViewProps {
   initialProfile: User;
@@ -35,64 +36,78 @@ export function ProfileView({ initialProfile, currentUserId, initialPosts }: Pro
 
   const isOwnProfile = profile.id === currentUserId;
 
-  return (
-    <div className="w-full space-y-4">
-      {/* Back Button */}
+  const header = (
+    <div className="relative mb-4 flex items-center justify-center px-6">
       <Button
         variant="ghost"
-        size="sm"
+        size="icon"
         onClick={() => router.back()}
-        className="flex items-center gap-2"
+        className="absolute left-6 h-10 w-10 rounded-full"
       >
-        <ChevronLeft className="h-4 w-4" />
-        <span>Back</span>
+        <ArrowLeft className="h-5 w-5" />
       </Button>
-
-      <Card className="w-full">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0">
-          <div className="flex items-center space-x-4">
-            <Avatar className="h-16 w-16">
-              <AvatarImage src={profile.avatarUrl || ''} alt={profile.username} />
-              <AvatarFallback>{profile.displayName?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
-            </Avatar>
-            <div>
-              <h2 className="text-2xl font-bold">{profile.displayName}</h2>
-              <p className="text-sm text-muted-foreground">@{profile.username}</p>
-            </div>
-          </div>
-          {isOwnProfile && !isEditing && (
-            <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
-              <EditIcon className="mr-2 h-4 w-4" />
-              Edit Profile
-            </Button>
-          )}
-        </CardHeader>
-
-        <CardContent>
-          {isEditing && isOwnProfile ? (
-            <ProfileEditForm
-              profile={profile}
-              onSuccess={handleProfileUpdate}
-              onCancel={() => setIsEditing(false)}
-            />
-          ) : (
-            <div className="space-y-4">
-              {profile.bio && (
-                <div>
-                  <h3 className="text-sm font-semibold">Bio</h3>
-                  <p className="text-sm text-muted-foreground">{profile.bio}</p>
-                </div>
-              )}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* CreatePostForm - Only on own profile */}
-      {isOwnProfile && <CreatePostForm />}
-
-      {/* User Posts */}
-      <PostsList posts={posts} currentUserId={currentUserId} emptyMessage="No posts yet" />
+      <span className="text-base font-semibold">@{profile.username}</span>
     </div>
   );
+
+  const content = (
+    <Card className="w-full">
+      <CardHeader className="relative pb-4 pt-6">
+        <div className="mb-6 flex items-center justify-between">
+          <div className="space-y-1">
+            <h2 className="text-2xl font-bold">{profile.displayName}</h2>
+            <p className="text-sm text-muted-foreground">@{profile.username}</p>
+          </div>
+          <Avatar className="h-20 w-20">
+            <AvatarImage src={profile.avatarUrl || ''} alt={profile.username} />
+            <AvatarFallback>{profile.displayName?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
+          </Avatar>
+        </div>
+        {isOwnProfile && !isEditing && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsEditing(true)}
+            className="w-full rounded-lg"
+          >
+            <EditIcon className="mr-2 h-4 w-4" />
+            Edit Profile
+          </Button>
+        )}
+      </CardHeader>
+
+      <CardContent>
+        {isEditing && isOwnProfile ? (
+          <ProfileEditForm
+            profile={profile}
+            onSuccess={handleProfileUpdate}
+            onCancel={() => setIsEditing(false)}
+          />
+        ) : (
+          <div className="space-y-4">
+            {profile.bio && (
+              <div>
+                <h3 className="text-sm font-semibold">Bio</h3>
+                <p className="text-sm text-muted-foreground">{profile.bio}</p>
+              </div>
+            )}
+          </div>
+        )}
+      </CardContent>
+
+      <Separator />
+
+      {/* User Posts inside same card */}
+      <div className="p-0">
+        <PostsList
+          posts={posts}
+          currentUserId={currentUserId}
+          emptyMessage="No posts yet"
+          variant="divider"
+        />
+      </div>
+    </Card>
+  );
+
+  return <ViewTemplate header={header} content={content} centerContent={true} />;
 }

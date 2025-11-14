@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -12,31 +12,20 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { signOut, useSession } from 'next-auth/react';
+import { signOut } from 'next-auth/react';
+import { ProfileSidebar } from '@/components/profile-sidebar';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { CreatePostForm } from '@/components/create-post-form';
 
 export function NavSidebar() {
   const pathname = usePathname();
-  const { data: session } = useSession();
-  const [username, setUsername] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (session?.user?.id) {
-      // Fetch current user's profile to get username
-      fetch('/api/profiles')
-        .then(res => res.json())
-        .then(data => {
-          if (data.profile?.username) {
-            setUsername(data.profile.username);
-          }
-        })
-        .catch(console.error);
-    }
-  }, [session?.user?.id]);
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [profileSidebarOpen, setProfileSidebarOpen] = useState(false);
 
   const navItems = [
     { icon: Home, label: 'Home', href: '/feed' },
     { icon: Search, label: 'Search', href: '/search', disabled: true },
-    { icon: PlusSquare, label: 'Create', href: '/feed', scrollTo: 'create' },
+    { icon: PlusSquare, label: 'Create', action: () => setCreateModalOpen(true) },
     { icon: Heart, label: 'Activity', href: '/activity', disabled: true },
   ];
 
@@ -57,7 +46,7 @@ export function NavSidebar() {
           <nav className="flex flex-1 flex-col items-center justify-center gap-6">
             {navItems.map(item => {
               const Icon = item.icon;
-              const isActive = pathname === item.href;
+              const isActive = item.href ? pathname === item.href : false;
 
               if (item.disabled) {
                 return (
@@ -74,8 +63,23 @@ export function NavSidebar() {
                 );
               }
 
+              if (item.action) {
+                return (
+                  <Button
+                    key={item.label}
+                    variant="ghost"
+                    size="icon"
+                    className="h-14 w-14"
+                    onClick={item.action}
+                    aria-label={item.label}
+                  >
+                    <Icon className="h-7 w-7" />
+                  </Button>
+                );
+              }
+
               return (
-                <Link key={item.label} href={item.href}>
+                <Link key={item.label} href={item.href!}>
                   <Button
                     variant="ghost"
                     size="icon"
@@ -89,23 +93,15 @@ export function NavSidebar() {
             })}
 
             {/* Profile Button */}
-            {username ? (
-              <Link href={`/profile/${username}`}>
-                <Button variant="ghost" size="icon" className="h-14 w-14" aria-label="Profile">
-                  <User className="h-7 w-7" />
-                </Button>
-              </Link>
-            ) : (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-14 w-14 cursor-not-allowed opacity-50"
-                disabled
-                aria-label="Profile"
-              >
-                <User className="h-7 w-7" />
-              </Button>
-            )}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-14 w-14"
+              onClick={() => setProfileSidebarOpen(true)}
+              aria-label="Profile"
+            >
+              <User className="h-7 w-7" />
+            </Button>
           </nav>
 
           {/* Bottom Menu */}
@@ -133,6 +129,29 @@ export function NavSidebar() {
           </DropdownMenu>
         </div>
       </aside>
+
+      {/* Profile Sidebar */}
+      <ProfileSidebar
+        trigger={null}
+        open={profileSidebarOpen}
+        onOpenChange={setProfileSidebarOpen}
+      />
+
+      {/* Create Post Dialog */}
+      <Dialog open={createModalOpen} onOpenChange={setCreateModalOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Create a Post</DialogTitle>
+          </DialogHeader>
+          <CreatePostForm
+            onPostCreated={() => {
+              setCreateModalOpen(false);
+              window.location.reload();
+            }}
+            asDialog
+          />
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

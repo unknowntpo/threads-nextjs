@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { PostWithUser } from '@/lib/repositories/post.repository';
-import { PostCard } from './post-card';
+import { PostsList } from '@/components/posts-list';
 import { Button } from './ui/button';
 import { RefreshCw, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -114,23 +114,14 @@ export function Feed({ currentUserId }: FeedProps) {
         </Button>
       </div>
 
-      {posts.length === 0 ? (
-        <div className="py-12 text-center text-muted-foreground">
-          <p>No posts yet. Be the first to share something!</p>
-        </div>
-      ) : (
-        <div className="space-y-1">
-          {posts.map(post => (
-            <PostCard
-              key={post.id}
-              post={post}
-              currentUserId={currentUserId}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-            />
-          ))}
-        </div>
-      )}
+      <PostsList
+        posts={posts}
+        currentUserId={currentUserId}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        onInteractionChange={() => fetchPosts(true)}
+        emptyMessage="No posts yet. Be the first to share something!"
+      />
     </div>
   );
 }

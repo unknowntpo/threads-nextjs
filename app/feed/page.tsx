@@ -1,9 +1,8 @@
 import { redirect } from 'next/navigation';
 import { ProfileSetupForm } from '@/components/profile-setup-form';
-import { NavSidebar } from '@/components/nav-sidebar';
+import { PostsPageTemplate } from '@/components/posts-page-template';
 import { Feed } from '@/components/feed';
 import { CreatePostForm } from '@/components/create-post-form';
-import { Separator } from '@/components/ui/separator';
 import { auth } from '@/auth';
 import { ProfileRepository } from '@/lib/repositories/profile.repository';
 
@@ -43,23 +42,10 @@ export default async function ProtectedPage() {
     const user = session.user;
 
     return (
-      <>
-        <NavSidebar />
-        <div className="flex w-full flex-1 flex-col items-center pl-20">
-          <div className="w-full max-w-2xl p-6">
-            {/* Content */}
-            <div className="space-y-8" id="create">
-              {/* Create Post Form */}
-              <CreatePostForm />
-
-              <Separator />
-
-              {/* Feed */}
-              <Feed currentUserId={user.id} />
-            </div>
-          </div>
-        </div>
-      </>
+      <PostsPageTemplate
+        beforePosts={<CreatePostForm />}
+        posts={<Feed currentUserId={user.id} />}
+      />
     );
   } catch (error) {
     console.error('Error loading protected page:', error);

@@ -309,7 +309,7 @@ export function PostCard({
         </div>
       </CardHeader>
 
-      <CardContent className="pt-0">
+      <CardContent className="pb-2 pt-0">
         <p
           className="cursor-pointer whitespace-pre-wrap text-sm"
           data-testid="post-content"
@@ -329,7 +329,7 @@ export function PostCard({
           </div>
         )}
 
-        <div className="mt-4 flex items-center justify-between border-t pt-2">
+        <div className="mt-3 flex items-center justify-between border-t pt-3">
           <Button
             variant="ghost"
             size="sm"

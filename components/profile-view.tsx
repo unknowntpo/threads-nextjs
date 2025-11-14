@@ -7,16 +7,21 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ProfileEditForm } from '@/components/profile-edit-form';
+import { PostsList } from '@/components/posts-list';
+import { CreatePostForm } from '@/components/create-post-form';
+import type { PostWithUser } from '@/lib/repositories/post.repository';
 import { EditIcon, ChevronLeft } from 'lucide-react';
 
 interface ProfileViewProps {
   initialProfile: User;
   currentUserId: string;
+  initialPosts: PostWithUser[];
 }
 
-export function ProfileView({ initialProfile, currentUserId }: ProfileViewProps) {
+export function ProfileView({ initialProfile, currentUserId, initialPosts }: ProfileViewProps) {
   const router = useRouter();
   const [profile, setProfile] = useState<User>(initialProfile);
+  const [posts] = useState<PostWithUser[]>(initialPosts);
   const [isEditing, setIsEditing] = useState(false);
 
   const handleProfileUpdate = () => {
@@ -82,6 +87,12 @@ export function ProfileView({ initialProfile, currentUserId }: ProfileViewProps)
           )}
         </CardContent>
       </Card>
+
+      {/* CreatePostForm - Only on own profile */}
+      {isOwnProfile && <CreatePostForm />}
+
+      {/* User Posts */}
+      <PostsList posts={posts} currentUserId={currentUserId} emptyMessage="No posts yet" />
     </div>
   );
 }

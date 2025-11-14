@@ -1,8 +1,9 @@
 import { redirect, notFound } from 'next/navigation';
-import { NavSidebar } from '@/components/nav-sidebar';
+import { PostsPageTemplate } from '@/components/posts-page-template';
 import { ProfileView } from '@/components/profile-view';
 import { auth } from '@/auth';
 import { ProfileRepository } from '@/lib/repositories/profile.repository';
+import { PostRepository } from '@/lib/repositories/post.repository';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,23 +22,30 @@ export default async function ProfilePage({ params }: PageProps) {
 
     const { username } = await params;
 
-    // Fetch profile server-side for instant display
+    // Fetch profile and posts server-side for instant display
     const profileRepo = new ProfileRepository();
+    const postRepo = new PostRepository();
+
     const profile = await profileRepo.findByUsername(username);
 
     if (!profile) {
       notFound();
     }
 
+    // Fetch user's posts with interaction counts
+    const posts = await postRepo.findAllWithCounts(session.user.id, 50, 0);
+    const userPosts = posts.filter(post => post.userId === profile.id);
+
     return (
-      <>
-        <NavSidebar />
-        <div className="flex w-full flex-1 flex-col items-center pl-20">
-          <div className="w-full max-w-2xl p-6">
-            <ProfileView initialProfile={profile} currentUserId={session.user.id} />
-          </div>
-        </div>
-      </>
+      <PostsPageTemplate
+        posts={
+          <ProfileView
+            initialProfile={profile}
+            currentUserId={session.user.id}
+            initialPosts={userPosts}
+          />
+        }
+      />
     );
   } catch (error) {
     console.error('Error loading profile page:', error);

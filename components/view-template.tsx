@@ -25,19 +25,14 @@ export function ViewTemplate({
   return (
     <>
       <NavSidebar />
-      <div className="flex w-full flex-1 flex-col items-center pl-20">
-        <div className={`w-full ${maxWidthClass} p-6`}>
-          <Card className="overflow-hidden">
-            {/* Header slot - Feed tabs or Profile card */}
-            {header}
+      <div className="flex w-full flex-1 flex-col items-center bg-secondary pl-20">
+        <div className={`w-full ${maxWidthClass} -ml-10 p-6`}>
+          {/* Header slot - Feed tabs (outside Card) */}
+          {header}
 
+          <Card className="overflow-hidden">
             {/* Before content slot - CreatePostForm (conditional) */}
-            {beforeContent && (
-              <>
-                <Separator />
-                {beforeContent}
-              </>
-            )}
+            {beforeContent}
 
             {/* Separator before content */}
             {beforeContent && <Separator />}

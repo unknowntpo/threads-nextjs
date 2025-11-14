@@ -3,8 +3,7 @@
 import { useState, useEffect } from 'react';
 import { PostWithUser } from '@/lib/repositories/post.repository';
 import { PostsList } from '@/components/posts-list';
-import { Button } from './ui/button';
-import { RefreshCw, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface FeedProps {
@@ -14,13 +13,11 @@ interface FeedProps {
 export function Feed({ currentUserId }: FeedProps) {
   const [posts, setPosts] = useState<PostWithUser[]>([]);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const { toast } = useToast();
 
   const fetchPosts = async (isRefresh = false) => {
     console.log('[Feed] fetchPosts called, isRefresh:', isRefresh);
-    if (isRefresh) setRefreshing(true);
-    else setLoading(true);
+    if (!isRefresh) setLoading(true);
 
     try {
       console.log('[Feed] Fetching /api/feeds...');
@@ -50,7 +47,6 @@ export function Feed({ currentUserId }: FeedProps) {
     } finally {
       console.log('[Feed] Finally block - setting loading to false');
       setLoading(false);
-      setRefreshing(false);
     }
   };
 
@@ -105,23 +101,13 @@ export function Feed({ currentUserId }: FeedProps) {
   }
 
   return (
-    <div className="mx-auto w-full max-w-2xl space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Feed</h2>
-        <Button variant="outline" size="sm" onClick={() => fetchPosts(true)} disabled={refreshing}>
-          <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-          <span className="ml-2">Refresh</span>
-        </Button>
-      </div>
-
-      <PostsList
-        posts={posts}
-        currentUserId={currentUserId}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        onInteractionChange={() => fetchPosts(true)}
-        emptyMessage="No posts yet. Be the first to share something!"
-      />
-    </div>
+    <PostsList
+      posts={posts}
+      currentUserId={currentUserId}
+      onEdit={handleEdit}
+      onDelete={handleDelete}
+      onInteractionChange={() => fetchPosts(true)}
+      emptyMessage="No posts yet. Be the first to share something!"
+    />
   );
 }

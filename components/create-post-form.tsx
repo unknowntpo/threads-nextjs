@@ -13,9 +13,10 @@ import type { Post } from '@prisma/client';
 
 interface CreatePostFormProps {
   onPostCreated?: (post: Post) => void;
+  asDialog?: boolean;
 }
 
-export function CreatePostForm({ onPostCreated }: CreatePostFormProps) {
+export function CreatePostForm({ onPostCreated, asDialog = false }: CreatePostFormProps) {
   const [content, setContent] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [loading, setLoading] = useState(false);
@@ -87,107 +88,113 @@ export function CreatePostForm({ onPostCreated }: CreatePostFormProps) {
 
   const remainingChars = 500 - content.length;
 
+  const formContent = (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="content">What&apos;s on your mind?</Label>
+        <Textarea
+          id="content"
+          name="content"
+          placeholder="Share your thoughts..."
+          value={content}
+          onChange={e => setContent(e.target.value)}
+          className="min-h-[120px] resize-none"
+          maxLength={500}
+          disabled={loading}
+          data-testid="create-post-textarea"
+        />
+        <div className="flex items-center justify-between text-sm text-muted-foreground">
+          <span>{remainingChars} characters remaining</span>
+        </div>
+      </div>
+
+      {showImageInput && (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="image-url">Image URL (optional)</Label>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={removeImage}
+              className="h-6 w-6 p-0"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+          <Input
+            id="image-url"
+            name="image_url"
+            type="url"
+            placeholder="https://example.com/image.jpg"
+            value={imageUrl}
+            onChange={e => setImageUrl(e.target.value)}
+            disabled={loading}
+          />
+          {imageUrl && (
+            <div className="mt-2">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={imageUrl}
+                alt="Preview"
+                className="max-h-40 rounded-lg border"
+                onError={() => {
+                  toast({
+                    title: 'Invalid Image',
+                    description: 'The image URL appears to be invalid',
+                    variant: 'destructive',
+                  });
+                }}
+              />
+            </div>
+          )}
+        </div>
+      )}
+
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-2">
+          {!showImageInput && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setShowImageInput(true)}
+              disabled={loading}
+            >
+              <ImagePlus className="mr-2 h-4 w-4" />
+              Add Image
+            </Button>
+          )}
+        </div>
+
+        <Button
+          type="submit"
+          disabled={loading || !content.trim() || remainingChars < 0}
+          data-testid="create-post-submit-button"
+        >
+          {loading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Posting...
+            </>
+          ) : (
+            'Post'
+          )}
+        </Button>
+      </div>
+    </form>
+  );
+
+  if (asDialog) {
+    return formContent;
+  }
+
   return (
     <Card className="mx-auto w-full max-w-2xl">
       <CardHeader>
         <CardTitle>Create a Post</CardTitle>
       </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="content">What&apos;s on your mind?</Label>
-            <Textarea
-              id="content"
-              name="content"
-              placeholder="Share your thoughts..."
-              value={content}
-              onChange={e => setContent(e.target.value)}
-              className="min-h-[120px] resize-none"
-              maxLength={500}
-              disabled={loading}
-              data-testid="create-post-textarea"
-            />
-            <div className="flex items-center justify-between text-sm text-muted-foreground">
-              <span>{remainingChars} characters remaining</span>
-            </div>
-          </div>
-
-          {showImageInput && (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="image-url">Image URL (optional)</Label>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={removeImage}
-                  className="h-6 w-6 p-0"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-              <Input
-                id="image-url"
-                name="image_url"
-                type="url"
-                placeholder="https://example.com/image.jpg"
-                value={imageUrl}
-                onChange={e => setImageUrl(e.target.value)}
-                disabled={loading}
-              />
-              {imageUrl && (
-                <div className="mt-2">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={imageUrl}
-                    alt="Preview"
-                    className="max-h-40 rounded-lg border"
-                    onError={() => {
-                      toast({
-                        title: 'Invalid Image',
-                        description: 'The image URL appears to be invalid',
-                        variant: 'destructive',
-                      });
-                    }}
-                  />
-                </div>
-              )}
-            </div>
-          )}
-
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              {!showImageInput && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowImageInput(true)}
-                  disabled={loading}
-                >
-                  <ImagePlus className="mr-2 h-4 w-4" />
-                  Add Image
-                </Button>
-              )}
-            </div>
-
-            <Button
-              type="submit"
-              disabled={loading || !content.trim() || remainingChars < 0}
-              data-testid="create-post-submit-button"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Posting...
-                </>
-              ) : (
-                'Post'
-              )}
-            </Button>
-          </div>
-        </form>
-      </CardContent>
+      <CardContent>{formContent}</CardContent>
     </Card>
   );
 }

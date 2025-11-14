@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import { ProfileSetupForm } from '@/components/profile-setup-form';
-import { PostsPageTemplate } from '@/components/posts-page-template';
+import { ViewTemplate } from '@/components/view-template';
 import { Feed } from '@/components/feed';
 import { CreatePostForm } from '@/components/create-post-form';
 import { auth } from '@/auth';
@@ -42,10 +42,7 @@ export default async function ProtectedPage() {
     const user = session.user;
 
     return (
-      <PostsPageTemplate
-        beforePosts={<CreatePostForm />}
-        posts={<Feed currentUserId={user.id} />}
-      />
+      <ViewTemplate beforeContent={<CreatePostForm />} content={<Feed currentUserId={user.id} />} />
     );
   } catch (error) {
     console.error('Error loading protected page:', error);

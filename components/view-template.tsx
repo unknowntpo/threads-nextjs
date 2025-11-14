@@ -1,19 +1,19 @@
 import { NavSidebar } from '@/components/nav-sidebar';
 import { Separator } from '@/components/ui/separator';
 
-interface PostsPageTemplateProps {
+interface ViewTemplateProps {
   header?: React.ReactNode;
-  beforePosts?: React.ReactNode;
-  posts: React.ReactNode;
+  beforeContent?: React.ReactNode;
+  content: React.ReactNode;
   maxWidth?: 'sm' | 'md' | 'lg' | '2xl';
 }
 
-export function PostsPageTemplate({
+export function ViewTemplate({
   header,
-  beforePosts,
-  posts,
+  beforeContent,
+  content,
   maxWidth = '2xl',
-}: PostsPageTemplateProps) {
+}: ViewTemplateProps) {
   const maxWidthClass = {
     sm: 'max-w-sm',
     md: 'max-w-md',
@@ -30,16 +30,16 @@ export function PostsPageTemplate({
             {/* Header slot - Feed tabs or Profile card */}
             {header && <div>{header}</div>}
 
-            {/* Before posts slot - CreatePostForm (conditional) */}
-            {beforePosts && (
+            {/* Before content slot - CreatePostForm (conditional) */}
+            {beforeContent && (
               <>
-                {beforePosts}
+                {beforeContent}
                 <Separator />
               </>
             )}
 
-            {/* Posts slot - Feed or PostsList */}
-            {posts}
+            {/* Content slot - Feed or PostsList */}
+            {content}
           </div>
         </div>
       </div>

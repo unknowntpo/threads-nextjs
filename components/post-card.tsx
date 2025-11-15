@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { PostWithUser } from '@/lib/repositories/post.repository';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';

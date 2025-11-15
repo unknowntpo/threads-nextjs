@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach } from 'vitest'
-import { FollowRepository } from '@/lib/repositories/follow.repository'
-import { cleanupDatabase, createTestUser } from '@/tests/helpers/db'
+import { describe, it, expect, beforeEach } from 'vitest';
+import { FollowRepository } from '@/lib/repositories/follow.repository';
+import { cleanupDatabase, createTestUser } from '@/tests/helpers/db';
 
 /**
  * Integration tests for FollowRepository
@@ -13,159 +13,263 @@ import { cleanupDatabase, createTestUser } from '@/tests/helpers/db'
  */
 
 describe('FollowRepository', () => {
-  let followRepo: FollowRepository
+  let followRepo: FollowRepository;
 
   beforeEach(async () => {
-    await cleanupDatabase()
-    followRepo = new FollowRepository()
-  })
+    await cleanupDatabase();
+    followRepo = new FollowRepository();
+  });
 
   describe('create', () => {
     it('should create a follow relationship', async () => {
-      const alice = await createTestUser({ email: 'alice@example.com', username: 'alice' })
-      const bob = await createTestUser({ email: 'bob@example.com', username: 'bob' })
+      const alice = await createTestUser({
+        email: 'alice@example.com',
+        username: 'alice',
+        password: 'password123',
+      });
+      const bob = await createTestUser({
+        email: 'bob@example.com',
+        username: 'bob',
+        password: 'password123',
+      });
 
-      const follow = await followRepo.create(alice.id, bob.id)
+      const follow = await followRepo.create(alice.id, bob.id);
 
-      expect(follow).toBeDefined()
-      expect(follow.followerId).toBe(alice.id)
-      expect(follow.followingId).toBe(bob.id)
-    })
+      expect(follow).toBeDefined();
+      expect(follow.followerId).toBe(alice.id);
+      expect(follow.followingId).toBe(bob.id);
+    });
 
     it('should fail when following the same user twice', async () => {
-      const alice = await createTestUser({ email: 'alice@example.com', username: 'alice' })
-      const bob = await createTestUser({ email: 'bob@example.com', username: 'bob' })
+      const alice = await createTestUser({
+        email: 'alice@example.com',
+        username: 'alice',
+        password: 'password123',
+      });
+      const bob = await createTestUser({
+        email: 'bob@example.com',
+        username: 'bob',
+        password: 'password123',
+      });
 
-      await followRepo.create(alice.id, bob.id)
+      await followRepo.create(alice.id, bob.id);
 
       // Prisma should throw a unique constraint error
-      await expect(followRepo.create(alice.id, bob.id)).rejects.toThrow()
-    })
-  })
+      await expect(followRepo.create(alice.id, bob.id)).rejects.toThrow();
+    });
+  });
 
   describe('delete', () => {
     it('should delete a follow relationship', async () => {
-      const alice = await createTestUser({ email: 'alice@example.com', username: 'alice' })
-      const bob = await createTestUser({ email: 'bob@example.com', username: 'bob' })
+      const alice = await createTestUser({
+        email: 'alice@example.com',
+        username: 'alice',
+        password: 'password123',
+      });
+      const bob = await createTestUser({
+        email: 'bob@example.com',
+        username: 'bob',
+        password: 'password123',
+      });
 
-      await followRepo.create(alice.id, bob.id)
-      await followRepo.delete(alice.id, bob.id)
+      await followRepo.create(alice.id, bob.id);
+      await followRepo.delete(alice.id, bob.id);
 
-      const isFollowing = await followRepo.isFollowing(alice.id, bob.id)
-      expect(isFollowing).toBe(false)
-    })
+      const isFollowing = await followRepo.isFollowing(alice.id, bob.id);
+      expect(isFollowing).toBe(false);
+    });
 
     it('should fail when deleting non-existent follow', async () => {
-      const alice = await createTestUser({ email: 'alice@example.com', username: 'alice' })
-      const bob = await createTestUser({ email: 'bob@example.com', username: 'bob' })
+      const alice = await createTestUser({
+        email: 'alice@example.com',
+        username: 'alice',
+        password: 'password123',
+      });
+      const bob = await createTestUser({
+        email: 'bob@example.com',
+        username: 'bob',
+        password: 'password123',
+      });
 
       // Prisma should throw not found error
-      await expect(followRepo.delete(alice.id, bob.id)).rejects.toThrow()
-    })
-  })
+      await expect(followRepo.delete(alice.id, bob.id)).rejects.toThrow();
+    });
+  });
 
   describe('isFollowing', () => {
     it('should return true when user is following another', async () => {
-      const alice = await createTestUser({ email: 'alice@example.com', username: 'alice' })
-      const bob = await createTestUser({ email: 'bob@example.com', username: 'bob' })
+      const alice = await createTestUser({
+        email: 'alice@example.com',
+        username: 'alice',
+        password: 'password123',
+      });
+      const bob = await createTestUser({
+        email: 'bob@example.com',
+        username: 'bob',
+        password: 'password123',
+      });
 
-      await followRepo.create(alice.id, bob.id)
+      await followRepo.create(alice.id, bob.id);
 
-      const isFollowing = await followRepo.isFollowing(alice.id, bob.id)
-      expect(isFollowing).toBe(true)
-    })
+      const isFollowing = await followRepo.isFollowing(alice.id, bob.id);
+      expect(isFollowing).toBe(true);
+    });
 
     it('should return false when user is not following another', async () => {
-      const alice = await createTestUser({ email: 'alice@example.com', username: 'alice' })
-      const bob = await createTestUser({ email: 'bob@example.com', username: 'bob' })
+      const alice = await createTestUser({
+        email: 'alice@example.com',
+        username: 'alice',
+        password: 'password123',
+      });
+      const bob = await createTestUser({
+        email: 'bob@example.com',
+        username: 'bob',
+        password: 'password123',
+      });
 
-      const isFollowing = await followRepo.isFollowing(alice.id, bob.id)
-      expect(isFollowing).toBe(false)
-    })
+      const isFollowing = await followRepo.isFollowing(alice.id, bob.id);
+      expect(isFollowing).toBe(false);
+    });
 
     it('should be directional (A follows B does not mean B follows A)', async () => {
-      const alice = await createTestUser({ email: 'alice@example.com', username: 'alice' })
-      const bob = await createTestUser({ email: 'bob@example.com', username: 'bob' })
+      const alice = await createTestUser({
+        email: 'alice@example.com',
+        username: 'alice',
+        password: 'password123',
+      });
+      const bob = await createTestUser({
+        email: 'bob@example.com',
+        username: 'bob',
+        password: 'password123',
+      });
 
-      await followRepo.create(alice.id, bob.id)
+      await followRepo.create(alice.id, bob.id);
 
-      const aliceFollowsBob = await followRepo.isFollowing(alice.id, bob.id)
-      const bobFollowsAlice = await followRepo.isFollowing(bob.id, alice.id)
+      const aliceFollowsBob = await followRepo.isFollowing(alice.id, bob.id);
+      const bobFollowsAlice = await followRepo.isFollowing(bob.id, alice.id);
 
-      expect(aliceFollowsBob).toBe(true)
-      expect(bobFollowsAlice).toBe(false)
-    })
-  })
+      expect(aliceFollowsBob).toBe(true);
+      expect(bobFollowsAlice).toBe(false);
+    });
+  });
 
   describe('getFollowerCount', () => {
     it('should return correct follower count', async () => {
-      const alice = await createTestUser({ email: 'alice@example.com', username: 'alice' })
-      const bob = await createTestUser({ email: 'bob@example.com', username: 'bob' })
-      const charlie = await createTestUser({ email: 'charlie@example.com', username: 'charlie' })
+      const alice = await createTestUser({
+        email: 'alice@example.com',
+        username: 'alice',
+        password: 'password123',
+      });
+      const bob = await createTestUser({
+        email: 'bob@example.com',
+        username: 'bob',
+        password: 'password123',
+      });
+      const charlie = await createTestUser({
+        email: 'charlie@example.com',
+        username: 'charlie',
+        password: 'password123',
+      });
 
       // Bob and Charlie follow Alice
-      await followRepo.create(bob.id, alice.id)
-      await followRepo.create(charlie.id, alice.id)
+      await followRepo.create(bob.id, alice.id);
+      await followRepo.create(charlie.id, alice.id);
 
-      const followerCount = await followRepo.getFollowerCount(alice.id)
-      expect(followerCount).toBe(2)
-    })
+      const followerCount = await followRepo.getFollowerCount(alice.id);
+      expect(followerCount).toBe(2);
+    });
 
     it('should return 0 when user has no followers', async () => {
-      const alice = await createTestUser({ email: 'alice@example.com', username: 'alice' })
+      const alice = await createTestUser({
+        email: 'alice@example.com',
+        username: 'alice',
+        password: 'password123',
+      });
 
-      const followerCount = await followRepo.getFollowerCount(alice.id)
-      expect(followerCount).toBe(0)
-    })
-  })
+      const followerCount = await followRepo.getFollowerCount(alice.id);
+      expect(followerCount).toBe(0);
+    });
+  });
 
   describe('getFollowingCount', () => {
     it('should return correct following count', async () => {
-      const alice = await createTestUser({ email: 'alice@example.com', username: 'alice' })
-      const bob = await createTestUser({ email: 'bob@example.com', username: 'bob' })
-      const charlie = await createTestUser({ email: 'charlie@example.com', username: 'charlie' })
+      const alice = await createTestUser({
+        email: 'alice@example.com',
+        username: 'alice',
+        password: 'password123',
+      });
+      const bob = await createTestUser({
+        email: 'bob@example.com',
+        username: 'bob',
+        password: 'password123',
+      });
+      const charlie = await createTestUser({
+        email: 'charlie@example.com',
+        username: 'charlie',
+        password: 'password123',
+      });
 
       // Alice follows Bob and Charlie
-      await followRepo.create(alice.id, bob.id)
-      await followRepo.create(alice.id, charlie.id)
+      await followRepo.create(alice.id, bob.id);
+      await followRepo.create(alice.id, charlie.id);
 
-      const followingCount = await followRepo.getFollowingCount(alice.id)
-      expect(followingCount).toBe(2)
-    })
+      const followingCount = await followRepo.getFollowingCount(alice.id);
+      expect(followingCount).toBe(2);
+    });
 
     it('should return 0 when user is not following anyone', async () => {
-      const alice = await createTestUser({ email: 'alice@example.com', username: 'alice' })
+      const alice = await createTestUser({
+        email: 'alice@example.com',
+        username: 'alice',
+        password: 'password123',
+      });
 
-      const followingCount = await followRepo.getFollowingCount(alice.id)
-      expect(followingCount).toBe(0)
-    })
-  })
+      const followingCount = await followRepo.getFollowingCount(alice.id);
+      expect(followingCount).toBe(0);
+    });
+  });
 
   describe('Complex scenarios', () => {
     it('should handle mutual follows correctly', async () => {
-      const alice = await createTestUser({ email: 'alice@example.com', username: 'alice' })
-      const bob = await createTestUser({ email: 'bob@example.com', username: 'bob' })
+      const alice = await createTestUser({
+        email: 'alice@example.com',
+        username: 'alice',
+        password: 'password123',
+      });
+      const bob = await createTestUser({
+        email: 'bob@example.com',
+        username: 'bob',
+        password: 'password123',
+      });
 
       // Mutual follow
-      await followRepo.create(alice.id, bob.id)
-      await followRepo.create(bob.id, alice.id)
+      await followRepo.create(alice.id, bob.id);
+      await followRepo.create(bob.id, alice.id);
 
-      expect(await followRepo.isFollowing(alice.id, bob.id)).toBe(true)
-      expect(await followRepo.isFollowing(bob.id, alice.id)).toBe(true)
-      expect(await followRepo.getFollowerCount(alice.id)).toBe(1) // Bob follows Alice
-      expect(await followRepo.getFollowingCount(alice.id)).toBe(1) // Alice follows Bob
-    })
+      expect(await followRepo.isFollowing(alice.id, bob.id)).toBe(true);
+      expect(await followRepo.isFollowing(bob.id, alice.id)).toBe(true);
+      expect(await followRepo.getFollowerCount(alice.id)).toBe(1); // Bob follows Alice
+      expect(await followRepo.getFollowingCount(alice.id)).toBe(1); // Alice follows Bob
+    });
 
     it('should update counts correctly when unfollowing', async () => {
-      const alice = await createTestUser({ email: 'alice@example.com', username: 'alice' })
-      const bob = await createTestUser({ email: 'bob@example.com', username: 'bob' })
+      const alice = await createTestUser({
+        email: 'alice@example.com',
+        username: 'alice',
+        password: 'password123',
+      });
+      const bob = await createTestUser({
+        email: 'bob@example.com',
+        username: 'bob',
+        password: 'password123',
+      });
 
-      await followRepo.create(alice.id, bob.id)
-      expect(await followRepo.getFollowingCount(alice.id)).toBe(1)
+      await followRepo.create(alice.id, bob.id);
+      expect(await followRepo.getFollowingCount(alice.id)).toBe(1);
 
-      await followRepo.delete(alice.id, bob.id)
-      expect(await followRepo.getFollowingCount(alice.id)).toBe(0)
-      expect(await followRepo.isFollowing(alice.id, bob.id)).toBe(false)
-    })
-  })
-})
+      await followRepo.delete(alice.id, bob.id);
+      expect(await followRepo.getFollowingCount(alice.id)).toBe(0);
+      expect(await followRepo.isFollowing(alice.id, bob.id)).toBe(false);
+    });
+  });
+});

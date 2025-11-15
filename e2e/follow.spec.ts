@@ -146,7 +146,6 @@ test.describe('Follow Functionality', () => {
       email: 'bob@example.com',
       username: 'bob',
       displayName: 'Bob Smith',
-      bio: "Bob's amazing bio",
     });
 
     // Bob creates a post

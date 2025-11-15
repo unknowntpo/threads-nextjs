@@ -99,12 +99,7 @@ export function ProfileView({ initialProfile, currentUserId, initialPosts }: Pro
 
       {/* User Posts inside same card */}
       <div className="p-0">
-        <PostsList
-          posts={posts}
-          currentUserId={currentUserId}
-          emptyMessage="No posts yet"
-          variant="divider"
-        />
+        <PostsList posts={posts} currentUserId={currentUserId} emptyMessage="No posts yet" />
       </div>
     </Card>
   );

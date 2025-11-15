@@ -42,12 +42,12 @@ describe('UserActionMenu', () => {
           username="otheruser"
           displayName="Other User"
           currentUserId="current-user-id"
-          trigger={<button>Hover me</button>}
+          trigger={<button data-testid="trigger-other">Hover me</button>}
         />
       );
 
       // Hover over trigger to open hover card
-      const trigger = screen.getByText('Hover me');
+      const trigger = screen.getByTestId('trigger-other');
       await userEvent.hover(trigger);
 
       // Wait for hover card to open and Follow button to appear
@@ -66,12 +66,12 @@ describe('UserActionMenu', () => {
           username="currentuser"
           displayName="Current User"
           currentUserId="current-user-id"
-          trigger={<button>Hover me</button>}
+          trigger={<button data-testid="trigger-self">Hover me</button>}
         />
       );
 
       // Hover over trigger to open hover card
-      const trigger = screen.getByText('Hover me');
+      const trigger = screen.getByTestId('trigger-self');
       await userEvent.hover(trigger);
 
       // Wait for hover card to open and check user info appears
@@ -93,12 +93,12 @@ describe('UserActionMenu', () => {
           username="otheruser"
           displayName="Other User"
           currentUserId="current-user-id"
-          trigger={<button>Hover me</button>}
+          trigger={<button data-testid="trigger-rerender">Hover me</button>}
         />
       );
 
       // Hover to open hover card
-      const trigger = screen.getByText('Hover me');
+      const trigger = screen.getByTestId('trigger-rerender');
       await userEvent.hover(trigger);
 
       await waitFor(
@@ -124,7 +124,7 @@ describe('UserActionMenu', () => {
           username="currentuser"
           displayName="Current User"
           currentUserId="current-user-id"
-          trigger={<button>Hover me</button>}
+          trigger={<button data-testid="trigger-rerender">Hover me</button>}
         />
       );
 
@@ -149,12 +149,12 @@ describe('UserActionMenu', () => {
           displayName="Test User"
           avatarUrl="https://example.com/avatar.jpg"
           currentUserId="current-user-id"
-          trigger={<button>Hover me</button>}
+          trigger={<button data-testid="trigger-info">Hover me</button>}
         />
       );
 
       // Hover to open hover card
-      const trigger = screen.getByText('Hover me');
+      const trigger = screen.getByTestId('trigger-info');
       await userEvent.hover(trigger);
 
       await waitFor(

@@ -3,12 +3,12 @@
  * This script configures Keycloak with a test realm, client, and users
  */
 
-const KEYCLOAK_URL = 'http://localhost:8080'
-const ADMIN_USERNAME = 'admin'
-const ADMIN_PASSWORD = 'admin'
-const REALM_NAME = 'threads-test'
-const CLIENT_ID = 'threads-app'
-const CLIENT_SECRET = 'test-client-secret'
+const KEYCLOAK_URL = 'http://localhost:8080';
+const ADMIN_USERNAME = 'admin';
+const ADMIN_PASSWORD = 'admin';
+const REALM_NAME = 'threads-test';
+const CLIENT_ID = 'threads-app';
+const CLIENT_SECRET = 'test-client-secret';
 
 async function getAdminToken() {
   const response = await fetch(`${KEYCLOAK_URL}/realms/master/protocol/openid-connect/token`, {
@@ -21,15 +21,15 @@ async function getAdminToken() {
       password: ADMIN_PASSWORD,
       grant_type: 'password',
       client_id: 'admin-cli',
-    }),
-  })
+    }).toString(),
+  });
 
   if (!response.ok) {
-    throw new Error(`Failed to get admin token: ${response.statusText}`)
+    throw new Error(`Failed to get admin token: ${response.statusText}`);
   }
 
-  const data = await response.json()
-  return data.access_token
+  const data = await response.json();
+  return data.access_token;
 }
 
 async function createRealm(token: string) {
@@ -43,10 +43,10 @@ async function createRealm(token: string) {
       realm: REALM_NAME,
       enabled: true,
     }),
-  })
+  });
 
   if (!response.ok && response.status !== 409) {
-    throw new Error(`Failed to create realm: ${response.statusText}`)
+    throw new Error(`Failed to create realm: ${response.statusText}`);
   }
 }
 
@@ -70,10 +70,10 @@ async function createClient(token: string) {
       standardFlowEnabled: true,
       implicitFlowEnabled: false,
     }),
-  })
+  });
 
   if (!response.ok && response.status !== 409) {
-    throw new Error(`Failed to create client: ${response.statusText}`)
+    throw new Error(`Failed to create client: ${response.statusText}`);
   }
 }
 
@@ -98,10 +98,10 @@ async function createTestUser(token: string, username: string, email: string, pa
         },
       ],
     }),
-  })
+  });
 
   if (!createResponse.ok && createResponse.status !== 409) {
-    throw new Error(`Failed to create user: ${createResponse.statusText}`)
+    throw new Error(`Failed to create user: ${createResponse.statusText}`);
   }
 
   // Get user ID
@@ -112,14 +112,14 @@ async function createTestUser(token: string, username: string, email: string, pa
         Authorization: `Bearer ${token}`,
       },
     }
-  )
+  );
 
-  const users = await usersResponse.json()
+  const users = await usersResponse.json();
   if (users.length === 0) {
-    throw new Error('User not found after creation')
+    throw new Error('User not found after creation');
   }
 
-  const userId = users[0].id
+  const userId = users[0].id;
 
   // Ensure password is set again and remove all required actions
   await fetch(`${KEYCLOAK_URL}/admin/realms/${REALM_NAME}/users/${userId}/reset-password`, {
@@ -133,7 +133,7 @@ async function createTestUser(token: string, username: string, email: string, pa
       value: password,
       temporary: false,
     }),
-  })
+  });
 
   // Execute required actions removal
   await fetch(`${KEYCLOAK_URL}/admin/realms/${REALM_NAME}/users/${userId}/execute-actions-email`, {
@@ -143,7 +143,7 @@ async function createTestUser(token: string, username: string, email: string, pa
       Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify([]),
-  })
+  });
 
   // Update user to remove required actions
   const updateResponse = await fetch(`${KEYCLOAK_URL}/admin/realms/${REALM_NAME}/users/${userId}`, {
@@ -159,47 +159,47 @@ async function createTestUser(token: string, username: string, email: string, pa
       emailVerified: true,
       requiredActions: [],
     }),
-  })
+  });
 
   if (!updateResponse.ok) {
-    console.error('Failed to update user:', await updateResponse.text())
+    console.error('Failed to update user:', await updateResponse.text());
   }
 }
 
 export async function setupKeycloak() {
   try {
-    console.log('Setting up Keycloak for tests...')
+    console.log('Setting up Keycloak for tests...');
 
-    const token = await getAdminToken()
-    console.log('✓ Got admin token')
+    const token = await getAdminToken();
+    console.log('✓ Got admin token');
 
-    await createRealm(token)
-    console.log('✓ Created realm')
+    await createRealm(token);
+    console.log('✓ Created realm');
 
-    await createClient(token)
-    console.log('✓ Created client')
+    await createClient(token);
+    console.log('✓ Created client');
 
-    await createTestUser(token, 'testuser', 'test@example.com', 'password123')
-    console.log('✓ Created test user')
+    await createTestUser(token, 'testuser', 'test@example.com', 'password123');
+    console.log('✓ Created test user');
 
-    console.log('Keycloak setup complete!')
+    console.log('Keycloak setup complete!');
 
     return {
       realmName: REALM_NAME,
       clientId: CLIENT_ID,
       clientSecret: CLIENT_SECRET,
       issuer: `${KEYCLOAK_URL}/realms/${REALM_NAME}`,
-    }
+    };
   } catch (error) {
-    console.error('Failed to setup Keycloak:', error)
-    throw error
+    console.error('Failed to setup Keycloak:', error);
+    throw error;
   }
 }
 
 // Run if called directly
-const isMainModule = import.meta.url === `file://${process.argv[1]}`
+const isMainModule = import.meta.url === `file://${process.argv[1]}`;
 if (isMainModule) {
   setupKeycloak()
     .then(() => process.exit(0))
-    .catch(() => process.exit(1))
+    .catch(() => process.exit(1));
 }

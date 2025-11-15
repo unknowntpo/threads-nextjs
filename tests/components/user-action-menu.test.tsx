@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import React from 'react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { UserActionMenu } from '@/components/user-action-menu';
@@ -32,6 +32,11 @@ describe('UserActionMenu', () => {
       }
       return Promise.reject(new Error('Unknown endpoint'));
     });
+  });
+
+  afterEach(() => {
+    // Clean up to prevent React cleanup timing errors
+    vi.clearAllTimers();
   });
 
   describe('Follow button visibility', () => {

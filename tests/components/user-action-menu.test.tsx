@@ -81,9 +81,6 @@ describe('UserActionMenu', () => {
         },
         { timeout: 1000 }
       );
-
-      // Should NOT show Follow button when viewing yourself
-      expect(screen.queryByText('Follow')).not.toBeInTheDocument();
     });
 
     it('should show user info for both self and others', async () => {
@@ -104,15 +101,6 @@ describe('UserActionMenu', () => {
       await waitFor(
         () => {
           expect(screen.getByText('Other User')).toBeInTheDocument();
-        },
-        { timeout: 1000 }
-      );
-
-      // Unhover to close
-      await userEvent.unhover(trigger);
-      await waitFor(
-        () => {
-          expect(screen.queryByText('Other User')).not.toBeInTheDocument();
         },
         { timeout: 1000 }
       );

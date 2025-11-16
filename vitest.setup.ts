@@ -1,7 +1,8 @@
-import { beforeAll, afterAll } from 'vitest';
+import { beforeAll, afterAll, afterEach } from 'vitest';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import { setupKeycloak } from './tests/setup-keycloak';
+import { cleanup } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 
 const execAsync = promisify(exec);
@@ -11,6 +12,11 @@ process.env.DATABASE_URL =
   'postgresql://postgres:postgres@localhost:5433/threads_test?schema=public';
 process.env.NEXTAUTH_SECRET = 'test-secret';
 process.env.NEXTAUTH_URL = 'http://localhost:3000';
+
+// Cleanup React components after each test
+afterEach(() => {
+  cleanup();
+});
 
 // Setup test database and Keycloak
 beforeAll(async () => {

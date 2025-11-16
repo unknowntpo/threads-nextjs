@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import React from 'react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { PostCard } from '@/components/post-card';
@@ -65,6 +65,11 @@ describe('PostCard - Hover Behavior', () => {
       }
       return Promise.reject(new Error('Unknown endpoint'));
     });
+  });
+
+  afterEach(() => {
+    // Clean up to prevent React cleanup timing errors
+    vi.clearAllTimers();
   });
 
   it('should show UserActionMenu hover card on hover over username', async () => {

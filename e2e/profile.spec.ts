@@ -137,11 +137,20 @@ test.describe('Profile Management', () => {
     await loginUser(page, user.email, password);
     await page.goto('/profile');
 
-    // Should see user's posts
+    // Wait for redirect to feed
+    await page.waitForURL('/feed', { timeout: 10000 });
+
+    // Wait for posts to load
+    await page.waitForSelector('[data-testid="post-card"]', {
+      state: 'visible',
+      timeout: 15000,
+    });
+
+    // Verify Alice's posts are visible in the feed
     await expect(page.locator('text=/Just deployed my first Next.js app/i')).toBeVisible({
       timeout: 10000,
     });
-    await expect(page.locator('text=/Just deployed my first Next.js app/i')).toBeVisible({
+    await expect(page.locator('text=/Shadcn\\/ui is awesome/i')).toBeVisible({
       timeout: 10000,
     });
   });

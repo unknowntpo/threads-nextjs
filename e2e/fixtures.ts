@@ -16,6 +16,7 @@ async function cleanDatabase() {
     prisma.notification.deleteMany(),
     prisma.comment.deleteMany(),
     prisma.like.deleteMany(),
+    prisma.follow.deleteMany(),
     prisma.post.deleteMany(),
     prisma.session.deleteMany(),
     prisma.account.deleteMany(),

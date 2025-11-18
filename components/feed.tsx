@@ -3,8 +3,9 @@
 import { useState, useEffect } from 'react';
 import { PostWithUser } from '@/lib/repositories/post.repository';
 import { PostsList } from '@/components/posts-list';
-import { Loader2 } from 'lucide-react';
+import { Loader2, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
 
 interface FeedProps {
   currentUserId?: string;
@@ -12,12 +13,12 @@ interface FeedProps {
 
 export function Feed({ currentUserId }: FeedProps) {
   const [posts, setPosts] = useState<PostWithUser[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
-  const fetchPosts = async (isRefresh = false) => {
-    console.log('[Feed] fetchPosts called, isRefresh:', isRefresh);
-    if (!isRefresh) setLoading(true);
+  const fetchPosts = async () => {
+    console.log('[Feed] fetchPosts called');
+    setIsLoading(true);
 
     try {
       console.log('[Feed] Fetching /api/feeds...');
@@ -46,7 +47,7 @@ export function Feed({ currentUserId }: FeedProps) {
       });
     } finally {
       console.log('[Feed] Finally block - setting loading to false');
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
@@ -89,9 +90,9 @@ export function Feed({ currentUserId }: FeedProps) {
     console.log('[Feed] Component mounted, currentUserId:', currentUserId);
     fetchPosts();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, []); // Empty array - only runs on mount
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
         <Loader2 className="h-6 w-6 animate-spin" />
@@ -101,13 +102,19 @@ export function Feed({ currentUserId }: FeedProps) {
   }
 
   return (
-    <PostsList
-      posts={posts}
-      currentUserId={currentUserId}
-      onEdit={handleEdit}
-      onDelete={handleDelete}
-      onInteractionChange={() => fetchPosts(true)}
-      emptyMessage="No posts yet. Be the first to share something!"
-    />
+    <div>
+      <Button variant="outline" size="sm" onClick={() => fetchPosts()} disabled={isLoading}>
+        <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+        Refresh
+      </Button>
+      <PostsList
+        posts={posts}
+        currentUserId={currentUserId}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        onInteractionChange={() => fetchPosts()}
+        emptyMessage="No posts yet. Be the first to share something!"
+      />
+    </div>
   );
 }

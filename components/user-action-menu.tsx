@@ -132,6 +132,7 @@ export function UserActionMenu({
 
           {!isViewingSelf && (
             <Button
+              data-testid="follow-toggle-button"
               onClick={handleFollowToggle}
               disabled={isLoadingFollow}
               variant={isFollowing ? 'secondary' : 'default'}

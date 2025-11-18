@@ -42,11 +42,11 @@ test.describe('Personalized Feed', () => {
     // Should redirect to feed
     await expect(page).toHaveURL('/feed');
 
-    // Should see feed heading
-    await expect(page.getByRole('heading', { name: 'Feed' })).toBeVisible();
-
     // Should see refresh button
     await expect(page.getByRole('button', { name: /Refresh/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /For you/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Following/i })).toBeVisible();
+    await expect(page.getByText("What's new?")).toBeVisible();
   });
 
   test('should display posts in feed', async ({ page }) => {
@@ -88,7 +88,7 @@ test.describe('Personalized Feed', () => {
     expect(postCount).toBeGreaterThan(0);
   });
 
-  test('should show user own posts in feed', async ({ page }) => {
+  test('should show newly created posts in feed', async ({ page }) => {
     // Create test user
     const { user, password } = await helpers.createUser({
       displayName: 'Alice Cooper',
@@ -104,7 +104,12 @@ test.describe('Personalized Feed', () => {
 
     // Create a post
     const newPostContent = `My own post ${Date.now()}`;
-    await page.getByPlaceholder(/Share your thoughts/i).fill(newPostContent);
+
+    // Click What's new button to open dialog
+    await page.getByText("What's new?").click();
+    await page.waitForSelector('[role="dialog"]', { state: 'visible' });
+    // Fill the content and click 'Post' button
+    await page.getByPlaceholder(/Share your thoughts.../).fill(newPostContent);
     await page.getByRole('button', { name: 'Post' }).click();
 
     // Wait for post to be created

@@ -145,7 +145,7 @@ const helpers = {
 /**
  * Extended test with database cleanup and helpers
  */
-export const test = base.extend<{ cleanDb: void }>({
+const test = base.extend<{ cleanDb: void }>({
   // Fixture that runs before each test
   cleanDb: [
     async ({}, use) => {
@@ -162,4 +162,4 @@ export const test = base.extend<{ cleanDb: void }>({
   ],
 });
 
-export { expect, helpers };
+export { test, expect, helpers };

@@ -118,25 +118,27 @@ test.describe('Follow Functionality', () => {
     await page.goto('/feed');
     await page.waitForLoadState('networkidle');
 
-    // Click on Bob's username
+    // Hover on Bob's username to show HoverCard
     const bobUsername = page.getByTestId('post-author').filter({ hasText: /Bob Smith/i });
-    await bobUsername.click({ timeout });
+    await bobUsername.hover({ timeout });
 
     // Should see "Following" button (already following)
-    await expect(page.getByRole('button', { name: 'Following' })).toBeVisible({ timeout: 5000 });
+    const followToggleButtonId = 'follow-toggle-button';
+    const followingButton = page.getByTestId(followToggleButtonId);
+    await expect(followingButton).toBeVisible({ timeout });
+    await expect(followingButton).toHaveText(/Following/);
 
     // Click to unfollow
-    const followingButton = page.getByRole('button', { name: 'Following' });
     await followingButton.click({ timeout });
 
     // Should see success toast
-    await expect(page.getByText(/You unfollowed/i)).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText(/You unfollowed/i)).toBeVisible({ timeout: 3000 });
 
     // Button should change back to "Follow"
-    await expect(page.getByRole('button', { name: 'Follow' })).toBeVisible({ timeout: 5000 });
+    await expect(followingButton).toHaveText(/Follow/);
   });
 
-  test('should open profile modal when clicking User information', async ({ page }) => {
+  test('should navigate to profile page when clicking username', async ({ page }) => {
     // Create two users
     const { user: alice, password: alicePassword } = await helpers.createUser({
       email: 'alice@example.com',
@@ -161,25 +163,19 @@ test.describe('Follow Functionality', () => {
     await page.goto('/feed');
     await page.waitForLoadState('networkidle');
 
-    // Click on Bob's username
+    // Click on Bob's username in the post
     const bobUsername = page.getByTestId('post-author').filter({ hasText: /Bob Smith/i });
     await bobUsername.click({ timeout });
 
-    // Click Visit Profile
-    const visitProfileButton = page.getByRole('button', { name: 'Visit Profile' });
-    await visitProfileButton.click({ timeout });
+    // Should navigate to Bob's profile page
+    await page.waitForURL(`/profile/bob`, { timeout: 5000 });
 
-    // Should see profile modal with Bob's info
-    // Use getByRole to scope to the dialog/modal
-    const profileModal = page.getByRole('dialog').last();
-    await expect(profileModal.getByText('Bob Smith')).toBeVisible({ timeout: 5000 });
-    await expect(profileModal.getByText('@bob')).toBeVisible();
-
-    // Should NOT see Edit Profile button (viewing other user's profile)
-    await expect(page.getByTestId('edit-profile-button')).not.toBeVisible();
+    // Should see Bob's profile info on the page
+    await expect(page.getByRole('heading', { name: 'Bob Smith' })).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText('@bob').first()).toBeVisible({ timeout: 5000 });
   });
 
-  test('should not show user action menu on own posts', async ({ page }) => {
+  test('should not show follow button on user action menu on own posts', async ({ page }) => {
     // Create user
     const { user: alice, password: alicePassword } = await helpers.createUser({
       email: 'alice@example.com',
@@ -198,12 +194,16 @@ test.describe('Follow Functionality', () => {
     await page.goto('/feed');
     await page.waitForLoadState('networkidle');
 
-    // Click on own username - should not open menu (username is not clickable)
+    // Hover on own username
     const aliceUsername = page.getByTestId('post-author').filter({ hasText: /Alice Cooper/i });
+    await aliceUsername.hover({ timeout });
 
-    // Username should not be clickable (disabled button)
-    const isDisabled = await aliceUsername.evaluate(el => (el as HTMLButtonElement).disabled);
-    expect(isDisabled).toBe(true);
+    // Wait a bit for HoverCard to potentially appear
+    await page.waitForTimeout(500);
+
+    // Follow button should NOT appear when viewing own posts
+    const followButton = page.getByTestId('follow-toggle-button');
+    await expect(followButton).not.toBeVisible();
   });
 
   test('should display follower and following counts in profile', async ({ page }) => {
@@ -276,13 +276,17 @@ test.describe('Follow Functionality', () => {
 
     // Alice follows Bob (creating mutual follow)
     const bobUsername = page.getByTestId('post-author').filter({ hasText: /Bob Smith/i });
-    await bobUsername.click({ timeout });
+    await bobUsername.hover({ timeout });
 
-    const followButton = page.getByRole('button', { name: 'Follow' });
+    const followToggleButtonId = 'follow-toggle-button';
+    const followButton = page.getByTestId(followToggleButtonId);
+    await expect(followButton).toBeVisible({ timeout });
+    await expect(followButton).toHaveText(/Follow/);
+
     await followButton.click({ timeout });
 
     // Should see Following button
-    await expect(page.getByRole('button', { name: 'Following' })).toBeVisible({ timeout: 5000 });
+    await expect(followButton).toHaveText(/Following/);
 
     // Verify mutual follow exists in database
     const aliceFollowsBob = await helpers.prisma.follow.findUnique({

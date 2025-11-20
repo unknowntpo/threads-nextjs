@@ -2,6 +2,7 @@ import { test, expect, helpers } from './fixtures';
 import type { Page } from '@playwright/test';
 
 test.describe('Post Creation and Feed', () => {
+  const timeout = 3000;
   // Helper function to login
   async function loginUser(page: Page, email: string, password: string) {
     await page.goto('/auth/login');
@@ -21,21 +22,25 @@ test.describe('Post Creation and Feed', () => {
     // Login
     await loginUser(page, user.email, password);
 
-    // Find and fill post creation form
-    const contentInput = page
-      .locator('textarea[name="content"], textarea[placeholder*="What"]')
-      .first();
-    await contentInput.fill('This is a test post from Playwright!');
+    // Click on "What's new?" trigger to open dialog
+    await page.getByTestId('create-post-trigger').click();
+
+    // Wait for dialog to open
+    await expect(page.getByRole('dialog')).toBeVisible({ timeout });
+
+    // Fill the textarea inside the dialog
+    await page
+      .getByPlaceholder(/share your thoughts/i)
+      .fill('This is a test post from Playwright!');
 
     // Submit the post
-    await page.click(
-      'button:has-text("Post"), button:has-text("Share"), button:has-text("Submit")'
-    );
+    await page.getByRole('button', { name: 'Post' }).click();
 
-    // Should see success message or new post in feed
-    await expect(
-      page.locator('text=/This is a test post from Playwright!|Post created|Success/i')
-    ).toBeVisible({ timeout: 5000 });
+    // Wait for page reload and verify post appears
+    await page.waitForLoadState('networkidle');
+    await expect(page.locator('text=/This is a test post from Playwright!/i')).toBeVisible({
+      timeout: 5000,
+    });
   });
 
   test('should display posts in feed', async ({ page }) => {
@@ -54,7 +59,7 @@ test.describe('Post Creation and Feed', () => {
 
     // Should see the post
     await expect(page.locator('text=/Just deployed my first Next.js app/i')).toBeVisible({
-      timeout: 10000,
+      timeout,
     });
   });
 
@@ -67,11 +72,14 @@ test.describe('Post Creation and Feed', () => {
     // Login
     await loginUser(page, user.email, password);
 
+    // Click on "What's new?" trigger to open dialog
+    await page.getByTestId('create-post-trigger').click();
+
+    // Wait for dialog to open
+    await expect(page.getByRole('dialog')).toBeVisible({ timeout });
+
     // Fill post content
-    const contentInput = page
-      .locator('textarea[name="content"], textarea[placeholder*="What"]')
-      .first();
-    await contentInput.fill('Test post with image');
+    await page.getByPlaceholder(/share your thoughts/i).fill('Test post with image');
 
     // Fill image URL if available
     const imageInput = page.locator('input[name="image_url"], input[placeholder*="image"]');
@@ -82,11 +90,10 @@ test.describe('Post Creation and Feed', () => {
     }
 
     // Submit
-    await page.click(
-      'button:has-text("Post"), button:has-text("Share"), button:has-text("Submit")'
-    );
+    await page.getByRole('button', { name: 'Post' }).click();
 
-    // Verify post appears
+    // Wait for page reload and verify post appears
+    await page.waitForLoadState('networkidle');
     await expect(page.locator('text=/Test post with image/i')).toBeVisible({ timeout: 5000 });
   });
 
@@ -124,17 +131,20 @@ test.describe('Post Creation and Feed', () => {
     // Login
     await loginUser(page, user.email, password);
 
+    // Verify post is visible
+    await expect(page.locator('text=/Test post for refresh/i')).toBeVisible({ timeout });
+
     // Look for refresh button
-    const refreshButton = page.locator('button:has-text("Refresh"), button[aria-label="Refresh"]');
+    const refreshButton = page.getByTestId('refresh-feed-button');
 
     if ((await refreshButton.count()) > 0) {
-      await refreshButton.first().click();
+      await refreshButton.click();
 
-      // Should show loading state or updated feed
-      await page.waitForTimeout(1000);
+      // Wait for refresh to complete
+      await page.waitForLoadState('networkidle');
 
-      // Feed header should still be visible
-      await expect(page.getByRole('heading', { name: 'Feed' })).toBeVisible();
+      // Post should still be visible after refresh
+      await expect(page.locator('text=/Test post for refresh/i')).toBeVisible({ timeout });
     }
   });
 });

@@ -1,7 +1,8 @@
 import { test, expect, helpers } from './fixtures';
 import { prisma } from '@/lib/prisma';
 
-test.describe('Interaction Tracking', () => {
+// skip tracking for now, we do this in backend.
+test.describe.skip('Interaction Tracking', () => {
   test.beforeEach(async ({ page }) => {
     // Capture console logs
     page.on('console', msg => console.log(`[Browser ${msg.type()}]`, msg.text()));

@@ -103,7 +103,13 @@ export function Feed({ currentUserId }: FeedProps) {
 
   return (
     <div>
-      <Button variant="outline" size="sm" onClick={() => fetchPosts()} disabled={isLoading}>
+      <Button
+        data-testid="refresh-feed-button"
+        variant="outline"
+        size="sm"
+        onClick={() => fetchPosts()}
+        disabled={isLoading}
+      >
         <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
         Refresh
       </Button>

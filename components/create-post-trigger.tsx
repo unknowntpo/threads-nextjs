@@ -19,6 +19,7 @@ export function CreatePostTrigger() {
   return (
     <>
       <div
+        data-testid="create-post-trigger"
         className="w-full cursor-pointer px-4 py-4 transition-colors hover:bg-accent/50"
         onClick={() => setOpen(true)}
       >

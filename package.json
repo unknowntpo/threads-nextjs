@@ -16,7 +16,7 @@
     "test:watch": "dotenv -e .env.test -- vitest --watch",
     "test:fe": "vitest run --config vitest.config.ui.ts",
     "test:fe:watch": "vitest --config vitest.config.ui.ts",
-    "test:e2e": "dotenv -e .env.test -- playwright test",
+    "test:e2e": "next build && dotenv -e .env.test -- playwright test",
     "test:e2e:ui": "dotenv -e .env.test -- playwright test --ui",
     "test:e2e:headed": "dotenv -e .env.test -- playwright test --headed",
     "test:e2e:debug": "dotenv -e .env.test -- playwright test --debug",

@@ -7,7 +7,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Link from 'next/link';
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 
 export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRef<'div'>) {
@@ -15,7 +14,6 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,22 +21,21 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
     setError(null);
 
     try {
+      // Use redirect: true to let NextAuth handle redirect after session is established
+      // This prevents race condition where router.push() happens before JWT token is set
       const result = await signIn('credentials', {
         email,
         password,
-        redirect: false,
+        redirect: true,
+        callbackUrl: '/feed',
       });
 
+      // Note: This code won't be reached if redirect is successful
       if (result?.error) {
         throw new Error(result.error);
       }
-
-      if (result?.ok) {
-        router.push('/feed');
-      }
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : 'An error occurred');
-    } finally {
       setIsLoading(false);
     }
   };

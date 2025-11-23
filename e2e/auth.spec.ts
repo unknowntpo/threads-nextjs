@@ -40,8 +40,9 @@ test.describe('Authentication Flow', () => {
 
     await page.getByRole('button', { name: 'Login' }).click();
 
-    // Should redirect to feed
-    await expect(page).toHaveURL('/feed');
+    // Wait for redirect navigation to complete (signIn uses redirect: true)
+    // Should redirect to feed after authentication
+    await expect(page).toHaveURL('/feed', { timeout: 10000 });
 
     // Wait for page to load completely
     await page.waitForLoadState('networkidle');

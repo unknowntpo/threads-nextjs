@@ -57,10 +57,11 @@ COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 
 # Copy package files and install ONLY prisma CLI from lockfile
 # Uses --dev flag to install only devDependencies (includes prisma)
+# --ignore-scripts skips postinstall hooks (we don't need prisma generate, only CLI)
 # This avoids copying full node_modules and keeps image size minimal
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/pnpm-lock.yaml ./pnpm-lock.yaml
-RUN pnpm install --frozen-lockfile --dev
+RUN pnpm install --frozen-lockfile --dev --ignore-scripts
 
 # Switch to non-root user
 USER nextjs

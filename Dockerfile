@@ -9,14 +9,26 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 # Copy package files
 COPY package.json pnpm-lock.yaml ./
 
-# Install dependencies
+# Copy Prisma schema (needed for postinstall hook)
+COPY prisma ./prisma
+
+# Install dependencies (postinstall will run prisma generate)
 RUN pnpm install --frozen-lockfile
 
-# Copy source code
-COPY . .
+# Copy source code (explicit)
+COPY app ./app
+COPY components ./components
+COPY lib ./lib
+COPY hooks ./hooks
+COPY types ./types
+COPY middleware.ts ./
+COPY auth.ts ./
 
-# Generate Prisma Client
-RUN pnpm prisma generate
+# Copy build config files
+COPY next.config.ts ./
+COPY tsconfig.json ./
+COPY tailwind.config.ts ./
+COPY postcss.config.mjs ./
 
 # Build the application
 RUN pnpm run build

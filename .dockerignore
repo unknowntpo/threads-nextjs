@@ -8,5 +8,43 @@ README.md
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Infrastructure & DevOps
 k8s/
 scripts/
+argocd/
+terraform/
+.zeabur/
+
+# Testing & Test outputs
+e2e/
+tests/
+test-results/
+playwright-report/
+.pytest_cache/
+vitest.config.*
+playwright.config.ts
+vitest.setup.ts
+
+# Development tools
+.husky/
+.agents/
+.claude/
+.madgerc
+.prettierignore
+.idea/
+.vscode/
+
+# Documentation & Planning
+docs/
+development_plan/
+*.md
+
+# CI/CD
+.github/
+
+# Other
+ml-service/
+Justfile
+docker-compose*.yml
+Tiltfile

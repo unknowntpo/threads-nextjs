@@ -9,7 +9,8 @@ test.describe('Follow Functionality', () => {
     await page.getByRole('textbox', { name: 'Email' }).fill(email);
     await page.getByRole('textbox', { name: 'Password' }).fill(password);
     await page.getByRole('button', { name: 'Login' }).click({ timeout });
-    await page.waitForURL('/feed');
+    // Wait for redirect navigation (signIn uses redirect: true)
+    await page.waitForURL('/feed', { timeout: 10000 });
   }
 
   test('should open user action menu when hovering on username in a post', async ({ page }) => {

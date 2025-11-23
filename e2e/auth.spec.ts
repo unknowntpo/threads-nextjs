@@ -63,7 +63,8 @@ test.describe('Authentication Flow', () => {
     await page.getByRole('textbox', { name: 'Password' }).fill(password);
     await page.getByRole('button', { name: 'Login' }).click();
 
-    await page.waitForURL('/feed');
+    // Wait for redirect navigation (signIn uses redirect: true)
+    await page.waitForURL('/feed', { timeout: 10000 });
 
     // Open sidebar menu and click sign out
     await page.click('button[aria-label="Menu"]');

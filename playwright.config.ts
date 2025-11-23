@@ -1,4 +1,4 @@
-import { defineConfig, devices } from '@playwright/test'
+import { defineConfig, devices } from '@playwright/test';
 
 /**
  * See https://playwright.dev/docs/test-configuration
@@ -44,20 +44,20 @@ export default defineConfig({
     },
   ],
 
-  /* Run your local dev server before starting the tests */
+  /* Run production server before starting tests to disable Next.js dev overlay */
   webServer: {
-    command: 'pnpm run dev',
+    command: 'pnpm run start',
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,
-    // Pass environment variables to dev server so it connects to same database as tests
-    // Only override in CI; locally, dev server will use .env file
-    env: process.env.CI
-      ? {
-          DATABASE_URL: process.env.DATABASE_URL || '',
-          NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET || '',
-          NEXTAUTH_URL: process.env.NEXTAUTH_URL || '',
-        }
-      : undefined,
+    // Set NODE_ENV=production to disable dev overlay that blocks E2E test interactions
+    // Pass database credentials from .env.test to production server
+    env: {
+      NODE_ENV: 'production',
+      DATABASE_URL: process.env.DATABASE_URL || '',
+      NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET || '',
+      NEXTAUTH_URL: process.env.NEXTAUTH_URL || '',
+      NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+    },
   },
-})
+});

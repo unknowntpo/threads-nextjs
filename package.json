@@ -26,7 +26,8 @@
     "prisma:studio": "prisma studio",
     "circular": "madge --circular --extensions ts,tsx .",
     "circular:image": "madge --circular --extensions ts,tsx --image graph.svg .",
-    "prepare": "husky"
+    "prepare": "husky",
+    "postinstall": "prisma generate"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [

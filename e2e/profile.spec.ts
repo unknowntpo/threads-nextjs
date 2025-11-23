@@ -8,7 +8,8 @@ test.describe('Profile Management', () => {
     await page.getByRole('textbox', { name: 'Email' }).fill(email);
     await page.getByRole('textbox', { name: 'Password' }).fill(password);
     await page.getByRole('button', { name: 'Login' }).click();
-    await page.waitForURL('/feed');
+    // Wait for redirect navigation (signIn uses redirect: true)
+    await page.waitForURL('/feed', { timeout: 10000 });
   }
 
   test.skip('should view own profile', async ({ page }) => {

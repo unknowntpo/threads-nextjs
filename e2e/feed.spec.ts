@@ -72,7 +72,7 @@ test.describe('Personalized Feed', () => {
     await page.getByRole('textbox', { name: 'Password' }).fill(password);
     await page.getByRole('button', { name: 'Login' }).click();
 
-    await page.waitForURL('/feed');
+    await page.waitForURL('/feed', { timeout: 10000 });
     await page.waitForLoadState('networkidle');
 
     // Wait for posts to load
@@ -100,7 +100,7 @@ test.describe('Personalized Feed', () => {
     await page.getByRole('textbox', { name: 'Password' }).fill(password);
     await page.getByRole('button', { name: 'Login' }).click();
 
-    await page.waitForURL('/feed');
+    await page.waitForURL('/feed', { timeout: 10000 });
 
     // Create a post
     const newPostContent = `My own post ${Date.now()}`;
@@ -143,7 +143,7 @@ test.describe('Personalized Feed', () => {
     await page.getByRole('textbox', { name: 'Password' }).fill(password);
     await page.getByRole('button', { name: 'Login' }).click();
 
-    await page.waitForURL('/feed');
+    await page.waitForURL('/feed', { timeout: 10000 });
     await page.waitForLoadState('networkidle');
 
     // Wait for posts to load
@@ -176,7 +176,7 @@ test.describe('Personalized Feed', () => {
     await page.getByRole('textbox', { name: 'Password' }).fill(password);
     await page.getByRole('button', { name: 'Login' }).click();
 
-    await page.waitForURL('/feed');
+    await page.waitForURL('/feed', { timeout: 10000 });
 
     // Should see empty state message
     await expect(page.getByText(/No posts yet|No posts available|Start following/i)).toBeVisible();
@@ -194,7 +194,7 @@ test.describe('Personalized Feed', () => {
     await page.getByRole('textbox', { name: 'Password' }).fill(password);
     await page.getByRole('button', { name: 'Login' }).click();
 
-    await page.waitForURL('/feed');
+    await page.waitForURL('/feed', { timeout: 10000 });
 
     // Intercept API call and simulate error
     await page.route('**/api/feeds*', route =>
@@ -229,7 +229,7 @@ test.describe('Personalized Feed', () => {
     await page.getByRole('textbox', { name: 'Password' }).fill(password);
     await page.getByRole('button', { name: 'Login' }).click();
 
-    await page.waitForURL('/feed');
+    await page.waitForURL('/feed', { timeout: 10000 });
 
     // Wait for posts
     await page.waitForSelector('[data-testid="post-card"]');

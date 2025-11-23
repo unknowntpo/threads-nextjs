@@ -14,7 +14,7 @@ test.describe('Comments', () => {
     await page.getByRole('textbox', { name: 'Email' }).fill(user.email);
     await page.getByRole('textbox', { name: 'Password' }).fill(password);
     await page.getByRole('button', { name: 'Login' }).click();
-    await page.waitForURL('/feed');
+    await page.waitForURL('/feed', { timeout: 10000 });
     await page.waitForLoadState('networkidle');
 
     // Create a new post

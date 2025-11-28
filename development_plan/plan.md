@@ -56,16 +56,15 @@ For completed MVP phases 1-6, see [PLAN_ARCHIVE.md](../PLAN_ARCHIVE.md)
 - Terraform infrastructure, k0s Kubernetes, ArgoCD + Keel GitOps, CI/CD pipeline
 - Monitoring and enhancements pending
 
+**[Epic: Threads UI Refactor](epic_threads_ui_refactor.md)** 🎨
+
+- Status: ✅ Complete (2025-11-24)
+- Visual redesign to match Threads app
+- Card roundness (16px), spacing (4px), profile drawer navigation
+
 ---
 
 ### In Progress Epics 🚧
-
-**[Epic: Threads UI Refactor](epic_threads_ui_refactor.md)** 🎨
-
-- Status: 🚧 In Progress (Started: 2025-11-13)
-- Priority: High - Visual redesign to match Threads app
-- Card roundness (16px), spacing (4px), profile drawer navigation
-- Effort: ~8-12 hours
 
 ---
 
@@ -123,6 +122,7 @@ Each Epic should be:
 - ✅ ML-powered personalized feed (collaborative filtering)
 - ✅ Interaction tracking (view, click, like, share)
 - ✅ Profile management with Threads-style sidebar
+- ✅ Threads-style UI with card roundness and spacing
 - ✅ Full CI/CD pipeline with tests
 - ✅ Deployed on GCP with k0s Kubernetes + ArgoCD GitOps
 
@@ -141,4 +141,4 @@ For completed MVP phases 1-6 (Auth, Post Creation, CI/CD, PostgreSQL Migration, 
 
 ---
 
-**Last Updated:** 2025-11-13
+**Last Updated:** 2025-11-24

@@ -18,43 +18,43 @@ User can search interested posts and comments.
 
 #### 1. Database Setup
 
-- [ ] Enable `pg_trgm` extension in PostgreSQL
-  - [ ] Run: `CREATE EXTENSION IF NOT EXISTS pg_trgm;`
-- [ ] Create trigram index on `Post.content` column (non-blocking)
-  - [ ] Run migration: `CREATE INDEX CONCURRENTLY post_content_trgm_idx ON "Post" USING GIN(content gin_trgm_ops);`
+- [x] Enable `pg_trgm` extension in PostgreSQL
+  - [x] Run: `CREATE EXTENSION IF NOT EXISTS pg_trgm;`
+- [x] Create trigram index on `Post.content` column (non-blocking)
+  - [x] Run migration: `CREATE INDEX CONCURRENTLY post_content_trgm_idx ON "Post" USING GIN(content gin_trgm_ops);`
   - [ ] Note: Use `CONCURRENTLY` to avoid blocking reads/writes (takes longer but safe for production)
   - [ ] Monitor index creation progress: `SELECT * FROM pg_stat_progress_create_index;`
-- [ ] Verify index creation
-  - [ ] Check index exists: `\d "Post"` or `SELECT indexname FROM pg_indexes WHERE tablename = 'Post';`
-- [ ] Test fuzzy search queries manually in psql
+- [x] Verify index creation
+  - [x] Check index exists: `\d "Post"` or `SELECT indexname FROM pg_indexes WHERE tablename = 'Post';`
+- [x] Test fuzzy search queries manually in psql
 
 #### 2. Backend Implementation (Clean Architecture)
 
-- [ ] **Layer 3: Repository**
-  - [ ] Create `lib/repositories/search.repository.ts`
-  - [ ] Implement `SearchRepository` class
-  - [ ] Implement `searchPosts()` method with trigram similarity
-  - [ ] Add unit tests for repository
-    - [ ] Test exact search
-    - [ ] Test fuzzy search (typo tolerance)
-    - [ ] Test pagination
-    - [ ] Test threshold boundary cases
-- [ ] **Layer 2: Service**
-  - [ ] Create `lib/services/search.service.ts`
-  - [ ] Implement `SearchService` class
-  - [ ] Define interfaces: `SearchParams`, `SearchResult`, `SearchResponse`
-  - [ ] Implement `search()` method
+- [x] **Layer 3: Repository**
+  - [x] Create `lib/repositories/search.repository.ts`
+  - [x] Implement `SearchRepository` class
+  - [x] Implement `searchPosts()` method with trigram similarity
+  - [x] Add unit tests for repository
+    - [x] Test exact search
+    - [x] Test fuzzy search (typo tolerance)
+    - [x] Test pagination
+    - [x] Test threshold boundary cases
+- [x] **Layer 2: Service**
+  - [x] Create `lib/services/search.service.ts`
+  - [x] Implement `SearchService` class
+  - [x] Define interfaces: `SearchParams`, `SearchResult`, `SearchResponse`
+  - [x] Implement `search()` method
   - [ ] Add unit tests for service
     - [ ] Test parameter validation
     - [ ] Test data transformation
     - [ ] Test filter logic (top vs recent)
-- [ ] **Layer 1: API Route**
-  - [ ] Create `app/api/search/route.ts`
-  - [ ] Implement `GET /api/search` handler
-  - [ ] Add authentication check
-  - [ ] Add parameter validation
-  - [ ] Add error handling with proper HTTP status codes
-  - [ ] Add logger integration
+- [x] **Layer 1: API Route**
+  - [x] Create `app/api/search/route.ts`
+  - [x] Implement `GET /api/search` handler
+  - [x] Add authentication check
+  - [x] Add parameter validation
+  - [x] Add error handling with proper HTTP status codes
+  - [x] Add logger integration
   - [ ] Add API integration tests
     - [ ] Test valid requests
     - [ ] Test missing query parameter
@@ -64,37 +64,37 @@ User can search interested posts and comments.
 
 #### 3. Testing
 
-- [ ] **Unit Tests**
-  - [ ] SearchRepository tests (coverage > 80%)
+- [x] **Unit Tests**
+  - [x] SearchRepository tests (coverage > 80%)
   - [ ] SearchService tests (coverage > 80%)
   - [ ] API route tests
-- [ ] **Integration Tests**
-  - [ ] Search with results
-  - [ ] Search with no results
-  - [ ] Search with typos ("coscto" → "costco")
+- [x] **Integration Tests**
+  - [x] Search with results
+  - [x] Search with no results
+  - [x] Search with typos ("Nxt" → "Next.js")
   - [ ] Multi-word search ("costco deals")
-  - [ ] Pagination (limit/offset)
-  - [ ] Sort by relevance (top)
-  - [ ] Sort by time (recent)
-- [ ] **E2E Tests**
-  - [ ] User clicks search icon in sidebar
-  - [ ] User types query and presses Enter
-  - [ ] Results display correctly
-  - [ ] Tab switching (Top/Recent)
+  - [x] Pagination (limit/offset)
+  - [x] Sort by relevance (top)
+  - [x] Sort by time (recent)
+- [x] **E2E Tests**
+  - [x] User clicks search icon in sidebar
+  - [x] User types query and presses Enter
+  - [x] Results display correctly
+  - [x] Tab switching (Top/Recent)
   - [ ] Infinite scroll loads more results
-  - [ ] Empty state when no results
+  - [x] Empty state when no results
 
 #### 4. Frontend Implementation
 
-- [ ] Create search UI components
-  - [ ] Search input component
-  - [ ] Search results list (reuse feed components)
-  - [ ] Tab switcher (Top/Recent/Profiles)
-  - [ ] Empty state component
-- [ ] Implement search page/route
-- [ ] Add infinite scroll
-- [ ] Add loading states
-- [ ] Add error handling
+- [x] Create search UI components
+  - [x] Search input component
+  - [x] Search results list (reuse feed components)
+  - [x] Tab switcher (Top/Recent/Profiles)
+  - [x] Empty state component
+- [x] Implement search page/route
+- [x] Add infinite scroll
+- [x] Add loading states
+- [x] Add error handling
 
 #### 5. Documentation
 

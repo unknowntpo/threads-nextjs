@@ -116,7 +116,7 @@ test.describe('Search Feature', () => {
 
     // Search with typo "Nxt" should still find "Next.js"
     await page.getByTestId('search-input').fill('Nxt');
-    await page.getByRole('button', { name: 'Search' }).click();
+    await page.getByTestId('search-submit-button').click();
 
     // Wait for results
     await page.waitForLoadState('networkidle');
@@ -150,7 +150,7 @@ test.describe('Search Feature', () => {
 
     // Search for non-existent term
     await page.getByTestId('search-input').fill('Python');
-    await page.getByRole('button', { name: 'Search' }).click();
+    await page.getByTestId('search-submit-button').click();
 
     // Wait for results
     await page.waitForLoadState('networkidle');
@@ -190,7 +190,7 @@ test.describe('Search Feature', () => {
 
     // Search for "React"
     await page.getByTestId('search-input').fill('React');
-    await page.getByRole('button', { name: 'Search' }).click();
+    await page.getByTestId('search-submit-button').click();
 
     // Wait for results
     await page.waitForLoadState('networkidle');

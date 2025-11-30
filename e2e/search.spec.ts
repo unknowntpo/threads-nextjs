@@ -205,8 +205,8 @@ test.describe('Search Feature', () => {
     // Wait for new results
     await page.waitForLoadState('networkidle');
 
-    // Should still see results
-    await expect(page.getByText(/React/)).toBeVisible();
+    // Should still see results (at least one post with "React")
+    await expect(page.getByText(/React/).first()).toBeVisible();
   });
 
   test('should clear search input', async ({ page }) => {

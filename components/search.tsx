@@ -7,6 +7,7 @@ import { PostsList } from '@/components/posts-list';
 import { EmptySearchState } from '@/components/empty-search-state';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useDebounce } from '@/lib/hooks/use-debounce';
 import type { PostWithUser } from '@/lib/repositories/post.repository';
 
 interface SearchProps {
@@ -149,7 +150,7 @@ export function Search({ currentUserId }: SearchProps) {
     }
   };
 
-  // Infinite scroll observer
+  // Infinite scroll observer (debounced to prevent loading too fast)
   const handleObserver = useCallback(
     (entries: IntersectionObserverEntry[]) => {
       const [target] = entries;
@@ -162,11 +163,13 @@ export function Search({ currentUserId }: SearchProps) {
     [hasMore, isLoading, offset, searchQuery, filter, limit, fetchResults]
   );
 
+  const debouncedHandleObserver = useDebounce(handleObserver, 500);
+
   useEffect(() => {
     const element = observerTarget.current;
     if (!element) return;
 
-    const observer = new IntersectionObserver(handleObserver, {
+    const observer = new IntersectionObserver(debouncedHandleObserver, {
       threshold: 0,
     });
 
@@ -177,7 +180,7 @@ export function Search({ currentUserId }: SearchProps) {
         observer.unobserve(element);
       }
     };
-  }, [handleObserver]);
+  }, [debouncedHandleObserver]);
 
   return (
     <div>

@@ -42,6 +42,17 @@ beforeAll(async () => {
     throw error;
   }
 
+  // Enable pg_trgm extension for fuzzy search
+  try {
+    await execAsync(
+      'docker compose exec -T postgres psql -U postgres -d threads_test -c "CREATE EXTENSION IF NOT EXISTS pg_trgm;"'
+    );
+    console.log('Enabled pg_trgm extension in test database');
+  } catch (error) {
+    console.error('Failed to enable pg_trgm extension:', error);
+    throw error;
+  }
+
   // Setup Keycloak realm, client, and test users (idempotent)
   try {
     await setupKeycloak();

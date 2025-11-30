@@ -68,11 +68,13 @@ export function Search({ currentUserId }: SearchProps) {
       });
 
       const response = await fetch(`/api/search?${params}`);
-      const data: SearchResponse = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to search');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to search');
       }
+
+      const data: SearchResponse = await response.json();
 
       const newPosts = data.results.map(result => result.data);
 

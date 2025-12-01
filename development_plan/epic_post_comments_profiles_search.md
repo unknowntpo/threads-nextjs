@@ -55,12 +55,13 @@ User can search interested posts and comments.
   - [x] Add parameter validation
   - [x] Add error handling with proper HTTP status codes
   - [x] Add logger integration
-  - [ ] Add API integration tests
-    - [ ] Test valid requests
+  - [ ] Add API integration tests (**In Progress - Test plan completed**)
+    - [ ] Test valid requests (31 test cases planned)
     - [ ] Test missing query parameter
     - [ ] Test invalid filter values
     - [ ] Test pagination edge cases
     - [ ] Test unauthorized access
+    - [ ] **Critical:** Test createdAt is Date instance (fixes "NaNw ago" bug)
 
 #### 3. Testing
 
@@ -76,13 +77,14 @@ User can search interested posts and comments.
   - [x] Pagination (limit/offset)
   - [x] Sort by relevance (top)
   - [x] Sort by time (recent)
-- [x] **E2E Tests**
+- [x] **E2E Tests** (**All passing - 39/39**)
   - [x] User clicks search icon in sidebar
   - [x] User types query and presses Enter
   - [x] Results display correctly
   - [x] Tab switching (Top/Recent)
-  - [ ] Infinite scroll loads more results
+  - [x] Infinite scroll loads more results (**With 500ms debounce**)
   - [x] Empty state when no results
+  - [x] Fixed E2E selector strict mode violations
 
 #### 4. Frontend Implementation
 
@@ -96,7 +98,63 @@ User can search interested posts and comments.
 - [x] Add loading states
 - [x] Add error handling
 
-#### 5. Documentation
+#### 5. Bug Fixes & Improvements
+
+##### 🐛 Critical Bug: Search Timestamp Display
+
+**Status:** Identified, fix pending
+**Issue:** Search results show "NaNw ago" instead of "1d ago", "2d ago"
+
+**Root Cause:**
+
+- SearchRepository uses `$queryRaw` → returns `createdAt` as **string** (ISO format)
+- FeedRepository uses Prisma ORM → returns `createdAt` as **Date object**
+- Frontend `formatDistanceToNow()` expects Date, gets string → NaN → "NaNw ago"
+
+**Files Involved:**
+
+- `lib/repositories/search.repository.ts:60` - Raw SQL returns string
+- `lib/repositories/feed.repository.ts` - ORM returns Date
+- `components/post-card.tsx:292` - `formatDistanceToNow(new Date(post.createdAt))`
+
+**Fix Required:**
+
+- [ ] Convert `createdAt` and `updatedAt` to Date objects in SearchRepository
+- [ ] Add test to verify `createdAt instanceof Date === true`
+- [ ] Verify fix resolves "NaNw ago" display issue
+
+**Implementation:**
+
+```typescript
+// In lib/repositories/search.repository.ts after $queryRaw
+const posts = await prisma.$queryRaw<PostWithUser[]>`...`;
+return {
+  posts: posts.map(post => ({
+    ...post,
+    createdAt: new Date(post.createdAt as unknown as string),
+    updatedAt: new Date(post.updatedAt as unknown as string),
+  })),
+  total: Number(totalResult[0].count),
+};
+```
+
+##### ✅ Completed Improvements
+
+- [x] Added 500ms debounce to infinite scroll (`lib/hooks/use-debounce.ts`)
+- [x] Fixed E2E test strict mode violations (button/text selectors)
+- [x] Added realistic timestamps to seed script (`scripts/seed-3d-printer-posts.ts`)
+- [x] All CI tests passing (39/39 E2E, 85/85 unit/integration)
+
+##### 📋 Upcoming Tasks
+
+- [ ] Create comprehensive search API tests (`tests/api/search/route.test.ts`)
+  - 31 test cases covering all scenarios
+  - Test createdAt is Date instance
+  - Test search functionality, filters, pagination, response structure
+- [ ] Simplify seed script (remove manual createdAt, use schema default)
+- [ ] Add SearchService unit tests (parameter validation, transformations)
+
+#### 6. Documentation
 
 - [ ] Update API documentation
 - [ ] Add code comments

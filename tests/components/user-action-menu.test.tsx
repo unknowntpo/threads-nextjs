@@ -139,8 +139,9 @@ describe('UserActionMenu', () => {
     it('should show loading state while fetching', async () => {
       // Make fetch delay to capture loading state
       global.fetch = vi.fn(
-        () =>
-          new Promise(resolve =>
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        _url =>
+          new Promise<Response>(resolve =>
             setTimeout(
               () =>
                 resolve({

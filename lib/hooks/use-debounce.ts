@@ -6,8 +6,9 @@ import { useEffect, useRef, useCallback } from 'react';
  * @param delay - Delay in milliseconds
  * @returns Debounced callback function
  */
-export function useDebounce<T extends (...args: unknown[]) => void>(callback: T, delay: number): T {
-  const timeoutRef = useRef<NodeJS.Timeout>();
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function useDebounce<T extends (...args: any[]) => void>(callback: T, delay: number): T {
+  const timeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
   const callbackRef = useRef<T>(callback);
 
   // Update callback ref when callback changes

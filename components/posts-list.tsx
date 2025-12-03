@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { PostCard } from '@/components/post-card';
 import type { PostWithUser } from '@/lib/repositories/post.repository';
 

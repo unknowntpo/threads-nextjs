@@ -22,12 +22,21 @@ vi.mock('@/hooks/use-toast', () => ({
 
 describe('UserActionMenu', () => {
   beforeEach(() => {
-    // Mock fetch for follow status
+    // Mock fetch for user info
     global.fetch = vi.fn(url => {
       if (url.includes('/api/users/')) {
         return Promise.resolve({
           ok: true,
-          json: () => Promise.resolve({ isFollowing: false }),
+          json: () =>
+            Promise.resolve({
+              isFollowing: false,
+              user: {
+                bio: 'Test bio',
+                _count: {
+                  followers: 42,
+                },
+              },
+            }),
         } as Response);
       }
       return Promise.reject(new Error('Unknown endpoint'));
@@ -37,6 +46,143 @@ describe('UserActionMenu', () => {
   afterEach(() => {
     // Clean up to prevent React cleanup timing errors
     vi.clearAllTimers();
+  });
+
+  describe('Lazy loading behavior', () => {
+    it('should NOT fetch user info on mount', async () => {
+      const fetchSpy = vi.spyOn(global, 'fetch');
+
+      render(
+        <UserActionMenu
+          userId="test-user-id"
+          username="testuser"
+          displayName="Test User"
+          currentUserId="current-user-id"
+          trigger={<button data-testid="trigger-lazy">Hover me</button>}
+        />
+      );
+
+      // Wait a bit to ensure no fetch is triggered
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Verify fetch was NOT called
+      expect(fetchSpy).not.toHaveBeenCalled();
+
+      fetchSpy.mockRestore();
+    });
+
+    it('should fetch user info only when hover card opens', async () => {
+      const fetchSpy = vi.spyOn(global, 'fetch');
+
+      render(
+        <UserActionMenu
+          userId="test-user-id"
+          username="testuser"
+          displayName="Test User"
+          currentUserId="current-user-id"
+          trigger={<button data-testid="trigger-hover">Hover me</button>}
+        />
+      );
+
+      // Verify no fetch on mount
+      expect(fetchSpy).not.toHaveBeenCalled();
+
+      // Hover to trigger fetch
+      const trigger = screen.getByTestId('trigger-hover');
+      await userEvent.hover(trigger);
+
+      // Verify fetch was called
+      await waitFor(
+        () => {
+          expect(fetchSpy).toHaveBeenCalledWith('/api/users/test-user-id');
+        },
+        { timeout: 1000 }
+      );
+
+      fetchSpy.mockRestore();
+    });
+
+    it('should NOT fetch user info multiple times on repeated hovers', async () => {
+      const fetchSpy = vi.spyOn(global, 'fetch');
+
+      render(
+        <UserActionMenu
+          userId="test-user-id"
+          username="testuser"
+          displayName="Test User"
+          currentUserId="current-user-id"
+          trigger={<button data-testid="trigger-multiple">Hover me</button>}
+        />
+      );
+
+      const trigger = screen.getByTestId('trigger-multiple');
+
+      // First hover
+      await userEvent.hover(trigger);
+      await waitFor(() => {
+        expect(fetchSpy).toHaveBeenCalledTimes(1);
+      });
+
+      // Unhover
+      await userEvent.unhover(trigger);
+
+      // Second hover - should not fetch again
+      await userEvent.hover(trigger);
+      await new Promise(resolve => setTimeout(resolve, 200));
+
+      // Should still be called only once
+      expect(fetchSpy).toHaveBeenCalledTimes(1);
+
+      fetchSpy.mockRestore();
+    });
+
+    it('should show loading state while fetching', async () => {
+      // Make fetch delay to capture loading state
+      global.fetch = vi.fn(
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        _url =>
+          new Promise<Response>(resolve =>
+            setTimeout(
+              () =>
+                resolve({
+                  ok: true,
+                  json: () =>
+                    Promise.resolve({
+                      isFollowing: false,
+                      user: { bio: 'Test bio', _count: { followers: 42 } },
+                    }),
+                } as Response),
+              100
+            )
+          )
+      );
+
+      render(
+        <UserActionMenu
+          userId="test-user-id"
+          username="testuser"
+          displayName="Test User"
+          currentUserId="current-user-id"
+          trigger={<button data-testid="trigger-loading">Hover me</button>}
+        />
+      );
+
+      const trigger = screen.getByTestId('trigger-loading');
+      await userEvent.hover(trigger);
+
+      // Should show loading state
+      await waitFor(() => {
+        expect(screen.getByText('Loading...')).toBeInTheDocument();
+      });
+
+      // Wait for data to load
+      await waitFor(
+        () => {
+          expect(screen.getByText('Test User')).toBeInTheDocument();
+        },
+        { timeout: 1000 }
+      );
+    });
   });
 
   describe('Follow button visibility', () => {

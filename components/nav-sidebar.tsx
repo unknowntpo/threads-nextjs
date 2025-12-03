@@ -24,7 +24,7 @@ export function NavSidebar() {
 
   const navItems = [
     { icon: Home, label: 'Home', href: '/feed' },
-    { icon: Search, label: 'Search', href: '/search', disabled: true },
+    { icon: Search, label: 'Search', href: '/search' },
     { icon: PlusSquare, label: 'Create', action: () => setCreateModalOpen(true) },
     { icon: Heart, label: 'Activity', href: '/activity', disabled: true },
   ];

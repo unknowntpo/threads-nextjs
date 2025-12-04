@@ -212,5 +212,30 @@ describe('SearchRepository', () => {
       expect(posts[0].user.id).toBe(user.id);
       expect(posts[0].user.username).toBe('alice');
     });
+
+    it('should return createdAt and updatedAt as Date objects', async () => {
+      const user = await createTestUser({
+        email: 'alice@example.com',
+        username: 'alice',
+        password: 'password123',
+      });
+
+      await prisma.post.create({
+        data: {
+          userId: user.id,
+          content: 'Test post for date type check',
+        },
+      });
+
+      const { posts } = await searchRepo.searchPosts('Test', 'top', 10, 0);
+
+      expect(posts).toHaveLength(1);
+      expect(posts[0].createdAt).toBeInstanceOf(Date);
+      expect(posts[0].updatedAt).toBeInstanceOf(Date);
+
+      // Verify Date methods work
+      expect(posts[0].createdAt.getTime()).toBeGreaterThan(0);
+      expect(posts[0].updatedAt.getTime()).toBeGreaterThan(0);
+    });
   });
 });

@@ -55,8 +55,16 @@ export class SearchRepository {
       `,
     ]);
 
+    // Convert snake_case timestamp fields to camelCase Date objects
+    // $queryRaw returns PostgreSQL columns as-is (created_at, updated_at as strings)
+    type RawPost = PostWithUser & { created_at: string; updated_at: string };
+
     return {
-      posts,
+      posts: posts.map((post: RawPost) => ({
+        ...post,
+        createdAt: new Date(post.created_at),
+        updatedAt: new Date(post.updated_at),
+      })),
       total: Number(totalResult[0].count),
     };
   }

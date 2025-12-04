@@ -100,39 +100,38 @@ User can search interested posts and comments.
 
 #### 5. Bug Fixes & Improvements
 
-##### 🐛 Critical Bug: Search Timestamp Display
+##### ✅ Critical Bug: Search Timestamp Display (FIXED - 2025-12-04)
 
-**Status:** Identified, fix pending
-**Issue:** Search results show "NaNw ago" instead of "1d ago", "2d ago"
+**Status:** ✅ RESOLVED
+**Issue:** Search results showed "NaNw ago" instead of "1d ago", "2d ago"
 
 **Root Cause:**
 
-- SearchRepository uses `$queryRaw` → returns `createdAt` as **string** (ISO format)
-- FeedRepository uses Prisma ORM → returns `createdAt` as **Date object**
-- Frontend `formatDistanceToNow()` expects Date, gets string → NaN → "NaNw ago"
+- SearchRepository uses `$queryRaw` → returns `created_at` (snake_case) as **string**
+- Code tried to access `createdAt` (camelCase) which didn't exist → `undefined` → NaN
+- Frontend `formatDistanceToNow()` expects Date, got invalid Date → "NaNw ago"
 
-**Files Involved:**
+**Files Modified:**
 
-- `lib/repositories/search.repository.ts:60` - Raw SQL returns string
-- `lib/repositories/feed.repository.ts` - ORM returns Date
-- `components/post-card.tsx:292` - `formatDistanceToNow(new Date(post.createdAt))`
+- `lib/repositories/search.repository.ts:59-63` - Fixed Date conversion
+- `tests/lib/repositories/search.repository.test.ts:216-239` - Added test
 
-**Fix Required:**
+**Fix Applied:**
 
-- [ ] Convert `createdAt` and `updatedAt` to Date objects in SearchRepository
-- [ ] Add test to verify `createdAt instanceof Date === true`
-- [ ] Verify fix resolves "NaNw ago" display issue
+- [x] Convert `created_at` and `updated_at` (snake_case) to Date objects in SearchRepository
+- [x] Added test to verify `createdAt instanceof Date === true`
+- [x] Verified fix resolves "NaNw ago" display issue
+- [x] All 90 tests passing
 
 **Implementation:**
 
 ```typescript
 // In lib/repositories/search.repository.ts after $queryRaw
-const posts = await prisma.$queryRaw<PostWithUser[]>`...`;
 return {
   posts: posts.map(post => ({
     ...post,
-    createdAt: new Date(post.createdAt as unknown as string),
-    updatedAt: new Date(post.updatedAt as unknown as string),
+    createdAt: new Date((post as any).created_at), // snake_case from SQL
+    updatedAt: new Date((post as any).updated_at), // snake_case from SQL
   })),
   total: Number(totalResult[0].count),
 };

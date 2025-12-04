@@ -65,10 +65,10 @@ RUN chown -R nextjs:nodejs /app
 # Switch to non-root user
 USER nextjs
 
-# Install ONLY prisma CLI from lockfile as nextjs user
-# Uses --dev flag to install only devDependencies (includes prisma)
-# --ignore-scripts skips postinstall hooks (we don't need prisma generate, only CLI)
-RUN pnpm install --frozen-lockfile --dev --ignore-scripts
+# Install prisma CLI and @prisma/client from lockfile as nextjs user
+# --prod false includes devDependencies (prisma CLI)
+# --ignore-scripts skips postinstall hooks (prisma generate already done in builder)
+RUN pnpm install --frozen-lockfile --prod false --ignore-scripts
 
 # Expose port
 EXPOSE 3000

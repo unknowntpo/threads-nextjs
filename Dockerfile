@@ -55,16 +55,18 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 # Copy prisma schema for migrations
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 
-# Copy package files and install ONLY prisma CLI from lockfile
-# Uses --dev flag to install only devDependencies (includes prisma)
-# --ignore-scripts skips postinstall hooks (we don't need prisma generate, only CLI)
-# This avoids copying full node_modules and keeps image size minimal
+# Copy package files
 COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
 COPY --from=builder --chown=nextjs:nodejs /app/pnpm-lock.yaml ./pnpm-lock.yaml
-RUN pnpm install --frozen-lockfile --dev --ignore-scripts
 
-# Switch to non-root user
+# Switch to non-root user BEFORE installing
 USER nextjs
+
+# Install ONLY prisma CLI from lockfile as nextjs user
+# Uses --dev flag to install only devDependencies (includes prisma)
+# --ignore-scripts skips postinstall hooks (we don't need prisma generate, only CLI)
+# Running as nextjs user ensures all node_modules are owned by nextjs
+RUN pnpm install --frozen-lockfile --dev --ignore-scripts
 
 # Expose port
 EXPOSE 3000

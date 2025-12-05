@@ -48,27 +48,26 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 
-# Copy built application from builder (standalone includes package.json + prod node_modules)
+# Copy built application from builder (standalone includes node_modules for runtime)
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 
 # Copy prisma schema for migrations
 COPY --from=builder /app/prisma ./prisma
 
-# Copy package files
+# Copy package files for pnpm install
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/pnpm-lock.yaml ./pnpm-lock.yaml
+
+# Install prisma CLI (prod dependency)
+# --ignore-scripts skips postinstall (prisma generate already done in builder)
+RUN pnpm install --frozen-lockfile --prod --ignore-scripts
 
 # Give nextjs user ownership of entire /app directory
 RUN chown -R nextjs:nodejs /app
 
 # Switch to non-root user
 USER nextjs
-
-# Install prisma CLI and @prisma/client from lockfile as nextjs user
-# --prod false includes devDependencies (prisma CLI)
-# --ignore-scripts skips postinstall hooks (prisma generate already done in builder)
-RUN pnpm install --frozen-lockfile --prod false --ignore-scripts
 
 # Expose port
 EXPOSE 3000

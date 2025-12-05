@@ -1,7 +1,7 @@
 # Session Summary - Threads Clone Development
 
-**Last Updated**: 2025-11-06
-**Status**: ✅ COMPLETE - MVP 8: Follow & Followers
+**Last Updated**: 2025-12-04
+**Status**: 🔄 IN PROGRESS - Post/Comments/Profiles Search (Phase 1)
 
 ## Current State
 
@@ -62,6 +62,111 @@ terraform/
     ├── namespaces/                 # Application namespaces
     └── kubectl-setup/              # Kubectl configuration
 ```
+
+## Work Completed (2025-12-04)
+
+### Epic: Post, Comments & Profiles Search - Phase 1 🔄
+
+**Goal**: Implement full-text search for posts using PostgreSQL trigram similarity
+
+**Epic Doc**: `development_plan/epic_post_comments_profiles_search.md`
+
+#### Completed ✅
+
+**1. Database Setup**
+
+- [x] Enable `pg_trgm` extension in PostgreSQL
+- [x] Create trigram index on `Post.content` column
+- [x] Verify index creation and test fuzzy search queries
+
+**2. Backend Implementation (Clean Architecture)**
+
+- [x] **Repository Layer**: `lib/repositories/search.repository.ts`
+  - `searchPosts()` with trigram similarity
+  - Threshold 0.05 for typo tolerance
+- [x] **Service Layer**: `lib/services/search.service.ts`
+  - `SearchParams`, `SearchResult`, `SearchResponse` interfaces
+  - `search()` method with filter logic
+- [x] **API Route**: `app/api/search/route.ts`
+  - `GET /api/search?q={query}&filter={filter}&limit={limit}&offset={offset}`
+  - Auth check, param validation, error handling
+
+**3. Frontend Implementation**
+
+- [x] Search UI components (input, results list, tabs)
+- [x] Search page/route
+- [x] Tab switcher (Top/Recent/Profiles)
+- [x] Infinite scroll with 500ms debounce
+- [x] Loading states and error handling
+- [x] Empty state component
+
+**4. Testing**
+
+- [x] SearchRepository unit tests (passing)
+- [x] E2E tests: 39/39 passing
+  - User clicks search icon
+  - Types query, presses Enter
+  - Results display correctly
+  - Tab switching works
+  - Infinite scroll loads more
+  - Empty state shows when no results
+- [x] Fixed E2E selector strict mode violations
+- [x] CI tests: 85/85 unit/integration passing
+
+**5. Performance Improvements**
+
+- [x] Added 500ms debounce to infinite scroll (`lib/hooks/use-debounce.ts`)
+- [x] Added realistic timestamps to seed script
+- [x] Fixed N+1 query in UserActionMenu (lazy load user info)
+
+#### Bug Fixes ✅
+
+**Critical Bug: Search Timestamp Display (FIXED)**
+
+- [x] Fixed "NaNw ago" bug in search results
+- **Root Cause**: `$queryRaw` returns `created_at` (snake_case string), but code tried to access `createdAt` (camelCase)
+- **Solution**: Convert snake_case columns to Date objects in SearchRepository
+- **Fix**: `lib/repositories/search.repository.ts:59-63`
+  ```typescript
+  posts: posts.map(post => ({
+    ...post,
+    createdAt: new Date((post as any).created_at),
+    updatedAt: new Date((post as any).updated_at),
+  }));
+  ```
+- [x] Added test to verify `createdAt instanceof Date === true`
+- [x] All 90 tests passing (8/8 SearchRepository tests)
+
+#### Pending 📋
+
+**Testing**
+
+- [ ] API integration tests (`tests/api/search/route.test.ts`) - 31 test cases planned
+- [ ] SearchService unit tests
+
+**Phase 2: Comments & Profiles Search**
+
+- [ ] Add Comment table trigram index
+- [ ] Add User table trigram index (username, displayName, bio)
+- [ ] Extend SearchRepository with `searchComments()`, `searchProfiles()`
+
+#### Files Created/Modified
+
+**Created**:
+
+- `lib/repositories/search.repository.ts`
+- `lib/services/search.service.ts`
+- `app/api/search/route.ts`
+- `app/search/page.tsx`
+- `lib/hooks/use-debounce.ts`
+
+**Modified**:
+
+- `components/nav-sidebar.tsx` (search icon navigation)
+- `components/user-action-menu.tsx` (lazy load fix)
+- `scripts/seed-3d-printer-posts.ts` (realistic timestamps)
+
+---
 
 ## Work Completed (2025-11-07)
 

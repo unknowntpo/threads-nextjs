@@ -3,6 +3,11 @@ kind: Application
 metadata:
   name: threads
   namespace: argocd
+  annotations:
+    argocd-image-updater.argoproj.io/image-list: nextjs=us-east1-docker.pkg.dev/web-service-design/threads/nextjs, ml-service=us-east1-docker.pkg.dev/web-service-design/threads/ml-service
+    argocd-image-updater.argoproj.io/nextjs.update-strategy: latest
+    argocd-image-updater.argoproj.io/ml-service.update-strategy: latest
+    argocd-image-updater.argoproj.io/write-back-method: git
 spec:
   project: default
   source:
